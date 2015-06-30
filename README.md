@@ -1,1 +1,1 @@
-# functional-imperative-visualiser
+# functional-visualiser
