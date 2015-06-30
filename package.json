@@ -1,0 +1,30 @@
+{
+  "name": "functional-visualiser",
+  "version": "0.0.1",
+  "description": "A program to visualise aspects of functional programming and compare them to their imperative counterparts.",
+  "main": "/server/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "cd server && node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/breakingco/functional-imperative-visualiser.git"
+  },
+  "keywords": [
+    "functional",
+    "d3",
+    "visualization"
+  ],
+  "author": "Daniel Lawrence",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/breakingco/functional-imperative-visualiser/issues"
+  },
+  "homepage": "https://github.com/breakingco/functional-imperative-visualiser",
+  "devDependencies": {
+    "del": "^1.2.0",
+    "gulp": "^3.9.0",
+    "gulp-babel": "^5.1.0"
+  }
+}

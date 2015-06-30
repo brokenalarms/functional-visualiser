@@ -1,11 +1,13 @@
+'use strict';
+
 var arrayToSum = [3,5,5,10];
 var sum = 0;
 
-var sumStuff = function() {
+var sumFunction = function() {
 	for (var i = 0; i < arrayToSum.length; i++) {
 		sum += arrayToSum[i] ;
-	};
+	}
 };
 
-sumStuff();
+sumFunction();
 console.log(sum);
