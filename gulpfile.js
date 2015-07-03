@@ -15,6 +15,7 @@ var browserify = require('browserify');
 var babelify = require('babelify');
 var watchify = require('watchify');
 var sass = require('gulp-sass');
+var nodemon = require('gulp-nodemon');
 var source = require('vinyl-source-stream');
 var browserSync = require('browser-sync').create();
 var del = require('del');
@@ -97,22 +98,31 @@ gulp.task('build:css', function() {
 
 gulp.task('build', ['build:js', 'build:css']);
 
-gulp.task('reload', function() {
-    browserSync.reload();
-});
-
 gulp.task('watch', function() {
     buildJs(true);
     gulp.watch(addBackslash(sourceRoot, 'sass/**/*.{scss,css}'), ['build:css']);
     gulp.watch(addBackslash(sourceRoot, '*.html'), browserSync.reload);
 });
 
-gulp.task('serve', function() {
+gulp.task('syncBrowser', function() {
     browserSync.init({
         proxy: "localhost:3000"
     });
 });
 
+gulp.task('server', function() {
+    nodemon({
+        script: 'bin/www.js',
+        ext: 'js html',
+        ignore: ['public'],
+        env: {'NODE_ENV': 'development'},
+        tasks: null
+    })
+    .on('restart', function() {
+
+        })
+});
+
 
 gulp.task('default', ['clean', 'build', 'watch']);
-gulp.task('bs', ['default', 'serve']);
+gulp.task('bs', ['default', 'syncBrowser']);

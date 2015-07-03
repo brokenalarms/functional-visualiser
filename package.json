@@ -48,6 +48,7 @@
     "del": "^1.2.0",
     "eslint": "^0.24.0",
     "gulp-babel": "^5.1.0",
+    "gulp-nodemon": "^2.0.3",
     "gulp-sass": "^2.0.3",
     "node-sass": "^3.2.0",
     "npm-watch": "0.0.1",
