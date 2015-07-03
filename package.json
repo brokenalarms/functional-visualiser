@@ -2,11 +2,28 @@
   "name": "functional-visualiser",
   "version": "0.0.1",
   "description": "A program to visualise aspects of functional programming and compare them to their imperative counterparts.",
-  "main": "/server/server.js",
+  "main": "app.js",
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ./bin/www"
+    "start": "node ./bin/www.js",
+    "clean": "rm -rf public/build && mkdir public/build",
+    "build-js": "browserify public/modules/main.js -o public/build/main.js",
+    "build-css": "node-sass public/css/main.scss public/build/main.css",
+    "prebuild": "npm run clean -s",
+    "build": "npm run build-js -s",
+    "buildwatch": "npm run build -s && npm-watch",
+    "serve": "npm run watch && npm run start",
+    "watch": "npm-watch"
+  },
+  "watch": {
+    "build-css": "public/css/main.scss",
+    "build-js": "public/modules/*.js"
+  },
+  "browserify": {
+    "transform": [
+      "babelify"
+    ]
   },
   "repository": {
     "type": "git",
@@ -24,17 +41,29 @@
   },
   "homepage": "https://github.com/breakingco/functional-imperative-visualiser",
   "devDependencies": {
+    "babelify": "^6.1.2",
+    "browser-refresh": "^1.4.6",
+    "browser-sync": "^2.7.13",
+    "browserify": "^10.2.4",
     "del": "^1.2.0",
-    "gulp": "^3.9.0",
-    "gulp-babel": "^5.1.0"
+    "eslint": "^0.24.0",
+    "gulp-babel": "^5.1.0",
+    "gulp-sass": "^2.0.3",
+    "node-sass": "^3.2.0",
+    "npm-watch": "0.0.1",
+    "vinyl-source-stream": "^1.1.0",
+    "watchify": "^3.2.3"
   },
   "dependencies": {
-    "express": "^4.13.0",
     "body-parser": "~1.10.2",
     "cookie-parser": "~1.3.3",
+    "core-js": "^0.9.18",
     "debug": "~2.1.1",
-    "jade": "~1.9.1",
+    "ejs": "^2.3.2",
+    "express": "^4.13.0",
+    "jade": "^1.11.0",
     "morgan": "~1.5.1",
-    "serve-favicon": "~2.2.0"
+    "serve-favicon": "~2.2.0",
+    "shift-parser": "^3.0.1"
   }
 }
