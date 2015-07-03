@@ -4,9 +4,9 @@ var babel = require('gulp-babel');
 var del = require('del');
 
 //folder setup
-var frontendFolder = 'frontend';
-var backendFolder = 'backend';
-var destinationFolder = 'build';
+var frontendFolder = 'public';
+var backendFolder = '';
+var destinationFolder = '../build';
 
 var sourcePaths = {
     frontend: {
@@ -22,13 +22,13 @@ var destinationPaths = {
         js: destinationFolder + '/' + frontendFolder
     },
     backend: {
-        js: destinationFolder + '/' + backendFolder
+        js: destinationFolder + (backendFolder !== '') ? ('/' + backendFolder) : ''
     }
 };
 
 //tasks
 gulp.task('clean', function() {
-    del(['build/**/*']);
+    del([destinationFolder+'/**/*']);
 });
 
 gulp.task('build:frontend:js', function() {
