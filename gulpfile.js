@@ -74,7 +74,7 @@ var buildJs = function(watch) {
     if (watch) {
         builder = watchify(builder);
         builder.on('update', function() {
-            console.log('rebuilding main.js');
+            console.log('rebuilding js...');
             rebuildJs();
         });
     }
@@ -88,6 +88,7 @@ gulp.task('build:js', function() {
 
 //rebuild and inject CSS into browser without reloading the app
 gulp.task('build:css', function() {
+    console.log('rebuilding css...');
     gulp.src(addBackslash(sourceRoot, ['sass/**/*.{scss,css}']))
         .pipe(sass({
             errLogToConsole: true
@@ -101,7 +102,7 @@ gulp.task('build', ['build:js', 'build:css']);
 gulp.task('watch', function() {
     buildJs(true);
     gulp.watch(addBackslash(sourceRoot, 'sass/**/*.{scss,css}'), ['build:css']);
-    gulp.watch(addBackslash(sourceRoot, '*.html'), browserSync.reload);
+    gulp.watch(addBackslash(sourceRoot, '*.html'), browserSync.reload());
 });
 
 gulp.task('syncBrowser', function() {
@@ -110,11 +111,11 @@ gulp.task('syncBrowser', function() {
     });
 });
 
-gulp.task('server', function() {
+gulp.task('serve', function() {
     nodemon({
         script: 'bin/www.js',
         ext: 'js html',
-        ignore: ['public'],
+        ignore: ['public', 'node_modules'],
         env: {'NODE_ENV': 'development'},
         tasks: null
     })

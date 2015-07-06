@@ -1,2 +1,8 @@
+.function-block {
+  color: red;
+  background-color: red;
+  height: 50px;
+  width: 50px; }
+
 .test {
   font-size: 10px; }
