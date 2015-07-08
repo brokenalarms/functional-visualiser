@@ -1,5 +1,12 @@
-import parse from 'shift-parser';
+import { parse } from 'acorn';
+import React from 'react';
 
-var ast = parse('./examples/functional.js');
+console.log('about to parse...');
+
+
+import script from './examples/functional.js';
+var ast = parse(script);
+
+var profile = <div></div>;
 
 console.log(ast);

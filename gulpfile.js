@@ -17,6 +17,8 @@ var watchify = require('watchify');
 var sass = require('gulp-sass');
 var nodemon = require('gulp-nodemon');
 var source = require('vinyl-source-stream');
+var buffer = require('vinyl-buffer');
+var sourcemaps = require('gulp-sourcemaps');
 var browserSync = require('browser-sync').create();
 var del = require('del');
 
@@ -54,17 +56,23 @@ gulp.task('clean', function() {
 var buildJs = function(watch) {
 
     var builder = browserify({
-        entries: addBackslash(sourceRoot, 'modules/main.js'),
-        debug: process.env.NODE_ENV === 'development',
-        noparse: ['lodash']
-    })
+            entries: addBackslash(sourceRoot, 'modules/app.jsx'),
+            debug: true,
+            noparse: ['lodash']
+        })
         .transform(babelify);
 
 
     var rebuildJs = function() {
-        builder
+        return builder
             .bundle()
-            .pipe(source('main.js'))
+            .on('error', function(err) { console.error(err); this.emit('end'); })
+            .pipe(source('app.js'))
+            .pipe(buffer())
+            .pipe(sourcemaps.init({
+                loadMaps: true
+            }))
+            .pipe(sourcemaps.write('./'))
             .pipe(gulp.dest(destPaths.js));
 
         browserSync.reload();
@@ -102,24 +110,33 @@ gulp.task('build', ['build:js', 'build:css']);
 gulp.task('watch', function() {
     buildJs(true);
     gulp.watch(addBackslash(sourceRoot, 'sass/**/*.{scss,css}'), ['build:css']);
-    gulp.watch(addBackslash(sourceRoot, '*.html'), browserSync.reload());
+    gulp.watch(addBackslash(sourceRoot, '*.html'), function() {
+        console.log('html changed, reloading...');
+        browserSync.reload();
+    });
 });
 
 gulp.task('syncBrowser', function() {
     browserSync.init({
+        port: '4000',
+        snippetOptions: {
+            async: false
+        },
         proxy: "localhost:3000"
     });
 });
 
 gulp.task('serve', function() {
     nodemon({
-        script: 'bin/www.js',
-        ext: 'js html',
-        ignore: ['public', 'node_modules'],
-        env: {'NODE_ENV': 'development'},
-        tasks: null
-    })
-    .on('restart', function() {
+            script: 'bin/www.js',
+            ext: 'js html',
+            ignore: ['public', 'node_modules'],
+            env: {
+                'NODE_ENV': 'development'
+            },
+            tasks: null
+        })
+        .on('restart', function() {
 
         })
 });
