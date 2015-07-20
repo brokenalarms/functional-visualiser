@@ -1,12 +1,11 @@
-body {
-	font-family: 'Roboto', sans-serif;
-}
-
 .function-block {
   color: red;
   background-color: red;
-  height: 50px;
-  width: 50px; }
+  height: 500px;
+  width: 500px; }
+
+.d3-test {
+  vertical-align: top; }
 
 .test {
   font-size: 10px; }

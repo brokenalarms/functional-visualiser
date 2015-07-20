@@ -73,9 +73,9 @@ var buildJs = function(watch) {
                 loadMaps: true
             }))
             .pipe(sourcemaps.write('./'))
-            .pipe(gulp.dest(destPaths.js));
-
-        browserSync.reload();
+            .pipe(gulp.dest(destPaths.js))
+            .on('end', function(){browserSync.reload();});
+        console.log('js rebuilt and browser reloaded')
     };
 
     //wrap for repeated rebuilding of only those parts that have changed
@@ -101,6 +101,7 @@ gulp.task('build:css', function() {
         .pipe(sass({
             errLogToConsole: true
         }))
+        .on('error', function(err) { console.error(err); this.emit('end'); })
         .pipe(gulp.dest(buildRoot))
         .pipe(browserSync.stream())
 });
@@ -109,7 +110,7 @@ gulp.task('build', ['build:js', 'build:css']);
 
 gulp.task('watch', function() {
     buildJs(true);
-    gulp.watch(addBackslash(sourceRoot, 'sass/**/*.{scss,css}'), ['build:css']);
+    gulp.watch([addBackslash(sourceRoot, 'sass/**/*.{scss,css}'), addBackslash(sourceRoot, 'modules/**/*.{scss,css}')], ['build:css']);
     gulp.watch(addBackslash(sourceRoot, '*.html'), function() {
         console.log('html changed, reloading...');
         browserSync.reload();
