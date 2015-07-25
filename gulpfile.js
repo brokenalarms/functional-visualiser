@@ -74,8 +74,10 @@ var buildJs = function(watch) {
             }))
             .pipe(sourcemaps.write('./'))
             .pipe(gulp.dest(destPaths.js))
-            .on('end', function(){browserSync.reload();});
-        console.log('js rebuilt and browser reloaded')
+            .on('end', function(){
+                console.log('js rebuilt and browser reloaded');
+                browserSync.reload();
+            });
     };
 
     //wrap for repeated rebuilding of only those parts that have changed

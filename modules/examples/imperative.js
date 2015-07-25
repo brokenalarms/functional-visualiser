@@ -1,5 +1,6 @@
 'use strict';
 
+export function sumDemo () {
 var arrayToSum = [3, 5, 5, 10];
 var sum = 0;
 
@@ -11,3 +12,4 @@ var sumFunction = function sumFunction() {
 
 sumFunction();
 console.log(sum);
+}
