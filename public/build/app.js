@@ -46647,8 +46647,24 @@ module.exports = exports['default'];
 },{"d3":2,"react":296}],298:[function(require,module,exports){
 'use strict';
 
+var _createClass = (function () {
+    function defineProperties(target, props) {
+        for (var i = 0; i < props.length; i++) {
+            var descriptor = props[i];descriptor.enumerable = descriptor.enumerable || false;descriptor.configurable = true;if ('value' in descriptor) descriptor.writable = true;Object.defineProperty(target, descriptor.key, descriptor);
+        }
+    }return function (Constructor, protoProps, staticProps) {
+        if (protoProps) defineProperties(Constructor.prototype, protoProps);if (staticProps) defineProperties(Constructor, staticProps);return Constructor;
+    };
+})();
+
 function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : { 'default': obj };
+}
+
+function _classCallCheck(instance, Constructor) {
+    if (!(instance instanceof Constructor)) {
+        throw new TypeError('Cannot call a class as a function');
+    }
 }
 
 //==========================================
@@ -46662,10 +46678,6 @@ var _react = require('react');
 
 var _react2 = _interopRequireDefault(_react);
 
-//import drawFunc from './components/functionBlock/functionBlock.jsx'
-
-//Set up React Material UI with Dark theme
-
 var _materialUi = require('material-ui');
 
 var _materialUi2 = _interopRequireDefault(_materialUi);
@@ -46674,15 +46686,70 @@ var _D3RootD3RootJsx = require('./D3Root/D3Root.jsx');
 
 var _D3RootD3RootJsx2 = _interopRequireDefault(_D3RootD3RootJsx);
 
-var themeManager = new _materialUi2['default'].Styles.ThemeManager();
+var ThemeManager = new _materialUi2['default'].Styles.ThemeManager();
 
-var App = function App() {
-    return {
-        render: function render() {
-            return _react2['default'].createElement('div', null, _react2['default'].createElement('h1', null, 'react working! ', word), _react2['default'].createElement(_D3RootD3RootJsx2['default'], { word: word }));
+var LeftNav = _materialUi2['default'].LeftNav,
+    RaisedButton = _materialUi2['default'].RaisedButton,
+    MenuItem = _materialUi2['default'].MenuItem,
+    menuItems = [{
+    route: 'get-started',
+    text: 'Get Started'
+}, {
+    route: 'customization',
+    text: 'Customization'
+}, {
+    route: 'components',
+    text: 'Components'
+}, {
+    type: MenuItem.Types.SUBHEADER,
+    text: 'Resources'
+}, {
+    type: MenuItem.Types.LINK,
+    payload: 'https://github.com/callemall/material-ui',
+    text: 'GitHub'
+}, {
+    text: 'Disabled',
+    disabled: true
+}, {
+    type: MenuItem.Types.LINK,
+    payload: 'https://www.google.com',
+    text: 'Disabled Link',
+    disabled: true
+}];
+
+var App = (function () {
+    function App() {
+        _classCallCheck(this, App);
+
+        //Set up React Material UI with Dark theme
+        ThemeManager.setTheme(ThemeManager.types.DARK);
+    }
+
+    _createClass(App, [{
+        key: 'getChildContext',
+
+        //boilerplate for material-UI initialisation
+        value: function getChildContext() {
+            return {
+                muiTheme: ThemeManager.getCurrentTheme()
+            };
         }
-    };
+    }, {
+        key: 'render',
+        value: function render() {
+            return _react2['default'].createElement('div', null, _react2['default'].createElement(RaisedButton, { label: 'Default' }), _react2['default'].createElement(LeftNav, { ref: 'leftNav', docked: false, menuItems: menuItems }), _react2['default'].createElement('h1', null, 'react working! ', word), _react2['default'].createElement(_D3RootD3RootJsx2['default'], { word: word }));
+        }
+    }]);
+
+    return App;
+})();
+
+;
+//boilerplate for material-UI initialisation
+App.childContextTypes = {
+    muiTheme: _react2['default'].PropTypes.object
 };
+
 var word = 'baallaoeuoea';
 
 _react2['default'].render(_react2['default'].createElement(App, { word: word }), document.getElementById('app'));
