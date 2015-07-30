@@ -9,17 +9,27 @@
 import React from 'react';
 //import drawFunc from './components/functionBlock/functionBlock.jsx'
 
-//Set up React Material UI with Dark theme
+import theme from './theme';
 import mui from 'material-ui';
-let themeManager = new mui.Styles.ThemeManager();
+let LeftNav = mui.LeftNav;
 
 import D3Root from './D3Root/D3Root.jsx'
 
+let menuItems = [
+  { route: 'get-started', text: 'Get Started' },
+  { route: 'customization', text: 'Customization' },
+  { route: 'components', text: 'Components' },
+  { 
+     text: 'Disabled', 
+     disabled: true 
+  }
+];
 var App = function() {
     return {
         render() {
             return (<div>
             <h1>react working! {word}</h1>
+              <LeftNav label="Default" menuItems={menuItems} />
 			<D3Root word={word} />
 			</div>)
         }

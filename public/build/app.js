@@ -46664,7 +46664,9 @@ var _react2 = _interopRequireDefault(_react);
 
 //import drawFunc from './components/functionBlock/functionBlock.jsx'
 
-//Set up React Material UI with Dark theme
+var _theme = require('./theme');
+
+var _theme2 = _interopRequireDefault(_theme);
 
 var _materialUi = require('material-ui');
 
@@ -46674,12 +46676,16 @@ var _D3RootD3RootJsx = require('./D3Root/D3Root.jsx');
 
 var _D3RootD3RootJsx2 = _interopRequireDefault(_D3RootD3RootJsx);
 
-var themeManager = new _materialUi2['default'].Styles.ThemeManager();
+var LeftNav = _materialUi2['default'].LeftNav;
 
+var menuItems = [{ route: 'get-started', text: 'Get Started' }, { route: 'customization', text: 'Customization' }, { route: 'components', text: 'Components' }, {
+    text: 'Disabled',
+    disabled: true
+}];
 var App = function App() {
     return {
         render: function render() {
-            return _react2['default'].createElement('div', null, _react2['default'].createElement('h1', null, 'react working! ', word), _react2['default'].createElement(_D3RootD3RootJsx2['default'], { word: word }));
+            return _react2['default'].createElement('div', null, _react2['default'].createElement('h1', null, 'react working! ', word), _react2['default'].createElement(LeftNav, { label: 'Default', menuItems: menuItems }), _react2['default'].createElement(_D3RootD3RootJsx2['default'], { word: word }));
         }
     };
 };
@@ -46687,7 +46693,97 @@ var word = 'baallaoeuoea';
 
 _react2['default'].render(_react2['default'].createElement(App, { word: word }), document.getElementById('app'));
 
-},{"./D3Root/D3Root.jsx":297,"material-ui":36,"react":296}]},{},[298])
+},{"./D3Root/D3Root.jsx":297,"./theme":299,"material-ui":36,"react":296}],299:[function(require,module,exports){
+//Set up React Material UI with Dark theme
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+
+var _createClass = (function () {
+    function defineProperties(target, props) {
+        for (var i = 0; i < props.length; i++) {
+            var descriptor = props[i];descriptor.enumerable = descriptor.enumerable || false;descriptor.configurable = true;if ('value' in descriptor) descriptor.writable = true;Object.defineProperty(target, descriptor.key, descriptor);
+        }
+    }return function (Constructor, protoProps, staticProps) {
+        if (protoProps) defineProperties(Constructor.prototype, protoProps);if (staticProps) defineProperties(Constructor, staticProps);return Constructor;
+    };
+})();
+
+var _get = function get(_x, _x2, _x3) {
+    var _again = true;_function: while (_again) {
+        var object = _x,
+            property = _x2,
+            receiver = _x3;desc = parent = getter = undefined;_again = false;if (object === null) object = Function.prototype;var desc = Object.getOwnPropertyDescriptor(object, property);if (desc === undefined) {
+            var parent = Object.getPrototypeOf(object);if (parent === null) {
+                return undefined;
+            } else {
+                _x = parent;_x2 = property;_x3 = receiver;_again = true;continue _function;
+            }
+        } else if ('value' in desc) {
+            return desc.value;
+        } else {
+            var getter = desc.get;if (getter === undefined) {
+                return undefined;
+            }return getter.call(receiver);
+        }
+    }
+};
+
+function _interopRequireDefault(obj) {
+    return obj && obj.__esModule ? obj : { 'default': obj };
+}
+
+function _classCallCheck(instance, Constructor) {
+    if (!(instance instanceof Constructor)) {
+        throw new TypeError('Cannot call a class as a function');
+    }
+}
+
+function _inherits(subClass, superClass) {
+    if (typeof superClass !== 'function' && superClass !== null) {
+        throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass);
+    }subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });if (superClass) subClass.__proto__ = superClass;
+}
+
+var _materialUi = require('material-ui');
+
+var _materialUi2 = _interopRequireDefault(_materialUi);
+
+var themeManager = new _materialUi2['default'].Styles.ThemeManager();
+themeManager.setTheme(themeManager.types.DARK);
+
+var OuterMostParentComponent = (function (_React$Component) {
+    _inherits(OuterMostParentComponent, _React$Component);
+
+    function OuterMostParentComponent() {
+        _classCallCheck(this, OuterMostParentComponent);
+
+        _get(Object.getPrototypeOf(OuterMostParentComponent.prototype), 'constructor', this).apply(this, arguments);
+    }
+
+    _createClass(OuterMostParentComponent, [{
+        key: 'getChildContext',
+        value: function getChildContext() {
+            return {
+                muiTheme: ThemeManager.getCurrentTheme()
+            };
+        }
+    }]);
+
+    return OuterMostParentComponent;
+})(React.Component);
+
+exports['default'] = OuterMostParentComponent;
+;
+
+OuterMostParentComponent.childContextTypes = {
+    muiTheme: React.PropTypes.object
+};
+module.exports = exports['default'];
+
+},{"material-ui":36}]},{},[298])
 
 
 //# sourceMappingURL=app.js.map
