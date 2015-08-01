@@ -41,7 +41,7 @@ app.use(function(req, res, next) {
 // error handlers
 
 //test that es6 is working
-let a = 12;
+let a = 42;
 
 // development error handler
 // will print stacktrace

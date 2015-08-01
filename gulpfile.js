@@ -21,6 +21,7 @@ var buffer = require('vinyl-buffer');
 var sourcemaps = require('gulp-sourcemaps');
 var browserSync = require('browser-sync').create();
 var del = require('del');
+var globbing = require('gulp-css-globbing');
 
 //specify relative path roots
 var sourceRoot = 'public';
@@ -60,13 +61,18 @@ var buildJs = function(watch) {
             debug: true,
             noparse: ['lodash']
         })
-        .transform(babelify);
+        .transform(babelify.configure({
+            stage: 0
+        }));
 
 
     var rebuildJs = function() {
         return builder
             .bundle()
-            .on('error', function(err) { console.error(err); this.emit('end'); })
+            .on('error', function(err) {
+                console.error(err);
+                this.emit('end');
+            })
             .pipe(source('app.js'))
             .pipe(buffer())
             .pipe(sourcemaps.init({
@@ -74,7 +80,7 @@ var buildJs = function(watch) {
             }))
             .pipe(sourcemaps.write('./'))
             .pipe(gulp.dest(destPaths.js))
-            .on('end', function(){
+            .on('end', function() {
                 console.log('js rebuilt and browser reloaded');
                 browserSync.reload();
             });
@@ -100,10 +106,16 @@ gulp.task('build:js', function() {
 gulp.task('build:css', function() {
     console.log('rebuilding css...');
     gulp.src(addBackslash(sourceRoot, ['sass/**/*.{scss,css}']))
+        .pipe(globbing({
+            extensions: ['.scss']
+        }))
         .pipe(sass({
             errLogToConsole: true
         }))
-        .on('error', function(err) { console.error(err); this.emit('end'); })
+        .on('error', function(err) {
+            console.error(err);
+            this.emit('end');
+        })
         .pipe(gulp.dest(buildRoot))
         .pipe(browserSync.stream())
 });

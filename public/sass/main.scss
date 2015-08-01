@@ -1,5 +1,2 @@
-@import '../modules/components/components';
-
-.test {
-    font-size: 10px;
-}
+//set up to work with gulp-css-globbing to import all the partials
+@import '../modules/layout/**/*.scss';

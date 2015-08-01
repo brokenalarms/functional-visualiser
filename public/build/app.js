@@ -46565,6 +46565,253 @@ module.exports = require('./lib/React');
 
 },{"./lib/React":154}],297:[function(require,module,exports){
 'use strict';
+//==========================================
+// Main root-level app module.
+// The whole application is defined by the 'App'
+// React component, and all state flows uni-directionally
+// down from it.
+//==========================================
+
+var _createClass = (function () {
+    function defineProperties(target, props) {
+        for (var i = 0; i < props.length; i++) {
+            var descriptor = props[i];descriptor.enumerable = descriptor.enumerable || false;descriptor.configurable = true;if ('value' in descriptor) descriptor.writable = true;Object.defineProperty(target, descriptor.key, descriptor);
+        }
+    }return function (Constructor, protoProps, staticProps) {
+        if (protoProps) defineProperties(Constructor.prototype, protoProps);if (staticProps) defineProperties(Constructor, staticProps);return Constructor;
+    };
+})();
+
+var _get = function get(_x, _x2, _x3) {
+    var _again = true;_function: while (_again) {
+        var object = _x,
+            property = _x2,
+            receiver = _x3;desc = parent = getter = undefined;_again = false;if (object === null) object = Function.prototype;var desc = Object.getOwnPropertyDescriptor(object, property);if (desc === undefined) {
+            var parent = Object.getPrototypeOf(object);if (parent === null) {
+                return undefined;
+            } else {
+                _x = parent;_x2 = property;_x3 = receiver;_again = true;continue _function;
+            }
+        } else if ('value' in desc) {
+            return desc.value;
+        } else {
+            var getter = desc.get;if (getter === undefined) {
+                return undefined;
+            }return getter.call(receiver);
+        }
+    }
+};
+
+function _interopRequireDefault(obj) {
+    return obj && obj.__esModule ? obj : { 'default': obj };
+}
+
+function _classCallCheck(instance, Constructor) {
+    if (!(instance instanceof Constructor)) {
+        throw new TypeError('Cannot call a class as a function');
+    }
+}
+
+function _inherits(subClass, superClass) {
+    if (typeof superClass !== 'function' && superClass !== null) {
+        throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass);
+    }subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+}
+
+var _react = require('react');
+
+var _react2 = _interopRequireDefault(_react);
+
+var _materialUi = require('material-ui');
+
+var _materialUi2 = _interopRequireDefault(_materialUi);
+
+var _layoutD3RootD3RootJsx = require('./layout/D3Root/D3Root.jsx');
+
+var _layoutD3RootD3RootJsx2 = _interopRequireDefault(_layoutD3RootD3RootJsx);
+
+var _layoutLeftNavLeftNavJsx = require('./layout/LeftNav/LeftNav.jsx');
+
+var _layoutLeftNavLeftNavJsx2 = _interopRequireDefault(_layoutLeftNavLeftNavJsx);
+
+var ThemeManager = new _materialUi2['default'].Styles.ThemeManager();
+var RaisedButton = _materialUi2['default'].RaisedButton;
+
+var App = (function (_React$Component) {
+    _inherits(App, _React$Component);
+
+    _createClass(App, null, [{
+        key: 'childContextTypes',
+
+        //boilerplate for material-UI initialisation
+        value: {
+            muiTheme: _react2['default'].PropTypes.object
+        },
+        enumerable: true
+    }, {
+        key: 'defaultProps',
+        value: {
+            word: 1
+        },
+        enumerable: true
+    }]);
+
+    function App(props) {
+        var _this = this;
+
+        _classCallCheck(this, App);
+
+        _get(Object.getPrototypeOf(App.prototype), 'constructor', this).call(this, props);
+        //Set up React Material UI with Dark theme
+
+        this.sendContent = function (e) {
+            console.log('sending input content ' + _this.state.inputContent);
+        };
+
+        this.changeContent = function (e) {
+            _this.setState({
+                inputContent: e.target.value
+            });
+        };
+
+        this.handleButtonClick = function () {
+            console.log('button clicked');
+            _this.setState({
+                word: ++_this.state.word
+            });
+        };
+
+        ThemeManager.setTheme(ThemeManager.types.DARK);
+        this.state = {
+            word: 1,
+            inputContent: 'start value'
+        };
+    }
+
+    //boilerplate for material-UI initialisation
+
+    _createClass(App, [{
+        key: 'getChildContext',
+        value: function getChildContext() {
+            return {
+                muiTheme: ThemeManager.getCurrentTheme()
+            };
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            console.log(_react2['default'].version);
+            return _react2['default'].createElement('div', { className: 'test' }, _react2['default'].createElement('div', null, _react2['default'].createElement(RaisedButton, { label: 'Default', onClick: this.handleButtonClick }), _react2['default'].createElement('h1', null, 'react working! ', this.state.word), _react2['default'].createElement(_layoutD3RootD3RootJsx2['default'], { word: this.props.word })), _react2['default'].createElement('div', null, _react2['default'].createElement('h4', null, 'The input form is here: ', this.state.inputContent), 'Title:', _react2['default'].createElement('input', { type: 'text', value: this.inputContent,
+                onChange: this.changeContent }), _react2['default'].createElement('button', { onClick: this.sendContent }, 'Submit')));
+        }
+    }]);
+
+    return App;
+})(_react2['default'].Component);
+
+;
+
+_react2['default'].render(_react2['default'].createElement(App, null), document.getElementById('app'));
+/*<LeftNavBar />*/
+
+},{"./layout/D3Root/D3Root.jsx":298,"./layout/LeftNav/LeftNav.jsx":299,"material-ui":36,"react":296}],298:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+
+var _createClass = (function () {
+    function defineProperties(target, props) {
+        for (var i = 0; i < props.length; i++) {
+            var descriptor = props[i];descriptor.enumerable = descriptor.enumerable || false;descriptor.configurable = true;if ('value' in descriptor) descriptor.writable = true;Object.defineProperty(target, descriptor.key, descriptor);
+        }
+    }return function (Constructor, protoProps, staticProps) {
+        if (protoProps) defineProperties(Constructor.prototype, protoProps);if (staticProps) defineProperties(Constructor, staticProps);return Constructor;
+    };
+})();
+
+var _get = function get(_x, _x2, _x3) {
+    var _again = true;_function: while (_again) {
+        var object = _x,
+            property = _x2,
+            receiver = _x3;desc = parent = getter = undefined;_again = false;if (object === null) object = Function.prototype;var desc = Object.getOwnPropertyDescriptor(object, property);if (desc === undefined) {
+            var parent = Object.getPrototypeOf(object);if (parent === null) {
+                return undefined;
+            } else {
+                _x = parent;_x2 = property;_x3 = receiver;_again = true;continue _function;
+            }
+        } else if ('value' in desc) {
+            return desc.value;
+        } else {
+            var getter = desc.get;if (getter === undefined) {
+                return undefined;
+            }return getter.call(receiver);
+        }
+    }
+};
+
+function _interopRequireDefault(obj) {
+    return obj && obj.__esModule ? obj : { 'default': obj };
+}
+
+function _classCallCheck(instance, Constructor) {
+    if (!(instance instanceof Constructor)) {
+        throw new TypeError('Cannot call a class as a function');
+    }
+}
+
+function _inherits(subClass, superClass) {
+    if (typeof superClass !== 'function' && superClass !== null) {
+        throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass);
+    }subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+}
+
+var _react = require('react');
+
+var _react2 = _interopRequireDefault(_react);
+
+var _d3 = require('d3');
+
+var _d32 = _interopRequireDefault(_d3);
+
+var D3Root = (function (_React$Component) {
+    _inherits(D3Root, _React$Component);
+
+    function D3Root() {
+        var _this = this;
+
+        _classCallCheck(this, D3Root);
+
+        _get(Object.getPrototypeOf(D3Root.prototype), 'constructor', this).apply(this, arguments);
+
+        this.componentDidMount = function () {
+            var element = _react2['default'].findDOMNode(_this);
+            initialize(element);
+        };
+    }
+
+    _createClass(D3Root, [{
+        key: 'render',
+        value: function render() {
+            return _react2['default'].createElement('div', { className: 'd3-test' });
+        }
+    }]);
+
+    return D3Root;
+})(_react2['default'].Component);
+
+exports['default'] = D3Root;
+;
+
+function initialize(element) {
+    _d32['default'].select(element).append('svg').attr('class', 'function-block').append("text").attr("x", 10).attr("y", 10).attr("dy", ".35em").text('d3 appended element inside react component - first attempt');
+    console.log('drawn');
+}
+module.exports = exports['default'];
+
+},{"d3":2,"react":296}],299:[function(require,module,exports){
+'use strict';
 
 Object.defineProperty(exports, '__esModule', {
     value: true
@@ -46590,90 +46837,6 @@ function _classCallCheck(instance, Constructor) {
     }
 }
 
-var _d3 = require('d3');
-
-var _d32 = _interopRequireDefault(_d3);
-
-var _react = require('react');
-
-var _react2 = _interopRequireDefault(_react);
-
-var D3Root = (function () {
-    function D3Root() {
-        _classCallCheck(this, D3Root);
-    }
-
-    _createClass(D3Root, [{
-        key: 'componentDidMount',
-        value: function componentDidMount() {
-            var domNode = _react2['default'].findDOMNode(this);
-            createChart(domNode, this.props);
-        }
-    }, {
-        key: 'render',
-        value: function render() {
-            return _react2['default'].createElement('div', { id: 'd3Root' }, 'Hello, ', this.props.word);
-        }
-    }]);
-
-    return D3Root;
-})();
-
-;
-D3Root.PropTypes = {
-    width: _react2['default'].PropTypes.number,
-    height: _react2['default'].PropTypes.number,
-    margin: _react2['default'].PropTypes.number,
-    somethingElse: _react2['default'].PropTypes.number.isRequired
-};
-D3Root.defaultProps = {
-    width: 600,
-    height: 600,
-    margin: 20
-};
-
-function createChart(domNode, props) {
-
-    console.log(props);
-    var canvasWidth = props.width + props.margin;
-    var canvasHeight = props.height + props.margin;
-
-    _d32['default'].select(domNode).append('svg').attr('width', canvasWidth).attr('height', canvasHeight).append('g').attr('class', 'd3Window').attr('width', props.width).attr('height', props.height).attr('transform', 'translate(' + props.margin + ',' + props.margin + ')').append('text').attr('class', 'function-block').attr('x', 10).attr('y', 10).attr('dy', '.35em').text('d3 appended element inside react component - first attempt');
-}
-
-exports['default'] = D3Root;
-module.exports = exports['default'];
-
-},{"d3":2,"react":296}],298:[function(require,module,exports){
-'use strict';
-
-var _createClass = (function () {
-    function defineProperties(target, props) {
-        for (var i = 0; i < props.length; i++) {
-            var descriptor = props[i];descriptor.enumerable = descriptor.enumerable || false;descriptor.configurable = true;if ('value' in descriptor) descriptor.writable = true;Object.defineProperty(target, descriptor.key, descriptor);
-        }
-    }return function (Constructor, protoProps, staticProps) {
-        if (protoProps) defineProperties(Constructor.prototype, protoProps);if (staticProps) defineProperties(Constructor, staticProps);return Constructor;
-    };
-})();
-
-function _interopRequireDefault(obj) {
-    return obj && obj.__esModule ? obj : { 'default': obj };
-}
-
-function _classCallCheck(instance, Constructor) {
-    if (!(instance instanceof Constructor)) {
-        throw new TypeError('Cannot call a class as a function');
-    }
-}
-
-//==========================================
-// Main root-level app module.
-// The whole application is defined by the 'App'
-// React component, and all state flows uni-directionally
-// down from it.
-//==========================================
-
 var _react = require('react');
 
 var _react2 = _interopRequireDefault(_react);
@@ -46682,79 +46845,61 @@ var _materialUi = require('material-ui');
 
 var _materialUi2 = _interopRequireDefault(_materialUi);
 
-var _D3RootD3RootJsx = require('./D3Root/D3Root.jsx');
+var LeftNav = _materialUi2['default'].LeftNav;
+var MenuItem = _materialUi2['default'].MenuItem;
 
-var _D3RootD3RootJsx2 = _interopRequireDefault(_D3RootD3RootJsx);
+var LeftNavBar = (function () {
+    _createClass(LeftNavBar, null, [{
+        key: 'defaultProps',
+        value: {
+            menuItems: [{
+                route: 'get-started',
+                text: 'Get Started'
+            }, {
+                route: 'customization',
+                text: 'Customization'
+            }, {
+                route: 'components',
+                text: 'Components'
+            }, {
+                type: MenuItem.Types.SUBHEADER,
+                text: 'Resources'
+            }, {
+                type: MenuItem.Types.LINK,
+                payload: 'https://github.com/callemall/material-ui',
+                text: 'GitHub'
+            }, {
+                text: 'Disabled',
+                disabled: true
+            }, {
+                type: MenuItem.Types.LINK,
+                payload: 'https://www.google.com',
+                text: 'Disabled Link',
+                disabled: true
+            }]
+        },
+        enumerable: true
+    }]);
 
-var ThemeManager = new _materialUi2['default'].Styles.ThemeManager();
-
-var LeftNav = _materialUi2['default'].LeftNav,
-    RaisedButton = _materialUi2['default'].RaisedButton,
-    MenuItem = _materialUi2['default'].MenuItem,
-    menuItems = [{
-    route: 'get-started',
-    text: 'Get Started'
-}, {
-    route: 'customization',
-    text: 'Customization'
-}, {
-    route: 'components',
-    text: 'Components'
-}, {
-    type: MenuItem.Types.SUBHEADER,
-    text: 'Resources'
-}, {
-    type: MenuItem.Types.LINK,
-    payload: 'https://github.com/callemall/material-ui',
-    text: 'GitHub'
-}, {
-    text: 'Disabled',
-    disabled: true
-}, {
-    type: MenuItem.Types.LINK,
-    payload: 'https://www.google.com',
-    text: 'Disabled Link',
-    disabled: true
-}];
-
-var App = (function () {
-    function App() {
-        _classCallCheck(this, App);
-
-        //Set up React Material UI with Dark theme
-        ThemeManager.setTheme(ThemeManager.types.DARK);
+    function LeftNavBar(props) {
+        _classCallCheck(this, LeftNavBar);
     }
 
-    _createClass(App, [{
-        key: 'getChildContext',
-
-        //boilerplate for material-UI initialisation
-        value: function getChildContext() {
-            return {
-                muiTheme: ThemeManager.getCurrentTheme()
-            };
-        }
-    }, {
+    _createClass(LeftNavBar, [{
         key: 'render',
         value: function render() {
-            return _react2['default'].createElement('div', null, _react2['default'].createElement(RaisedButton, { label: 'Default' }), _react2['default'].createElement(LeftNav, { ref: 'leftNav', docked: false, menuItems: menuItems }), _react2['default'].createElement('h1', null, 'react working! ', word), _react2['default'].createElement(_D3RootD3RootJsx2['default'], { word: word }));
+            return _react2['default'].createElement(LeftNav, { ref: 'leftNav', menuItems: this.props.menuItems, docked: true, className: 'left-nav' });
         }
     }]);
 
-    return App;
+    return LeftNavBar;
 })();
 
+exports['default'] = LeftNavBar;
 ;
-//boilerplate for material-UI initialisation
-App.childContextTypes = {
-    muiTheme: _react2['default'].PropTypes.object
-};
+module.exports = exports['default'];
 
-var word = 'baallaoeuoea';
-
-_react2['default'].render(_react2['default'].createElement(App, { word: word }), document.getElementById('app'));
-
-},{"./D3Root/D3Root.jsx":297,"material-ui":36,"react":296}]},{},[298])
+},{"material-ui":36,"react":296}]},{},[297])
 
 
 //# sourceMappingURL=app.js.map

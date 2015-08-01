@@ -8,43 +8,29 @@
 
 import React from 'react';
 import mui from 'material-ui';
-import D3Root from './D3Root/D3Root.jsx'
+import D3Root from './layout/D3Root/D3Root.jsx';
+import LeftNavBar from './layout/LeftNav/LeftNav.jsx'
 var ThemeManager = new mui.Styles.ThemeManager();
+var RaisedButton = mui.RaisedButton;
 
-var LeftNav = mui.LeftNav,
-    RaisedButton = mui.RaisedButton,
-    MenuItem = mui.MenuItem,
-    menuItems = [{
-        route: 'get-started',
-        text: 'Get Started'
-    }, {
-        route: 'customization',
-        text: 'Customization'
-    }, {
-        route: 'components',
-        text: 'Components'
-    }, {
-        type: MenuItem.Types.SUBHEADER,
-        text: 'Resources'
-    }, {
-        type: MenuItem.Types.LINK,
-        payload: 'https://github.com/callemall/material-ui',
-        text: 'GitHub'
-    }, {
-        text: 'Disabled',
-        disabled: true
-    }, {
-        type: MenuItem.Types.LINK,
-        payload: 'https://www.google.com',
-        text: 'Disabled Link',
-        disabled: true
-    }, ];
+class App extends React.Component {
 
-class App {
+    //boilerplate for material-UI initialisation
+    static childContextTypes = {
+        muiTheme: React.PropTypes.object
+    };
+    static defaultProps = {
+        word: 1
+    }
 
-    constructor() {
+    constructor(props) {
+        super(props);
         //Set up React Material UI with Dark theme
         ThemeManager.setTheme(ThemeManager.types.DARK);
+        this.state = {
+            word: 1,
+            inputContent: 'start value'
+        };
     }
 
     //boilerplate for material-UI initialisation
@@ -53,20 +39,42 @@ class App {
             muiTheme: ThemeManager.getCurrentTheme()
         };
     }
+
+    sendContent = (e) => {
+        console.log('sending input content ' + this.state.inputContent);
+    }
+
+    changeContent = (e) => {
+        this.setState({
+            inputContent: e.target.value
+        })
+    }
+
+    handleButtonClick = () => {
+        console.log('button clicked');
+        this.setState({
+            word: ++this.state.word
+        });
+    }
+
     render() {
-        return (<div>
-       <RaisedButton label="Default"/>
-      <LeftNav ref="leftNav" docked={false} menuItems={menuItems} />
-            <h1>react working! {word}</h1>
-            <D3Root word={word} />
-       </div>)
+        console.log(React.version);
+        return (<div className='test'>
+                    {/*<LeftNavBar />*/}
+                    <div>
+                        <RaisedButton label="Default" onClick={this.handleButtonClick}/>
+                        <h1>react working! {this.state.word}</h1>
+                        <D3Root word={this.props.word} />
+                    </div>
+                    <div>
+        <h4>The input form is here: {this.state.inputContent}</h4>
+        Title: 
+        <input type="text" value={this.inputContent} 
+          onChange={this.changeContent} /> 
+        <button onClick={this.sendContent}>Submit</button>
+      </div>
+            </div>)
     }
 };
-//boilerplate for material-UI initialisation
-App.childContextTypes = {
-    muiTheme: React.PropTypes.object
-};
 
-var word = 'baallaoeuoea';
-
-React.render(<App word={word}/>, document.getElementById('app'));
+React.render(<App />, document.getElementById('app'));
