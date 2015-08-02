@@ -19,7 +19,7 @@ gen
 node_modules
 
 ### build files
-public/build
+public/build/*
 *.map
 
 ### other
