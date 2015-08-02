@@ -6,6 +6,8 @@ let MenuItem = mui.MenuItem;
 
 export default class LeftNavBar {
 
+    static displayName = 'LeftNavBar';
+
     static defaultProps = {
         menuItems: [{
             route: 'get-started',
@@ -34,10 +36,34 @@ export default class LeftNavBar {
         }, ]
     }
 
-    constructor(props) {}
+    handleClick = () => {
+        console.log('handlingclick');
+        this.toggle();
+    }
 
+    componentDidMount() {
+        console.log('left nav mounted');
+       // this.refs.leftNav.toggle();
+    }
+
+    componentWillReceiveProps(nextProps){
+        console.log('left nav has received props');
+        console.log(nextProps);
+    }
+
+    componentWillUpdate () {
+        console.log('left nav updating');
+    }
+
+    componentDidUpdate (){
+        console.log('left nav updated');
+    }
     render() {
         return (
-            <LeftNav ref="leftNav" menuItems={this.props.menuItems} docked={true} className="left-nav"/>)
+            <LeftNav ref="leftNav"
+            menuItems={this.props.menuItems}
+            docked={false}
+            onChange={this.handleClick}
+            className="left-nav" />)
     }
 };

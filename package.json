@@ -14,7 +14,8 @@
     "build": "npm run build-js -s",
     "buildwatch": "npm run build -s && npm-watch",
     "serve": "npm run watch && npm run start",
-    "watch": "npm-watch"
+    "watch": "npm-watch",
+    "lint": "eslint ./public"
   },
   "watch": {
     "build-css": "public/css/main.scss",
@@ -41,12 +42,13 @@
   },
   "homepage": "https://github.com/breakingco/functional-imperative-visualiser",
   "devDependencies": {
+    "babel-eslint": "^4.0.5",
     "babelify": "^6.1.2",
     "browser-refresh": "^1.4.6",
     "browser-sync": "^2.7.13",
     "browserify": "^10.2.4",
     "del": "^1.2.0",
-    "eslint": "^0.24.0",
+    "eslint": "^1.0.0",
     "gulp": "^3.9.0",
     "gulp-babel": "^5.1.0",
     "gulp-css-globbing": "^0.1.8",

@@ -24,8 +24,8 @@ var del = require('del');
 var globbing = require('gulp-css-globbing');
 
 //specify relative path roots
-var sourceRoot = 'public';
-var buildRoot = 'public/build';
+var sourceRoot = './public';
+var buildRoot = './public/build';
 
 //setup Gulp globs from path roots
 var addBackslash = function(first, second) {
@@ -56,23 +56,36 @@ gulp.task('clean', function() {
 
 var buildJs = function(watch) {
 
-    var builder = browserify({
-            entries: addBackslash(sourceRoot, 'modules/app.jsx'),
+    //all the dependencies we don't want to watch (faster dev refresh)
+    var libs = ['react', 'd3', 'material-ui'];
+
+    var vendorBundler = browserify({
+        debug: true
+    })
+    libs.forEach(function(lib) {
+        vendorBundler.require(lib);
+    })
+
+    var bundler = browserify({
             debug: true,
-            noparse: ['lodash']
+            cache: {},
+            packageCache: {},
+            fullPaths: watch
+        })
+        .require(require.resolve('./public/modules/app.jsx'), {
+            entry: true
         })
         .transform(babelify.configure({
             stage: 0
-        }));
+        }))
+    libs.forEach(function(lib) {
+        bundler.external(lib);
+    })
 
-
-    var rebuildJs = function() {
-        return builder
-            .bundle()
-            .on('error', function(err) {
-                console.error(err);
-                this.emit('end');
-            })
+    var rebundle = function() {
+        var startTime = Date.now();
+        console.log('rebuilding user js');
+        return bundler.bundle()
             .pipe(source('app.js'))
             .pipe(buffer())
             .pipe(sourcemaps.init({
@@ -80,22 +93,26 @@ var buildJs = function(watch) {
             }))
             .pipe(sourcemaps.write('./'))
             .pipe(gulp.dest(destPaths.js))
+            .on('error', function(err) {
+                console.error(err.message || err);
+                this.emit('end');
+            })
             .on('end', function() {
-                console.log('js rebuilt and browser reloaded');
+                console.log('js rebuilt in ' + (Date.now() - startTime) + ' ms');
                 browserSync.reload();
             });
     };
 
-    //wrap for repeated rebuilding of only those parts that have changed
     if (watch) {
-        builder = watchify(builder);
-        builder.on('update', function() {
-            console.log('rebuilding js...');
-            rebuildJs();
-        });
+        bundler = watchify(bundler);
+        bundler.on('update', rebundle);
     }
 
-    rebuildJs();
+    vendorBundler.bundle()
+        .pipe(source('vendor.js'))
+        .pipe(gulp.dest(destPaths.js))
+
+    return rebundle();
 };
 
 gulp.task('build:js', function() {
@@ -131,7 +148,7 @@ gulp.task('watch', function() {
     });
 });
 
-gulp.task('syncBrowser', function() {
+gulp.task('syncBrowser', ['default'], function() {
     browserSync.init({
         port: '4000',
         snippetOptions: {
@@ -157,5 +174,5 @@ gulp.task('serve', function() {
 });
 
 
-gulp.task('default', ['clean', 'build', 'watch']);
+gulp.task('default', ['clean', 'build:css', 'watch']);
 gulp.task('bs', ['default', 'syncBrowser']);
