@@ -1,4 +1,3 @@
-
 import express from 'express';
 import path from 'path';
 import favicon from 'serve-favicon';
@@ -21,10 +20,6 @@ app.set('view engine', 'jade');
 
 
 app.use(favicon(__dirname + '/public/resources/favicons/favicon.ico'));
-//app.use(logger('dev'));
-//app.use(bodyParser.json());
-//app.use(bodyParser.urlencoded({ extended: false }));
-//app.use(cookieParser());
 
 //set to read js files from the babel-transpiled ES5 folder
 app.use(express.static(path.join(__dirname, 'public')));
@@ -46,7 +41,6 @@ let a = 42;
 // development error handler
 // will print stacktrace
 if (app.get('env') === 'development') {
-
     app.use(function(err, req, res, next) {
         res.status(err.status || 500);
         App.render('error', {
