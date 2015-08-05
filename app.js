@@ -1,6 +1,6 @@
-import express from 'express';
-import path from 'path';
-import favicon from 'serve-favicon';
+var express = require('express');
+var path = require('path');
+var favicon = require('serve-favicon');
 
 //import logger from 'morgan';
 //import cookieParser from 'cookie-parser'; 
@@ -10,7 +10,7 @@ import favicon from 'serve-favicon';
 
 /** Import self-written modules
  */
-import routes from './routes/index';
+var routes = require('./routes/index');
 
 var app = express();
 
@@ -35,9 +35,6 @@ app.use(function(req, res, next) {
 
 // error handlers
 
-//test that es6 is working
-let a = 42;
-
 // development error handler
 // will print stacktrace
 if (app.get('env') === 'development') {
@@ -61,4 +58,4 @@ app.use(function(err, req, res, next) {
 });
 
 
-export default app;
+module.exports = app;

@@ -3,7 +3,7 @@
  * Module dependencies.
  */
 //TODO - this allows use of ES6 in node but only good if not made into a library
-require("babel/register");
+//require("babel/register");
 
 var app = require('../app');
 var debug = require('debug')('app:server');

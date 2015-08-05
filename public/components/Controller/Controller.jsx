@@ -1,47 +1,67 @@
 import React from 'react';
-
-import LeftNavBar from './LeftNav/LeftNav.jsx';
 import {AppBar} from 'material-ui';
 
-/* PRACTICE - exporting a react component as a plain JS function (no classes)
-   Eric Eliott style...
-   I will switch to ES6 classes now, even though this is against prototypical
-   inheritance the linting integration is better.
+import optionStore from '../../modules/stores/optionStore.js';
+import NavBar from './NavBar/NavBar.jsx';
+import ActionPane from './ActionPane/ActionPane.jsx';
+
+/*
+  Central controller for all state in the app.
+  Using principles of functional reactive programming (FRP),
+  state is mutated imperatively in the NavBar only, handlede here,
+  and declarative code in the children components react to this
+  and propogate the state change through the system.
 */
 
-function Controller() {
-  const instance = Object.create(React.Component.prototype);
+class Controller extends React.Component {
 
-  Object.assign(instance, {
-    constructor: instance,
-    displayName: 'Controller',
-    state: {
+  constructor() {
+    super();
+    this.displayName = 'Controller';
+    this.state = {
       showNavBar: true,
-    },
-    render() {
-      return (
-        <div>
-        {this.props.word}
+      selectedExample: null,
+    };
+  }
+
+  componentDidMount = () => {
+    optionStore.subscribeListener(this.onOptionsChanged);
+  }
+
+  componentWillUnmount = () => {
+    optionStore.unsubscribeListener(this.onOptionsChanged);
+  }
+
+  showMenuOnClick = (shouldShow) => {
+    this.setState({
+      showNavBar: shouldShow,
+    });
+  }
+
+  onOptionsChanged = () => {
+    const exampleKey = optionStore.getOptions().selectedExampleId;
+    this.setState({
+      selectedExample: optionStore.getOptions().examples[exampleKey],
+    });
+  }
+
+  render = () => {
+    return (
+      <div>
           <AppBar
             title="Functional Visualiser Demo"
-            onLeftIconButtonTouchTap={instance.showMenuOnClick.bind(instance, true)}
+            onLeftIconButtonTouchTap={this.showMenuOnClick.bind(this, true)}
           />
-          <LeftNavBar
-            showNavBar={instance.state.showNavBar}
-            onNavClose={instance.showMenuOnClick.bind(instance, false)}
+          <NavBar
+            showNavBar={this.state.showNavBar}
+            onNavClose={this.showMenuOnClick.bind(this, false)}
           />
+          <ActionPane example={this.state.selectedExample}/>
        </div>
-      );
-    },
+    );
+  }
 
-    showMenuOnClick(shouldShow) {
-      instance.setState({
-        showNavBar: shouldShow,
-      });
-    },
-  });
 
-  return instance;
 }
 
 export default Controller;

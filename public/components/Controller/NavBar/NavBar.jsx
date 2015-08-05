@@ -1,5 +1,10 @@
+/*
+All setting of the optionStore is done directly through here.
+*/
+
 import React from 'react';
 import mui from 'material-ui';
+import optionStore from '../../../modules/stores/optionStore.js';
 
 const LeftNav = mui.LeftNav;
 const MenuItem = mui.MenuItem;
@@ -14,8 +19,12 @@ export default class LeftNavBar {
 
   static defaultProps = {
     menuItems: [{
+      type: MenuItem.Types.SUBHEADER,
+      text: 'Examples',
+    }, {
       route: 'get-started',
-      text: 'Get Started',
+      text: 'Sum',
+      id: 'sum',
     }, {
       route: 'customization',
       text: 'Customization',
@@ -24,10 +33,10 @@ export default class LeftNavBar {
       text: 'Components',
     }, {
       type: MenuItem.Types.SUBHEADER,
-      text: 'Resources',
+      text: 'Examples',
     }, {
       type: MenuItem.Types.LINK,
-      payload: 'https://github.com/callemall/material-ui',
+      payload: 'https://github.com/breakingco/functional-visualiser',
       text: 'GitHub',
     }, {
       text: 'Disabled',
@@ -41,12 +50,11 @@ export default class LeftNavBar {
   }
 
   componentDidMount = () => {
-    this.refs.leftNav.toggle();
-    this.handleNavClose = this.props.onNavClose.bind(this, false);
+   // this.refs.leftNav.toggle();
+    // console.log(MenuItem.Types);
   }
 
-  componentWillUpdate() {
-  }
+  componentWillUpdate() {}
 
   componentDidUpdate() {
     // only show navBar if allowed by parent
@@ -60,11 +68,14 @@ export default class LeftNavBar {
             menuItems={this.props.menuItems}
             docked={false}
             onChange={this.handleClick}
-            onNavClose={this.handleNavClose} />
+            onNavClose={this.props.onNavClose.bind(this, false)} />
     );
   }
 
-  handleClick = () => {
-    console.log('handling nav bar click');
-  }
+  handleClick = (e, selectedIndex, menuItem) => {
+    // console.log(menuItem);
+    optionStore.setOptions({
+      selectedExampleId: menuItem.id,
+    });
+  };
 }

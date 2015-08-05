@@ -1,0 +1,18 @@
+.d3-root {
+    flex: 1;
+    border: 1px solid red;
+}
+
+.function-node {
+    width: 100px;
+    height: 50px;
+    border: 1px solid red;
+    fill: #ccc;
+    stroke: #fff;
+    stroke-width: 2px;
+}
+
+.function-link {
+    stroke: #777;
+    stroke-width: 2px;
+}

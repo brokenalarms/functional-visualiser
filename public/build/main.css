@@ -1,2 +1,24 @@
-/* No files to import found in ..//modules//layout//**/
-/*.scss */
+.action-pane {
+  display: flex;
+  justify-content: center;
+  flex-direction: row; }
+
+.code-pane {
+  flex-grow: 0;
+  border: 1px solid green; }
+
+.d3-root {
+  flex: 1;
+  border: 1px solid red; }
+
+.function-node {
+  width: 100px;
+  height: 50px;
+  border: 1px solid red;
+  fill: #ccc;
+  stroke: #fff;
+  stroke-width: 2px; }
+
+.function-link {
+  stroke: #777;
+  stroke-width: 2px; }

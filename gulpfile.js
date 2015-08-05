@@ -57,10 +57,21 @@ gulp.task('clean', function() {
 var buildJs = function(watch) {
 
   //all the dependencies we don't want to watch (faster dev refresh)
-  var libs = ['react', 'd3', 'material-ui', 'react-tap-event-plugin', 'lodash'];
+  var libs = ['react',
+    'd3',
+    'material-ui',
+    'react-tap-event-plugin',
+    'lodash',
+    'shift-parser',
+    'shift-scope',
+    'shift-traverse',
+    'acorn',
+    'estraverse',
+    'escodegen',
+  ];
 
   var vendorBundler = browserify({
-    debug: true
+    debug: true,
   })
   libs.forEach(function(lib) {
     vendorBundler.require(lib);
@@ -110,6 +121,11 @@ var buildJs = function(watch) {
 
   vendorBundler.bundle()
     .pipe(source('vendor.js'))
+    .pipe(buffer())
+      .pipe(sourcemaps.init({
+        loadMaps: true
+      }))
+      .pipe(sourcemaps.write('./'))
     .pipe(gulp.dest(destPaths.js))
 
   return rebundle();

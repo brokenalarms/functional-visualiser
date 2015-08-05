@@ -1,9 +1,10 @@
 'use strict';
 // ==========================================
 // Main root-level app module.
-// The whole application is defined by the 'App'
+// The App class is used purely to set up boilerplate.
+// Subscriptions to data begin in the 'Controller'
 // React component, and all state flows uni-directionally
-// down from it.
+// down from the 'Controller' module.
 // ==========================================
 
 // dependencies
@@ -13,7 +14,6 @@ import injectTapEventPlugin from 'react-tap-event-plugin';
 
 // React components
 import Controller from './Controller/Controller.jsx';
-import ActionPane from './ActionPane/ActionPane.jsx';
 
 class App extends React.Component {
 
@@ -43,8 +43,7 @@ class App extends React.Component {
   render() {
     return (
       <div className="app">
-        <Controller word={'comp one'}/>
-        <ActionPane />
+        <Controller/>
       </div>
     );
   }
