@@ -1,4 +1,4 @@
-import event from 'events';
+const event = require('events');
 import examples from '../examples/examples.js';
 
 /* simple event store / emitter singleton.
@@ -12,6 +12,9 @@ function OptionStore() {
 
   // read in available examples from constants file
   options.examples = examples;
+
+  // TODO - temp - triggers sum function
+  options.selectedExampleId = 'sum';
 
   function subscribeListener(callback) {
     optionStore.on('change', callback);

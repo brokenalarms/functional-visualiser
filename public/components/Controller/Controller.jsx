@@ -19,8 +19,9 @@ class Controller extends React.Component {
     super();
     this.displayName = 'Controller';
     this.state = {
-      showNavBar: true,
-      selectedExample: null,
+      showNavBar: false,
+      // TODO - to be changed to null
+      selectedExample: optionStore.getOptions().examples['sum'],
     };
   }
 
@@ -39,9 +40,8 @@ class Controller extends React.Component {
   }
 
   onOptionsChanged = () => {
-    const exampleKey = optionStore.getOptions().selectedExampleId;
     this.setState({
-      selectedExample: optionStore.getOptions().examples[exampleKey],
+      selectedExample: optionStore.getOptions().selectedExample,
     });
   }
 
@@ -56,7 +56,8 @@ class Controller extends React.Component {
             showNavBar={this.state.showNavBar}
             onNavClose={this.showMenuOnClick.bind(this, false)}
           />
-          <ActionPane example={this.state.selectedExample}/>
+          <ActionPane example={this.state.selectedExample}
+          isNavBarShowing={this.state.showNavBar}/>
        </div>
     );
   }

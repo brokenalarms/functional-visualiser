@@ -13,6 +13,7 @@ export default class LeftNavBar {
   static displayName = 'LeftNavBar';
 
   static propTypes = {
+    menuItems: React.PropTypes.array.isRequired,
     showNavBar: React.PropTypes.bool.isRequired,
     onNavClose: React.PropTypes.func.isRequired,
   }
@@ -22,36 +23,36 @@ export default class LeftNavBar {
       type: MenuItem.Types.SUBHEADER,
       text: 'Examples',
     }, {
-      route: 'get-started',
+      type: 'exampleLink',
       text: 'Sum',
       id: 'sum',
     }, {
       route: 'customization',
-      text: 'Customization',
+      text: 'TBD',
     }, {
       route: 'components',
-      text: 'Components',
+      text: 'TBD',
     }, {
       type: MenuItem.Types.SUBHEADER,
-      text: 'Examples',
+      text: 'Docs',
     }, {
       type: MenuItem.Types.LINK,
       payload: 'https://github.com/breakingco/functional-visualiser',
-      text: 'GitHub',
+      text: 'GitHub source',
     }, {
-      text: 'Disabled',
+      text: 'Early Deliverable MD',
       disabled: true,
     }, {
       type: MenuItem.Types.LINK,
       payload: 'https://www.google.com',
-      text: 'Disabled Link',
+      text: 'Dissertation MD',
       disabled: true,
     }, ],
   }
 
   componentDidMount = () => {
-   // this.refs.leftNav.toggle();
-    // console.log(MenuItem.Types);
+    // TODO - uncomment
+    // this.refs.leftNav.toggle();
   }
 
   componentWillUpdate() {}
@@ -74,8 +75,11 @@ export default class LeftNavBar {
 
   handleClick = (e, selectedIndex, menuItem) => {
     // console.log(menuItem);
-    optionStore.setOptions({
-      selectedExampleId: menuItem.id,
-    });
+    switch (menuItem.exampleLink) {
+      case 'exampleLink':
+        optionStore.setOptions({
+          selectedExample: optionStore.getOptions().examples[menuItem.id],
+        });
+    }
   };
 }

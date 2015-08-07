@@ -2,7 +2,11 @@
 	"extends": "eslint-config-airbnb",
 	 "parser": "babel-eslint",
   "rules": {
-    "strict": 0
+  	"eqeqeq": 1,
+  	"prefer-const": 0,
+    "strict": 1,
+    "no-use-before-define": 1,
+    "no-unused-vars": 1
   }
 }
 

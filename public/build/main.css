@@ -8,17 +8,30 @@
   border: 1px solid green; }
 
 .d3-root {
-  flex: 1;
+  flex: 1 1 auto;
   border: 1px solid red; }
 
 .function-node {
-  width: 100px;
-  height: 50px;
   border: 1px solid red;
-  fill: #ccc;
-  stroke: #fff;
+  fill: white;
+  stroke: black;
   stroke-width: 2px; }
 
 .function-link {
-  stroke: #777;
-  stroke-width: 2px; }
+  stroke: #999;
+  stroke-width: 3px;
+  stroke-opacity: 1; }
+
+.function-heading {
+  cursor: pointer;
+  font-size: 1rem; }
+
+circle {
+  fill: #ccc;
+  stroke: #fff;
+  stroke-width: 1.5px; }
+
+html,
+body {
+  width: 100%;
+  height: 100%; }

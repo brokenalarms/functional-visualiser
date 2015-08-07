@@ -22,16 +22,13 @@ class ActionPane extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps) => {
-    //temp
-    return true;
-
-    return !this.props.example && nextProps.example.id ||
-      this.props.example.id !== nextProps.example.id;
+    return nextProps.example && !nextProps.isNavBarShowing;
   }
 
   render = () => {
     if (this.props.example) {
-      const funcMap = prepareVisualAst(this.props.example.imperative);
+      //TODO - hardcoded, choose from menu
+      const funcMap = prepareVisualAst(this.props.example.functional);
       return (
         <div className="action-pane">
       	<VisPane funcMap={funcMap}

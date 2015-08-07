@@ -57,24 +57,26 @@ gulp.task('clean', function() {
 var buildJs = function(watch) {
 
   //all the dependencies we don't want to watch (faster dev refresh)
-  var libs = ['react',
+  var libs = [
+    'react',
     'd3',
+    'webcola',
     'material-ui',
     'react-tap-event-plugin',
     'lodash',
-    'shift-parser',
-    'shift-scope',
-    'shift-traverse',
     'acorn',
     'estraverse',
     'escodegen',
+    'escope',
   ];
 
   var vendorBundler = browserify({
     debug: true,
   })
   libs.forEach(function(lib) {
+    if(lib !== 'cola'){
     vendorBundler.require(lib);
+  }
   })
 
   var bundler = browserify({
@@ -87,7 +89,7 @@ var buildJs = function(watch) {
       entry: true
     })
     .transform(babelify.configure({
-      stage: 0
+      stage: 0,
     }))
   libs.forEach(function(lib) {
     bundler.external(lib);
@@ -122,10 +124,10 @@ var buildJs = function(watch) {
   vendorBundler.bundle()
     .pipe(source('vendor.js'))
     .pipe(buffer())
-      .pipe(sourcemaps.init({
-        loadMaps: true
-      }))
-      .pipe(sourcemaps.write('./'))
+    .pipe(sourcemaps.init({
+      loadMaps: true
+    }))
+    .pipe(sourcemaps.write('./'))
     .pipe(gulp.dest(destPaths.js))
 
   return rebundle();

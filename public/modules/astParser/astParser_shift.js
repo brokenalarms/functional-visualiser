@@ -1,14 +1,14 @@
 //FIXME: lodge gitHub issue as their ES6 import system isn't working...
 // const parse = require('shift-parser');
-// import {parseScript as parse} from 'shift-parser';
-// import {analyze as analyzeScope} from 'shift-scope';
+import {parseScript as parse} from 'shift-parser';
+import analyze from 'shift-scope';
 
-let parse = require("shift-parser").parseScript;
+/*let parse = require("shift-parser").parseScript;
 let analyze = require('shift-scope').default;
 let ScopeType = require('shift-scope').ScopeType;
 let DeclarationType = require('shift-scope').DeclarationType;
-
-(function createAst() {
+*/
+function createAst() {
 
   let ast = parse(`
 
@@ -23,9 +23,9 @@ class Person {
 }
 
 `);
-  let astScope = analyze(ast);
+  //let astScope = analyze(ast);
   debugger;
   return ast;
-})()
+}
 
 export default createAst;
