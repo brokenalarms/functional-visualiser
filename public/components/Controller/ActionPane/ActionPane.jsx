@@ -1,14 +1,14 @@
-//TODO - responsible for layout of windows (multiple vis panes?)
+// TODO - responsible for layout of windows (multiple vis panes?)
 
 import React from 'react';
-import createAst from '../../../modules/astParser/astParser.js';
+
+/* massaged data created in here from AST and passed to
+   D3 components as props - they just render based on info
+   received and don't care how it was produced */
+import getVisPaneNodes from '../../../modules/astParser/astParser.js';
 
 import CodePane from './CodePane/CodePane.jsx';
 import VisPane from './VisPane/Vispane.jsx';
-
-function prepareVisualAst(funcObj) {
-  return createAst(funcObj);
-}
 
 class ActionPane extends React.Component {
 
@@ -27,8 +27,8 @@ class ActionPane extends React.Component {
 
   render = () => {
     if (this.props.example) {
-      //TODO - hardcoded, choose from menu
-      const funcMap = prepareVisualAst(this.props.example.functional);
+      // TODO - hardcoded, choose from menu
+      const funcMap = getVisPaneNodes(this.props.example.functional);
       return (
         <div className="action-pane">
       	<VisPane funcMap={funcMap}

@@ -106,7 +106,7 @@ function updateDrawFunctionBlocks(node, drag) {
     .attr('x', 5)
     .attr('y', 20)
     .text(function(d) {
-      return d.id.name;
+      return d.name;
     });
 
   // set up event listeners for interactivity
@@ -129,5 +129,7 @@ function onClickNode() {
 function onDragNode() {
 
 }
+
+
 
 export default initialize;

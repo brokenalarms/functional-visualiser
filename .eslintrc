@@ -6,7 +6,9 @@
   	"prefer-const": 0,
     "strict": 1,
     "no-use-before-define": 1,
-    "no-unused-vars": 1
+    "no-unused-vars": 1,
+    "no-trailing-spaces": 1,
+    "comma-dangle": 1
   }
 }
 
