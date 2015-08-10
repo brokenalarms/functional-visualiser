@@ -1,10 +1,13 @@
 import React from 'react';
-import initialize from './D3Helper.js';
+import initialize from '../../../../modules/d3Visualiser/d3Visualiser.js';
+
+// Interface between React and D3.
 
 class D3Root extends React.Component {
 
   static propTypes = {
-    funcMap: React.PropTypes.array,
+    nodes: React.PropTypes.array,
+    links: React.PropTypes.array,
     dimensions: React.PropTypes.array,
   }
 
@@ -24,16 +27,18 @@ class D3Root extends React.Component {
   }
 
   render() {
-    // const ast = astParser(this.props.codeLocation);
     return (
-      <div className="d3-root"></div>
+      <div className="flex-vis-pane"></div>
     );
   }
 
   handoverToD3 = () => {
-    if (this.props.funcMap) {
+    if (this.props.nodes) {
       const element = React.findDOMNode(this);
-      initialize(element, this.props.dimensions, this.props.funcMap);
+      initialize(element,
+        this.props.nodes,
+        this.props.links,
+        this.props.dimensions);
     }
   }
 }

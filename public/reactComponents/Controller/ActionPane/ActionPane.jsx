@@ -17,7 +17,7 @@ class ActionPane extends React.Component {
   }
 
   static propTypes = {
-    example: React.PropTypes.object,
+    example: React.PropTypes.func,
     currentLine: React.PropTypes.number,
   }
 
@@ -27,13 +27,16 @@ class ActionPane extends React.Component {
 
   render = () => {
     if (this.props.example) {
-      // TODO - hardcoded, choose from menu
-      const funcMap = getVisPaneNodes(this.props.example.functional);
+      let exampleString = this.props.example.toString();
+      const [nodes, links] = getVisPaneNodes(exampleString);
       return (
-        <div className="action-pane">
-      	<VisPane funcMap={funcMap}
-      	dimensions={[640, 480]}/>
-      	<CodePane />
+        <div className="flex-action-pane">
+        <VisPane
+          nodes={nodes}
+          links={links}
+          dimensions={[1000, 800]}/>
+        <CodePane
+          codeString={exampleString} />
       </div>
       );
     }

@@ -1,0 +1,16 @@
+.flex-action-pane {
+    display: flex;
+    justify-content: left;
+    flex-direction: row;
+}
+
+.flex-vis-pane {
+	max-height: 1000px;
+    border: 2px solid red;
+}
+
+.flex-code-pane {
+	flex-grow: 1;
+    max-height: 1000px;
+    border: 2px solid red;
+}

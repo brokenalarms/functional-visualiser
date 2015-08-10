@@ -67,7 +67,8 @@ var buildJs = function(watch) {
     'acorn',
     'estraverse',
     'escodegen',
-    'escope',
+    'codemirror',
+    'react-codemirror',
   ];
 
   var vendorBundler = browserify({
@@ -159,7 +160,7 @@ gulp.task('build', ['build:js', 'build:css']);
 
 gulp.task('watch', function() {
   buildJs(true);
-  gulp.watch([addBackslash(sourceRoot, 'sass/**/*.{scss,css}'), addBackslash(sourceRoot, 'components/**/*.{scss,css}')], ['build:css']);
+  gulp.watch([addBackslash(sourceRoot, 'sass/**/*.{scss,css}'), addBackslash(sourceRoot, 'reactComponents/**/*.{scss,css}')], ['build:css']);
   gulp.watch(addBackslash(sourceRoot, '*.html'), function() {
     console.log('html changed, reloading...');
     browserSync.reload();

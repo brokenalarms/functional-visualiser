@@ -20,8 +20,8 @@ class Controller extends React.Component {
     this.displayName = 'Controller';
     this.state = {
       showNavBar: false,
-      // TODO - to be changed to null
-      selectedExample: optionStore.getOptions().examples['sum'],
+      // TODO - TESTING - to be changed to null
+      selectedExample: optionStore.getOptions().examples.sum.functional,
     };
   }
 

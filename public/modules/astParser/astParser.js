@@ -2,7 +2,7 @@
 
 import {parse} from 'acorn';
 import estraverse from 'estraverse';
-import escope from 'escope';
+import {includes, pluck} from 'lodash';
 
 /* BEGIN CODE USED FOR DOCUMENTING ONLY
 
@@ -189,87 +189,110 @@ const astVariableMutated = {
   },
 };
 
-
-/* ===================================
-   d3: resulting things I'm interested in
-   for block nodes and links
-   ===================================*/
-const d3FunctionNode = {
-  name: 'foo',
-  /* I assign ids in case functions are given same name
-  in different scopes (so basically, scopeId) */
-  scopeId: 1234, // can just store the objects in a set to keep them unique
-  enterParams: new Set(),
-  variablesDeclared: new Set(), // including functions
-  varaiablesMutated: new Set(), // only interested in assignments, not references, so excludes all built-ins eg Object
-  functionsCalled: new Set(), // scopeId targets for links
-  returnParams: new Set(), // function without return, should only be main program in stateless system?
-  parent: {}, // object reference or null for window/global
-};
-
-const d3FunctionLinks = [{
-  source: 'scopeIdOfCaller',
-  target: 'scopeIdOfCallee',
-  /* to find the scopeId of Callee, navigate back up the scope
-     chain and find the first name match in variablesDeclared */
-}];
-
 // END CODE USE FOR DOCUMENTING ONLY
 
-function getVisPaneNodes(funcObj) {
-  let scopeChain = [];
-  let currentScope = null;
+function getVisPaneNodes(parseString) {
   let currentD3Node = null;
-  let funcMap = new Set();
   let d3Nodes = [];
   let d3Links = [];
+  /* keep track of variable/function declaration set via string: array
+  (if same name is shadowed at deeper scope)*/
+  let variablesDeclaredKeyMapChain = new Map();
 
-  const ast = parse(funcObj.toString());
+  let ast;
+  if (typeof parseString === 'string') {
+    ast = parse(parseString);
+  } else {
+    // allows for the actual function to be passed in
+    ast = parse(parseString.toString());
+  }
+
+  /* ============================
+     main traverse task assigner
+     hands off everything to
+     helper functions in same scope
+     ============================ */
+
   estraverse.traverse(ast, {
     enter(node) {
         // create initial d3Node for a function scope
         if (createsNewFunctionScope(node)) {
-          currentScope = node;
           currentD3Node = createD3Node(node);
-          d3Nodes.push(currentD3Node);
-          /* only push onto scopeChain once
+
+          if (node.type === 'Program') {
+            currentD3Node.parent = null;
+          } else {
+            currentD3Node.parent = d3Nodes[d3Nodes.length - 1];
+          }
+          /* only push onto d3Nodes once
           createD3Node has captured the
-          correct parent node at the end of the scopeChain */
-          scopeChain.push(currentScope);
-          funcMap.add(currentScope);
+          correct parent node at the end of chain */
+          d3Nodes.push(currentD3Node);
         }
 
         if (node.type === 'VariableDeclaration') {
           // allows for multiple variables declared with single statement
           node.declarations.forEach((declaration) => {
-            currentD3Node.variablesDeclared.add(declaration.id.name);
+            let variable = {
+              name: declaration.id.name,
+              type: declaration.init.type.replace('Expression', ''),
+            };
+            currentD3Node.variablesDeclared.push(variable);
+            addToKeyMapChain(variablesDeclaredKeyMapChain, variable, currentD3Node);
           });
         }
 
         if (node.type === 'FunctionDeclaration') {
-          // same place - higher order functions are just variables too
-          currentD3Node.variablesDeclared.add(node.id.name);
+          let func = {
+            name: node.id.name,
+            type: 'Function',
+          };
+          /* in this case it was actually declared in its parent,
+             since we've already created a new d3Node for this scope. */
+          currentD3Node.parent.variablesDeclared.push(func);
+          addToKeyMapChain(variablesDeclaredKeyMapChain, func, currentD3Node.parent);
         }
 
         if (node.type === 'AssignmentExpression') {
           /* get name of variables mutated within this scope
              will work for foo = bar = baz as each assignee
              is nested recursively in the 'left' property */
-          currentD3Node.varaiablesMutated.add(node.expression.left.name);
+          let variableName = node.left.name;
+          // save reference to where the variable was actually defined
+          let scopeChainForVariable = variablesDeclaredKeyMapChain.get(variableName);
+          let nodeWhereVariableDeclared = scopeChainForVariable[scopeChainForVariable.length - 1];
+          currentD3Node.variablesMutated.add({
+            'name': variableName,
+            'nodeWhereDeclared': nodeWhereVariableDeclared,
+          });
         }
 
         if (node.type === 'CallExpression') {
-          let calleeName = null;
+          let calleeName;
+          let scopeChainForFunction;
+          let nodeWhereFunctionDeclared;
           if (node.callee.type === 'Identifier') {
             // function is being called directly
-            calleeName = node.callee.type;
-            currentD3Node.functionsCalled.add(calleeName);
+            calleeName = node.callee.name;
           } else if (node.callee.type === 'MemberExpression') {
-            // function called is an object property, e.g foo.reduce()
+            // function called is an object property, e.g foo.reduce() - take the last property
             calleeName = node.callee.property.name;
-            currentD3Node.functionsCalled.add(calleeName);
           } else {
-            console.error('Unrecognised type of CallExpression encountered.');
+            // all possibilities need to be handled here - kill program if there's an error
+            throw new Error('Unrecognised type of CallExpression encountered.');
+          }
+
+          if (variablesDeclaredKeyMapChain.has(calleeName)) {
+            // call refers to a user-declared variable, add it to array for that variable.
+            scopeChainForFunction = variablesDeclaredKeyMapChain.get(calleeName);
+            nodeWhereFunctionDeclared = scopeChainForFunction[scopeChainForFunction.length - 1];
+            currentD3Node.functionsCalled.add({
+              calleeName, nodeWhereFunctionDeclared,
+            });
+          } else if (!isCalleeParamOrBuiltin(currentD3Node, calleeName, node, variablesDeclaredKeyMapChain)) {
+            throw new Error(`Attempt to look up built-in function failed.
+                             Only objects, arrays and literals are being considered
+                             in this exercise - not e.g., "new Set()"`);
           }
           /* d3 converts to direct object references anyway
              when generating links - so doing this directly here */
@@ -286,20 +309,27 @@ function getVisPaneNodes(funcObj) {
              point at which the target name of a declaration
              matches the source link name */
           let currentD3Link = d3links[d3Links.length - 1];
-          if (currentD3Node.variablesDeclared
+          if (currentD3Node.functionsCalled
             .has(currentD3Link.source.name) &&
             currentD3Link.target !== null) {
             currentD3Link.target = currentD3Node;
           }
-          if (node.type === 'Program') {
-            d3Node.parent = null;
-          } else {
-            d3Node.parent = scopeChain.pop();
-          }
+          /* we're back up to the parent scope,
+             remove variables defined in this scope
+             (deletion of object property whilst looping
+             over properties is safe in JS) */
+          variablesDeclared.forEach((scopeChain, variableName) => {
+            if (scopeChain[scopeChain.length - 1] === currentD3Node) {
+              scopeChain.pop();
+              if (scopeChain.length === 0) {
+                variablesDeclared.delete(variableName);
+              }
+            }
+          });
         }
-      }
+      },
   });
-  return d3Nodes;
+  return [d3Nodes, d3Links];
 }
 
 function createsNewFunctionScope(node) {
@@ -310,31 +340,70 @@ function createsNewFunctionScope(node) {
 
 
 function createD3Node(node) {
-  let name = '';
+  let name;
   if (node.id && node.id.name) {
     name = node.id.name;
   } else {
     name = (node.type === 'Program') ? 'Global' : 'Anonymous';
   }
+
   let d3Node = {
     name: name,
-    params: node.params,
-    variablesDeclared: new Set(),
-    varaiablesMutated: new Set(),
-    functionsCalled: new Set(),
+    params: node.params || null,
+    variablesDeclared: [], // {variableName, variableType} all arrays because declarations/mutations may happen multiple times (incorrectly) in single scope
+    variablesMutated: new Set(), // {name, nodeWhereDeclared}
+    functionsCalled: new Set(), // {name, nodeWhereDeclared}
   };
   // TODO - for debugging only, can remove once structure correct
   d3Node.astNode = node;
   return d3Node;
 }
 
-function createD3FunctionBlock(node) {
-  if (node.id === null) {
-    node.id = {
-      name: node.body.body[0].type,
-    };
+function addToKeyMapChain(keyMap, variable, d3Node) {
+  if (keyMap.has(variable.name)) {
+    keyMap.get(variable.name).push(d3Node);
+  } else {
+    keyMap.set(variable.name, [d3Node]);
   }
-  return node;
+}
+
+function isCalleeParamOrBuiltin(currentD3Node, calleeName, node, variablesDeclaredKeyMapChain) {
+  /* we've been tracking all variable declarations,
+   so the unfound callee -should- either be a named param or a JS built-in.
+   I am only dealing with object, arrays and literal built-in functions
+   for this exercise but I want to have these tests for stability and
+    to make sure the user knows this and that I'm expecting this error. */
+  let params = pluck(currentD3Node.params, 'name');
+
+  if (includes(params, calleeName)) {
+    return true;
+  }
+
+  // TODO - this doesn't work for reasons outlined below
+  let member = node.callee;
+  while (member.object.object) {
+    /* traverse down to get the final property prior to the callee
+     - this is the variable we want to get the built-in methods of. */
+    member = member.object;
+  }
+
+  /* I can't do this exactly in a static context for params
+     without type checking. So all I can do is check against
+     all builtins in scope for this exercise, and assume that
+     the program is correct, e.g reduce() only called against arrays. */
+
+  const builtInObjs = [Object, Function, Array, String, Number];
+
+  let builtIns = builtInObjs.reduce((a, b) => {
+    return a.concat(Object.getOwnPropertyNames(b))
+      .concat(Object.getOwnPropertyNames(b.prototype));
+  }, []);
+  if (includes(builtIns, calleeName)) {
+    /* a built-in function such as map() or reduce() is being used:
+       it's OK that we don't have this in the variablesDeclaredKeyMapChain. */
+    return true;
+  }
+  return false;
 }
 
 export default getVisPaneNodes;

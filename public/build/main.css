@@ -1,15 +1,19 @@
-.action-pane {
+.flex-action-pane {
   display: flex;
-  justify-content: center;
+  justify-content: left;
   flex-direction: row; }
 
-.code-pane {
-  flex-grow: 0;
-  border: 1px solid green; }
+.flex-vis-pane {
+  max-height: 1000px;
+  border: 2px solid red; }
+
+.flex-code-pane {
+  flex-grow: 1;
+  max-height: 1000px;
+  border: 2px solid red; }
 
 .d3-root {
-  flex: 1 1 auto;
-  border: 1px solid red; }
+  border: 2px solid blue; }
 
 .function-node {
   border: 1px solid red;

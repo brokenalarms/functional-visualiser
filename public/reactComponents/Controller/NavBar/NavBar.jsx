@@ -24,14 +24,14 @@ export default class LeftNavBar {
       text: 'Examples',
     }, {
       type: 'exampleLink',
-      text: 'Sum',
-      id: 'sum',
+      text: 'Sum: imperative',
+      moduleId: 'sum',
+      programType: 'imperative',
     }, {
-      route: 'customization',
-      text: 'TBD',
-    }, {
-      route: 'components',
-      text: 'TBD',
+      type: 'exampleLink',
+      text: 'Sum: functional',
+      moduleId: 'sum',
+      programType: 'functional',
     }, {
       type: MenuItem.Types.SUBHEADER,
       text: 'Docs',
@@ -75,10 +75,10 @@ export default class LeftNavBar {
 
   handleClick = (e, selectedIndex, menuItem) => {
     // console.log(menuItem);
-    switch (menuItem.exampleLink) {
+    switch (menuItem.type) {
       case 'exampleLink':
         optionStore.setOptions({
-          selectedExample: optionStore.getOptions().examples[menuItem.id],
+          selectedExample: optionStore.getOptions().examples[menuItem.moduleId][menuItem.programType],
         });
     }
   };

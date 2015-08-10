@@ -13,8 +13,8 @@ function OptionStore() {
   // read in available examples from constants file
   options.examples = examples;
 
-  // TODO - temp - triggers sum function
-  options.selectedExampleId = 'sum';
+  // TODO - temp hardcoding - triggers sum function as default
+  //options.selectedExampleId = 'sum';
 
   function subscribeListener(callback) {
     optionStore.on('change', callback);

@@ -6,8 +6,8 @@
 import d3 from 'd3';
 let cola = require('webcola');
 
-function initialize(element, dimensions, nodes, links) {
-  const width = dimensions[0] = element.clientWidth;
+function initialize(element, nodes, links, dimensions) {
+  const width = dimensions[0] //= element.clientWidth;
   const height = dimensions[1];
 
   // for the bounding box when dragging functions
@@ -17,6 +17,7 @@ function initialize(element, dimensions, nodes, links) {
   d3.select(element).selectAll('*').remove();
 
   let svg = d3.select(element).append('svg')
+    .attr('class', 'd3-root')
     .attr('width', width)
     .attr('height', height);
 
