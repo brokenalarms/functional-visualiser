@@ -1,3 +1,7 @@
+/* This is not in use, but was just written to understand how
+   the Class syntatic sugar actually works under the hood
+   with Javascript prototypal inheritance. */
+
 import React from 'react';
 
 export default function ComponentFactory(name, methods) {

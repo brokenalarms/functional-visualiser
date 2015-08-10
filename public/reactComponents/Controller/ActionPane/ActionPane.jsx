@@ -22,7 +22,7 @@ class ActionPane extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps) => {
-    return nextProps.example && !nextProps.isNavBarShowing;
+    return (nextProps.example && !nextProps.isNavBarShowing);
   }
 
   render = () => {

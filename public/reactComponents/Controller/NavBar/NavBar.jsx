@@ -23,12 +23,12 @@ export default class LeftNavBar {
       type: MenuItem.Types.SUBHEADER,
       text: 'Examples',
     }, {
-      type: 'exampleLink',
+      type: 'example',
       text: 'Sum: imperative',
       moduleId: 'sum',
       programType: 'imperative',
     }, {
-      type: 'exampleLink',
+      type: 'example',
       text: 'Sum: functional',
       moduleId: 'sum',
       programType: 'functional',
@@ -40,12 +40,14 @@ export default class LeftNavBar {
       payload: 'https://github.com/breakingco/functional-visualiser',
       text: 'GitHub source',
     }, {
-      text: 'Early Deliverable MD',
-      disabled: true,
+      type: 'markdown',
+      text: 'Early Deliverable',
+      id: 'earlyDeliverable',
     }, {
-      type: MenuItem.Types.LINK,
+      type: 'markdown',
       payload: 'https://www.google.com',
-      text: 'Dissertation MD',
+      text: 'Dissertation',
+      'id': 'dissertation',
       disabled: true,
     }, ],
   }
@@ -74,12 +76,19 @@ export default class LeftNavBar {
   }
 
   handleClick = (e, selectedIndex, menuItem) => {
-    // console.log(menuItem);
     switch (menuItem.type) {
-      case 'exampleLink':
+      case 'example':
         optionStore.setOptions({
           selectedExample: optionStore.getOptions().examples[menuItem.moduleId][menuItem.programType],
+          lastClickedItem: menuItem,
         });
+        break;
+      case 'markdown':
+        optionStore.setOptions({
+          selectedMarkdown: menuItem.id,
+          lastClickedItem: menuItem,
+        });
+
     }
   };
 }

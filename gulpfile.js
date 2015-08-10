@@ -69,6 +69,7 @@ var buildJs = function(watch) {
     'escodegen',
     'codemirror',
     'react-codemirror',
+    'react-remarkable',
   ];
 
   var vendorBundler = browserify({
@@ -94,7 +95,7 @@ var buildJs = function(watch) {
     }))
   libs.forEach(function(lib) {
     bundler.external(lib);
-  })
+  });
 
   var rebundle = function() {
     var startTime = Date.now();
@@ -129,7 +130,7 @@ var buildJs = function(watch) {
       loadMaps: true
     }))
     .pipe(sourcemaps.write('./'))
-    .pipe(gulp.dest(destPaths.js))
+    .pipe(gulp.dest(destPaths.js));
 
   return rebundle();
 };
@@ -153,7 +154,7 @@ gulp.task('build:css', function() {
       this.emit('end');
     })
     .pipe(gulp.dest(buildRoot))
-    .pipe(browserSync.stream())
+    .pipe(browserSync.stream());
 });
 
 gulp.task('build', ['build:js', 'build:css']);
