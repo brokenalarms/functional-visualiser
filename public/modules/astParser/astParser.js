@@ -195,8 +195,9 @@ function getVisPaneNodes(parseString) {
   let currentD3Node = null;
   let d3Nodes = [];
   let d3Links = [];
-  /* keep track of variable/function declaration set via string: array
-  (if same name is shadowed at deeper scope)*/
+  /* keep track of variable/function declaration set via:
+   {variable string: [array containing each d3 scope node the variable is declared in]}
+  (so this allows for same name being shadowed at deeper scope)*/
   let variablesDeclaredKeyMapChain = new Map();
 
   let ast;
@@ -223,6 +224,10 @@ function getVisPaneNodes(parseString) {
             currentD3Node.parent = null;
           } else {
             currentD3Node.parent = d3Nodes[d3Nodes.length - 1];
+            /* add parameters passed to scope chain */
+            currentD3Node.params.forEach((param) => {
+              addToKeyMapChain(variablesDeclaredKeyMapChain, param.name, currentD3Node);
+            });
           }
           /* only push onto d3Nodes once
           createD3Node has captured the
@@ -238,7 +243,7 @@ function getVisPaneNodes(parseString) {
               type: declaration.init.type.replace('Expression', ''),
             };
             currentD3Node.variablesDeclared.push(variable);
-            addToKeyMapChain(variablesDeclaredKeyMapChain, variable, currentD3Node);
+            addToKeyMapChain(variablesDeclaredKeyMapChain, variable.name, currentD3Node);
           });
         }
 
@@ -250,18 +255,34 @@ function getVisPaneNodes(parseString) {
           /* in this case it was actually declared in its parent,
              since we've already created a new d3Node for this scope. */
           currentD3Node.parent.variablesDeclared.push(func);
-          addToKeyMapChain(variablesDeclaredKeyMapChain, func, currentD3Node.parent);
+          addToKeyMapChain(variablesDeclaredKeyMapChain, func.name, currentD3Node.parent);
         }
 
         if (node.type === 'AssignmentExpression') {
-          /* get name of variables mutated within this scope
-             will work for foo = bar = baz as each assignee
-             is nested recursively in the 'left' property */
-          let variableName = node.left.name;
+          let variableName;
+          if (node.left.type === 'Identifier') {
+            /* straight assignment to variable, not property
+               get name of variables mutated within this scope
+               will work for foo = bar = baz as each assignee
+               is nested recursively in the 'left' property */
+            variableName = node.left.name;
+          } else if (node.left.type === 'MemberExpression') {
+            /* property has been mutated - for this exercise,
+               this just counts as some mutation to the data structure
+               of the parent variable, so just get that */
+            let _ = node.left;
+            while (_.object) {
+              _ = _.object;
+            }
+            variableName = _.name;
+          } else {
+            throw new Error('unrecognised AssignmentExpression syntax.');
+          }
+
           // save reference to where the variable was actually defined
           let scopeChainForVariable = variablesDeclaredKeyMapChain.get(variableName);
           let nodeWhereVariableDeclared = scopeChainForVariable[scopeChainForVariable.length - 1];
-          currentD3Node.variablesMutated.add({
+          currentD3Node.variablesMutated.push({
             'name': variableName,
             'nodeWhereDeclared': nodeWhereVariableDeclared,
           });
@@ -350,8 +371,8 @@ function createD3Node(node) {
   let d3Node = {
     name: name,
     params: node.params || null,
-    variablesDeclared: [], // {variableName, variableType} all arrays because declarations/mutations may happen multiple times (incorrectly) in single scope
-    variablesMutated: new Set(), // {name, nodeWhereDeclared}
+    variablesDeclared: [], // {name, type} all arrays because declarations/mutations may happen multiple times (incorrectly) in single scope
+    variablesMutated: [], // {name, nodeWhereDeclared}
     functionsCalled: new Set(), // {name, nodeWhereDeclared}
   };
   // TODO - for debugging only, can remove once structure correct
@@ -360,10 +381,10 @@ function createD3Node(node) {
 }
 
 function addToKeyMapChain(keyMap, variable, d3Node) {
-  if (keyMap.has(variable.name)) {
-    keyMap.get(variable.name).push(d3Node);
+  if (keyMap.has(variable)) {
+    keyMap.get(variable).push(d3Node);
   } else {
-    keyMap.set(variable.name, [d3Node]);
+    keyMap.set(variable, [d3Node]);
   }
 }
 
@@ -378,15 +399,6 @@ function isCalleeParamOrBuiltin(currentD3Node, calleeName, node, variablesDeclar
   if (includes(params, calleeName)) {
     return true;
   }
-
-  // TODO - this doesn't work for reasons outlined below
-  let member = node.callee;
-  while (member.object.object) {
-    /* traverse down to get the final property prior to the callee
-     - this is the variable we want to get the built-in methods of. */
-    member = member.object;
-  }
-
   /* I can't do this exactly in a static context for params
      without type checking. So all I can do is check against
      all builtins in scope for this exercise, and assume that

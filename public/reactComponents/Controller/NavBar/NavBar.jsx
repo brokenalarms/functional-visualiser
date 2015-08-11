@@ -26,12 +26,17 @@ export default class LeftNavBar {
       type: 'example',
       text: 'Sum: imperative',
       moduleId: 'sum',
-      programType: 'imperative',
+      functionId: 'imperative',
     }, {
       type: 'example',
       text: 'Sum: functional',
       moduleId: 'sum',
-      programType: 'functional',
+      functionId: 'functional',
+    }, {
+      type: 'example',
+      text: 'code from eScope library demo',
+      moduleId: 'escopeDemo',
+      functionId: 'demo',
     }, {
       type: MenuItem.Types.SUBHEADER,
       text: 'Docs',
@@ -78,8 +83,10 @@ export default class LeftNavBar {
   handleClick = (e, selectedIndex, menuItem) => {
     switch (menuItem.type) {
       case 'example':
+        let selectedExample =
+          optionStore.getOptions().examples[menuItem.moduleId][menuItem.functionId];
         optionStore.setOptions({
-          selectedExample: optionStore.getOptions().examples[menuItem.moduleId][menuItem.programType],
+          selectedExample,
           lastClickedItem: menuItem,
         });
         break;

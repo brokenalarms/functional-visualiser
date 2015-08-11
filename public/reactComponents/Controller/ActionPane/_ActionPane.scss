@@ -5,12 +5,14 @@
 }
 
 .flex-vis-pane {
-	max-height: 1000px;
+	flex-grow: 0;
+//	max-height: 1000px;
     border: 2px solid red;
 }
 
 .flex-code-pane {
 	flex-grow: 1;
-    max-height: 1000px;
+	height: 100%;
+ //   max-height: 1000px;
     border: 2px solid red;
 }

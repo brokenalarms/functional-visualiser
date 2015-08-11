@@ -51,8 +51,7 @@ class Controller extends React.Component {
 
   render = () => {
     let modal = (this.state.selectedMarkdown &&
-      this.state.lastClickedItem.type === 'markdown'
-      && !this.state.showNavBar) ?
+        this.state.lastClickedItem.type === 'markdown' && !this.state.showNavBar) ?
       <MarkdownModal
         markdown={this.state.selectedMarkdown}/> :
       null;

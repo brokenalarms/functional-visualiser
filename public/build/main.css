@@ -4,18 +4,19 @@
   flex-direction: row; }
 
 .flex-vis-pane {
-  max-height: 1000px;
+  flex-grow: 0;
   border: 2px solid red; }
 
 .flex-code-pane {
   flex-grow: 1;
-  max-height: 1000px;
+  height: 100%;
   border: 2px solid red; }
 
 .d3-root {
   border: 2px solid blue; }
 
 .function-node {
+  cursor: pointer;
   border: 1px solid red;
   fill: white;
   stroke: black;
@@ -26,9 +27,16 @@
   stroke-width: 3px;
   stroke-opacity: 1; }
 
+.function-name {
+  font-size: 1em; }
+
 .function-heading {
-  cursor: pointer;
-  font-size: 1rem; }
+  font-size: 0.85em;
+  fill: blue; }
+
+.function-text {
+  font-size: 0.7em;
+  fill: black; }
 
 circle {
   fill: #ccc;

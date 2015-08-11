@@ -3,6 +3,7 @@
 }
 
 .function-node {
+    cursor: pointer;
     border: 1px solid red;
     fill: white;
     stroke: black;
@@ -15,9 +16,18 @@
     stroke-opacity: 1;
 }
 
+.function-name {
+    font-size: 1em;
+}
+
 .function-heading {
-    cursor: pointer;
-    font-size: 1rem;
+    font-size: 0.85em;
+    fill: blue;
+}
+
+.function-text {
+    font-size: 0.7em;
+    fill: black;
 }
 
 circle {

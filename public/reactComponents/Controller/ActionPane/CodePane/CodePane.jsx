@@ -13,21 +13,21 @@ class CodePane {
   }
 
   static defaultProps = {
-    codeMirrorOptions: {
+    options: {
       theme: 'solarized dark',
-      lineNumbers: true,
+      lineNumbers: false,
       styleActiveLine: true,
       readOnly: false,
     },
   }
 
   render() {
-    let {...other} = this.props.codeMirrorOptions;
+    //let {...other} = this.props.options;
     return (
       <div className="flex-code-pane">
         <CodeMirror ref={'CodeMirror'}
           value={this.props.codeString}
-  		  options={this.props.codeMirrorOptions} />
+  		  options={this.props.options} />
   	  </div>
     );
   }
