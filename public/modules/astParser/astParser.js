@@ -2,204 +2,12 @@
 
 import {parse} from 'acorn';
 import estraverse from 'estraverse';
-import {includes, pluck, uniq as unique} from 'lodash';
-
-/* BEGIN CODE USED FOR DOCUMENTING ONLY
-
-   ==================================
-   AST: stripped down/ augmented representations
-   that I am interested in.
-   These will be supplied to the CodePane.
-   ================================== */
-
-/* where a new function / scope is created
- (function scoping for this exercise only,
-  not ES6 block scoping!) */
-
-/* describes 'function foo () {}'
-   note: 'arguments' are passed as an array to a function
-   in a CallExpression,
-   but in declarations they are stored as 'params'.
-*/
-const astFunctionDeclared = {
-  'type': 'FunctionDeclaration',
-  'id': {
-    'type': 'Identifier',
-    'name': 'foo',
-  },
-  'params': [],
-};
-
-// OR...
-
-/* describes 'var foo = function(){}'
-   anonymous functions are just the 'FunctionExpression' object
-   with the 'id' set to null.
-*/
-const astFunctionAssignedToVariable = {
-  'type': 'VariableDeclaration',
-  'declarations': [{
-    'type': 'VariableDeclarator',
-    'id': {
-      'type': 'Identifier',
-      'name': 'foo',
-    },
-    'init': {
-      'type': 'FunctionExpression',
-      'id': {
-        'type': 'Identifier',
-        'name': 'foo',
-      },
-      'params': [],
-    },
-  }, ],
-};
-
-/* describes function call 'foo(bar, function(){})'
-   with an anonymousFunction passed in as an argument */
-const astFunctionCalled = {
-  'type': 'ExpressionStatement',
-  'expression': {
-    'type': 'CallExpression',
-    'callee': {
-      'type': 'Identifier',
-      'name': 'foo',
-    },
-    'arguments': [{
-      'type': 'Identifier',
-      'name': 'bar',
-    }, {
-      'type': 'FunctionExpression',
-      'id': {
-        'type': 'Identifier',
-        'name': null,
-      },
-      'params': [],
-      'defaults': [],
-      'body': {
-        'type': 'BlockStatement',
-        'body': [],
-      },
-    }],
-  },
-};
-
-/* describes 'reduce' called at end of foo.bar.reduce(a, b),
-   that returns a+b.
-
-   I am only interested in top-level 'property.name'
-   under 'callee' - nested properties are recursively
-   stored under 'object.property.object...etc.
-   I have commented that part out.'
-*/
-const astFunctionCalledasMemberOfObject = {
-  'type': 'ExpressionStatement',
-  'expression': {
-    'type': 'CallExpression',
-    'callee': {
-      'type': 'MemberExpression',
-      /*        'object': {
-                'type': 'MemberExpression',
-                'object': {
-                  'type': 'Identifier',
-                  'name': 'foo',
-                },
-                'property': {
-                  'type': 'Identifier',
-                  'name': 'bar',
-                },
-              },*/
-      'property': {
-        'type': 'Identifier',
-        'name': 'reduce',
-      },
-    },
-    'arguments': [{
-      'type': 'FunctionExpression',
-      'id': null,
-      'params': [{
-        'type': 'Identifier',
-        'name': 'a',
-      }, {
-        'type': 'Identifier',
-        'name': 'b',
-      }],
-      'defaults': [],
-      'body': {
-        'type': 'BlockStatement',
-        'body': [{
-          'type': 'ReturnStatement',
-          'argument': {
-            'type': 'BinaryExpression',
-            'operator': '+',
-            'left': {
-              'type': 'Identifier',
-              'name': 'a',
-            },
-            'right': {
-              'type': 'Identifier',
-              'name': 'b',
-            },
-          },
-        }],
-      },
-    }, {
-      'type': 'Literal',
-      'value': 0,
-      'raw': '0',
-    }],
-  },
-};
-
-const astReturnStatement = {
-  'type': 'ReturnStatement',
-  'argument': {
-    'type': 'Identifier',
-    'name': 'foo',
-  },
-};
-
-/* for each of these mutations,
-if the VariableDeclaration did not occur within
-the same scope, set a flag
-and record a reference to the
-object where the VariableDeclaration is made. */
-
-const astVariableMutated = {
-  'type': 'ExpressionStatement',
-  'expression': {
-    'type': 'AssignmentExpression',
-    'operator': '+=',
-    'left': {
-      'type': 'Identifier',
-      'name': 'sum',
-    },
-    'right': {
-      'type': 'MemberExpression',
-      'computed': true,
-      'object': {
-        'type': 'Identifier',
-        'name': 'arrayToSum',
-      },
-      'property': {
-        'type': 'Identifier',
-        'name': 'i',
-      },
-    },
-  },
-};
-
-// END CODE USE FOR DOCUMENTING ONLY
+import {includes, pluck, uniq as unique, last} from 'lodash';
 
 function getVisPaneNodes(parseString) {
-  let currentD3Node = null;
   let d3Nodes = [];
-  let d3Links = [];
-  /* keep track of variable/function declaration set via:
-   {variable string: [array containing each d3 scope node the variable is declared in]}
-  (so this allows for same name being shadowed at deeper scope)*/
-  let variablesDeclaredKeyMapChain = new Map();
-
+  let d3CallLinks = [];
+  let d3HierarchyLinks = [];
   // for writing back to the correct d3Node in leave function
   let d3ScopeChain = [];
 
@@ -211,18 +19,21 @@ function getVisPaneNodes(parseString) {
     ast = parse(parseString.toString());
   }
 
+  let varTracker = variablesTracker();
+
   estraverse.traverse(ast, {
     enter(node) {
-        // create initial d3Node for a function scope
+        let currentD3Node = last(d3ScopeChain);
         if (createsNewFunctionScope(node)) {
+          // create initial d3Node for a function scope
           currentD3Node = createD3Node(node);
           if (node.type === 'Program') {
             currentD3Node.parent = null;
           } else {
-            currentD3Node.parent = d3Nodes[d3Nodes.length - 1];
+            currentD3Node.parent = last(d3Nodes);
             /* add parameters passed to scope chain */
             currentD3Node.params.forEach((param) => {
-              addToKeyMapChain(variablesDeclaredKeyMapChain, param.name, currentD3Node);
+              varTracker.set(param.name, currentD3Node);
             });
           }
           /* only push onto d3Nodes once
@@ -240,7 +51,7 @@ function getVisPaneNodes(parseString) {
               type: declaration.init.type.replace('Expression', ''),
             };
             currentD3Node.variablesDeclared.push(variable);
-            addToKeyMapChain(variablesDeclaredKeyMapChain, variable.name, currentD3Node);
+            varTracker.set(variable.name, currentD3Node);
           });
         }
 
@@ -252,7 +63,8 @@ function getVisPaneNodes(parseString) {
           /* in this case it was actually declared in its parent,
              since we've already created a new d3Node for this scope. */
           currentD3Node.parent.variablesDeclared.push(func);
-          addToKeyMapChain(variablesDeclaredKeyMapChain, func.name, currentD3Node.parent);
+          // but we want to keep track of the scope of the actual function for referring to later
+          varTracker.set(func.name, currentD3Node);
         }
 
         if (node.type === 'AssignmentExpression') {
@@ -277,8 +89,7 @@ function getVisPaneNodes(parseString) {
           }
 
           // save reference to where the variable was actually defined
-          let scopeChainForVariable = variablesDeclaredKeyMapChain.get(variableName);
-          let nodeWhereVariableDeclared = scopeChainForVariable[scopeChainForVariable.length - 1];
+          let nodeWhereVariableDeclared = last(varTracker.get(variableName));
           currentD3Node.variablesMutated.push({
             'name': variableName,
             'nodeWhereDeclared': nodeWhereVariableDeclared,
@@ -287,8 +98,6 @@ function getVisPaneNodes(parseString) {
 
         if (node.type === 'CallExpression') {
           let calleeName;
-          let scopeChainForFunction;
-          let nodeWhereFunctionDeclared;
           if (node.callee.type === 'Identifier') {
             // function is being called directly
             calleeName = node.callee.name;
@@ -300,57 +109,98 @@ function getVisPaneNodes(parseString) {
             throw new Error('Unrecognised type of CallExpression encountered.');
           }
 
-          if (variablesDeclaredKeyMapChain.has(calleeName)) {
-            // call refers to a user-declared variable, add it to array for that variable.
-            scopeChainForFunction = variablesDeclaredKeyMapChain.get(calleeName);
-            nodeWhereFunctionDeclared = scopeChainForFunction[scopeChainForFunction.length - 1];
-            currentD3Node.functionsCalled.push({
-              calleeName, nodeWhereFunctionDeclared,
-            });
-          } else if (!isCalleeParamOrBuiltin(currentD3Node, calleeName, node, variablesDeclaredKeyMapChain)) {
-            throw new Error(`Attempt to look up built-in function failed.
-                             Only objects, arrays and literals are being considered
-                             in this exercise - not e.g., "new Set()"`);
-          }
-          /* d3 converts to direct object references anyway
-             when generating links - so doing this directly here */
-          d3Links.push({
-            source: currentD3Node,
+          currentD3Node.functionsCalled.push({
+            name: calleeName,
             target: null,
           });
         }
       },
-
       leave(node) {
+        let currentD3Node = last(d3ScopeChain);
 
         if (createsNewFunctionScope(node)) {
-          /* heading up the scope chain - so find the first
-             point at which the target name of a declaration
-             matches the source link name */
-          if (d3Links.length > 0) {
-            let currentD3Link = d3Links[d3Links.length - 1];
-            if (includes(currentD3Node.functionsCalled, currentD3Link.source.name) &&
-              currentD3Link.target !== null) {
-              currentD3Link.target = currentD3Node;
-            }
-          }
-          /* we're back up to the parent scope,
-             remove variables defined in this scope
-             (deletion of object property whilst looping
-             over properties is safe in JS) */
-          variablesDeclaredKeyMapChain.forEach((scopeChain, variableName) => {
-            if (scopeChain[scopeChain.length - 1] === currentD3Node) {
-              scopeChain.pop();
-              if (scopeChain.length === 0) {
-                variablesDeclaredKeyMapChain.delete(variableName);
+          if (currentD3Node.functionsCalled.length > 0) {
+            // finish building our callLinks now we have the lower scope info
+            currentD3Node.functionsCalled.forEach((callee) => {
+              let nodeForFunction = varTracker.get(callee.name);
+              if (nodeForFunction) {
+                // call refers to a user-declared variable, add it to array for that variable.
+                callee.target = nodeForFunction;
+                d3CallLinks.push(callee);
+              } else if (!isCalleeParamOrBuiltin(callee.name, currentD3Node.params)) {
+                throw new Error(`Attempt to look up built-in function failed.
+                             Only objects, arrays and literals are being considered
+                             in this exercise - not e.g., "new Set()"`);
               }
-            }
-          });
-          createDisplayText(d3ScopeChain.pop());
+            });
+          }
+
+
+          varTracker.exitNode(currentD3Node);
+          addDisplayText(last(d3ScopeChain));
+
+          d3ScopeChain.pop();
         }
       },
   });
-  return [d3Nodes, d3Links];
+  return [d3Nodes, d3CallLinks, d3HierarchyLinks];
+}
+
+function variablesTracker() {
+  /* keep track of variable/function declaration set via:
+   {variable string: [array containing each d3 scope node the variable is declared in]}
+  (so this allows for same name being shadowed at deeper scope)
+   extended normal Map functions to manage array access and confine
+   the different management of choosing node.parent for function declarations */
+  let variablesDeclared = new Map();
+
+  function set(variable, d3Node) {
+    if (variablesDeclared.has(variable)) {
+      variablesDeclared.get(variable).push(d3Node);
+    } else {
+      variablesDeclared.set(variable, [d3Node]);
+    }
+  }
+
+  function get(variable) {
+    return last(variablesDeclared.get(variable));
+  }
+
+  function has(variable) {
+    return variablesDeclared.has(variable);
+  }
+
+  function getDeclaredScope(variable) {
+    let node = last(variablesDeclared.get(variable));
+    let varType = (node.variablesDeclared.filter((varObj) => {
+      return varObj.name === variable;
+    })).type;
+    if (varType === 'Function') {
+      return node.parent;
+    }
+    return node;
+  }
+
+  function exitNode(d3Node) {
+    /* clean up - remove any nested function scopes.
+       This process allows for same-named variables
+       on different scopes to be matched. */
+    variablesDeclared.forEach((scopeChain, key) => {
+      if (scopeChain.length > 1) {
+        let outerScope = scopeChain[length - 2];
+        if (outerScope === d3Node) {
+          scopeChain.pop();
+          if (scopeChain.length === 1) {
+            variablesDeclared.delete(key);
+          }
+        }
+      }
+    });
+  }
+
+  return {
+    get, set, has, exitNode,
+  };
 }
 
 function createsNewFunctionScope(node) {
@@ -373,10 +223,11 @@ function createD3Node(node) {
     node.params.forEach((param) => {
       params.push(param.name);
     });
-    paramsText =  '('.concat(params.join(', ')).concat(')');
+    paramsText = '('.concat(params.join(', ')).concat(')');
   }
 
   let d3Node = {
+    name: name,
     params: node.params || null,
     displayText: {
       functionName: name,
@@ -384,7 +235,7 @@ function createD3Node(node) {
       variablesDeclared: '',
       variablesMutated: '',
       functionsCalled: '',
-    }, // do the work here for d3 so it doesn't repeat transformations on update
+    },
     variablesDeclared: [], // {name, type} all arrays because declarations/mutations may happen multiple times (incorrectly) in single scope
     variablesMutated: [], // {name, nodeWhereDeclared}
     functionsCalled: [], // {name, nodeWhereDeclared}
@@ -394,10 +245,11 @@ function createD3Node(node) {
   return d3Node;
 }
 
-function createDisplayText(currentD3Node) {
-  let displayTextgroupEntries = ['variablesDeclared', 'variablesMutated', 'functionsCalled'];
+// TODO - make this update function, give to d3, and give [{name, class based on correctness}]
+function addDisplayText(currentD3Node) {
+  // do the work basic work here for d3 so it doesn't repeat transformations on update
 
-  displayTextgroupEntries.forEach((textGroup) => {
+  ['variablesDeclared', 'variablesMutated', 'functionsCalled'].forEach((textGroup) => {
     currentD3Node.displayText[textGroup] = getTextFromArray(currentD3Node[textGroup]);
   });
 
@@ -411,27 +263,19 @@ function createDisplayText(currentD3Node) {
       return a.concat(name);
     }, []);
     let textSet = unique(textArray);
-    return textSet;
+    return textSet.join(', ');
   }
 }
 
-function addToKeyMapChain(keyMap, variable, d3Node) {
-  if (keyMap.has(variable)) {
-    keyMap.get(variable).push(d3Node);
-  } else {
-    keyMap.set(variable, [d3Node]);
-  }
-}
-
-function isCalleeParamOrBuiltin(currentD3Node, calleeName, node, variablesDeclaredKeyMapChain) {
+function isCalleeParamOrBuiltin(calleeName, params) {
   /* we've been tracking all variable declarations,
    so the unfound callee -should- either be a named param or a JS built-in.
    I am only dealing with object, arrays and literal built-in functions
    for this exercise but I want to have these tests for stability and
     to make sure the user knows this and that I'm expecting this error. */
-  let params = pluck(currentD3Node.params, 'name');
+  let paramNames = pluck(params, 'name');
 
-  if (includes(params, calleeName)) {
+  if (includes(paramNames, calleeName)) {
     return true;
   }
   /* I can't do this exactly in a static context for params
@@ -447,10 +291,11 @@ function isCalleeParamOrBuiltin(currentD3Node, calleeName, node, variablesDeclar
   }, []);
   if (includes(builtIns, calleeName)) {
     /* a built-in function such as map() or reduce() is being used:
-       it's OK that we don't have this in the variablesDeclaredKeyMapChain. */
+       it's OK that we don't have this in the variablesDeclared. */
     return true;
   }
   return false;
 }
+
 
 export default getVisPaneNodes;

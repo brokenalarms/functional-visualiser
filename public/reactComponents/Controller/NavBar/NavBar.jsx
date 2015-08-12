@@ -34,7 +34,7 @@ export default class LeftNavBar {
       functionId: 'functional',
     }, {
       type: 'example',
-      text: 'code from eScope library demo',
+      text: 'sample code from eScope',
       moduleId: 'escopeDemo',
       functionId: 'demo',
     }, {

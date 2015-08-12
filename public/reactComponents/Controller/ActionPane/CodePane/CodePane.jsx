@@ -18,6 +18,9 @@ class CodePane {
       lineNumbers: false,
       styleActiveLine: true,
       readOnly: false,
+      style: {
+        maxHeight: 500 px,
+      },
     },
   }
 
@@ -27,8 +30,8 @@ class CodePane {
       <div className="flex-code-pane">
         <CodeMirror ref={'CodeMirror'}
           value={this.props.codeString}
-  		  options={this.props.options} />
-  	  </div>
+        options={this.props.options} />
+      </div>
     );
   }
 }

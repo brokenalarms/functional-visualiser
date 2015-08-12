@@ -16,7 +16,7 @@ let options = {
     height: 200,
     width: 200,
     text: {
-      lineHeight: 25,
+      lineHeight: 20,
     },
   },
   links: {
@@ -89,7 +89,7 @@ function initialize(element, nodes, links, dimensions) {
     forceLayout.start();
   }
   update();
-};
+}
 
 
 // ===========================================
@@ -111,7 +111,7 @@ function createNewForceLayout(graphType, nodes, links) {
   forceLayout.size([options.width, options.height])
     .nodes(nodes)
     .links(links)
-    .linkDistance(options.links.distance);
+    .linkDistance(options.width / 3.5);
 
   if (graphType === 'd3') {
     forceLayout
@@ -144,8 +144,9 @@ function updateDrawFunctionBlocks(node, drag) {
       });*/
   let addText = appendText(funcBlock, 10, 25);
   addText('function-name', 'functionName');
-  let paramText = appendText(funcBlock, 10, 25, 150);
-  paramText('function-text', 'params');
+  let hoverText = appendText(funcBlock, 170, 10, 180, 'rect');
+  hoverText('function-hover');
+  addText('function-text', 'params');
   addText('function-heading', 'Variables declared:');
   addText('function-text', 'variablesDeclared');
   addText('function-heading', 'Variables mutated:');
@@ -153,28 +154,28 @@ function updateDrawFunctionBlocks(node, drag) {
   addText('function-heading', 'Functions called:');
   addText('function-text', 'functionsCalled');
 
-  function appendText(block, ...initialOffsets) {
+  function appendText(block, ...other) {
     let textBlock = block;
-    let [x, y, dx, dy] = initialOffsets;
+    let [x, y, dx, element] = other;
+    element = element ? element : 'text';
 
     return function(className, textOrKey) {
-      textBlock = funcBlock.append('text')
+      textBlock = funcBlock.append(element)
         .attr('class', className)
         .attr('x', x)
-        .attr('y', y)
-        .attr('dx', dx)
-        .attr('dy', dy)
+        .attr('y', y);
 
       if (dx) {
         textBlock
-          .style('text-anchor', 'end')
-          .attr('startOffset', '100%')
+          .attr('dx', dx)
+          .style('text-anchor', 'end');
       }
-
-      textBlock.text((d) => {
-        let keyLookupText = d.displayText[textOrKey];
-        return (keyLookupText !== undefined) ? keyLookupText : textOrKey;
-      });
+      if (element === 'text') {
+        textBlock.text((d) => {
+          let keyLookupText = d.displayText[textOrKey];
+          return (keyLookupText !== undefined) ? keyLookupText : textOrKey;
+        });
+      }
 
       y += options.funcBlock.text.lineHeight;
     };
@@ -199,7 +200,5 @@ function onClickNode() {
 function onDragNode() {
 
 }
-
-
 
 export default initialize;

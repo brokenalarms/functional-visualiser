@@ -1,10 +1,8 @@
 .d3-root {
-    border: 2px solid blue;
+    border: 5px solid darkblue;
 }
 
 .function-node {
-    cursor: pointer;
-    border: 1px solid red;
     fill: white;
     stroke: black;
     stroke-width: 2px;
@@ -16,17 +14,27 @@
     stroke-opacity: 1;
 }
 
+.function-hover {
+    cursor: pointer;
+    width: 1rem;
+    height: 1rem;
+    fill: blue;
+}
+
 .function-name {
+    cursor: default;
     font-size: 1em;
 }
 
 .function-heading {
+    cursor: default;
     font-size: 0.85em;
     fill: blue;
 }
 
 .function-text {
-    font-size: 0.7em;
+    cursor: default;
+    font-size: 0.8em;
     fill: black;
 }
 
