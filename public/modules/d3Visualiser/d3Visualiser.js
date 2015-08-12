@@ -8,7 +8,7 @@ let cola = require('webcola');
 
 /* it would be better if I could take these variables from a CSS class,
    but D3 doesn't seem to allow this. */
-const options = {
+let options = {
   graphType: 'cola',
   width: null,
   height: null,
@@ -143,40 +143,40 @@ function updateDrawFunctionBlocks(node, drag) {
         return d.name;
       });*/
   let addText = appendText(funcBlock, 10, 25);
-  addText('function-name', 'name');
-  addText('function-heading', null, 'Variables declared:');
-  addText('function-text', null, getTextFromArray('variablesDeclared', 'name'));
-  addText('function-heading', null, 'Variables mutated:');
-  addText('function-text', null, getTextFromArray('variablesMutated', 'name'));
-
-
-  function getTextFromArray(objProp, itProp) {
-    return function(d) {
-      return d[objProp].reduce((a, b) => {
-        return a.concat(` ${b[itProp]}`);
-      }, []);
-    };
-  }
+  addText('function-name', 'functionName');
+  let paramText = appendText(funcBlock, 10, 25, 150);
+  paramText('function-text', 'params');
+  addText('function-heading', 'Variables declared:');
+  addText('function-text', 'variablesDeclared');
+  addText('function-heading', 'Variables mutated:');
+  addText('function-text', 'variablesMutated');
+  addText('function-heading', 'Functions called:');
+  addText('function-text', 'functionsCalled');
 
   function appendText(block, ...initialOffsets) {
     let textBlock = block;
-    let [x, yOffset] = initialOffsets;
+    let [x, y, dx, dy] = initialOffsets;
 
-    return function(className, propertyChain, text) {
+    return function(className, textOrKey) {
       textBlock = funcBlock.append('text')
         .attr('class', className)
         .attr('x', x)
-        .attr('y', yOffset);
-      if (propertyChain) {
-        textBlock.text(function(d) {
-          return propertyChain.split('.').reduce((a, b) => {
-            return a[b];
-          }, d);
-        });
-      } else {
-        textBlock.text(text);
+        .attr('y', y)
+        .attr('dx', dx)
+        .attr('dy', dy)
+
+      if (dx) {
+        textBlock
+          .style('text-anchor', 'end')
+          .attr('startOffset', '100%')
       }
-      yOffset += options.funcBlock.text.lineHeight;
+
+      textBlock.text((d) => {
+        let keyLookupText = d.displayText[textOrKey];
+        return (keyLookupText !== undefined) ? keyLookupText : textOrKey;
+      });
+
+      y += options.funcBlock.text.lineHeight;
     };
   }
   // set up event listeners for interactivity

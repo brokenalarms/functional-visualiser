@@ -2,7 +2,7 @@
 
 import {parse} from 'acorn';
 import estraverse from 'estraverse';
-import {includes, pluck} from 'lodash';
+import {includes, pluck, uniq as unique} from 'lodash';
 
 /* BEGIN CODE USED FOR DOCUMENTING ONLY
 
@@ -200,6 +200,9 @@ function getVisPaneNodes(parseString) {
   (so this allows for same name being shadowed at deeper scope)*/
   let variablesDeclaredKeyMapChain = new Map();
 
+  // for writing back to the correct d3Node in leave function
+  let d3ScopeChain = [];
+
   let ast;
   if (typeof parseString === 'string') {
     ast = parse(parseString);
@@ -208,18 +211,11 @@ function getVisPaneNodes(parseString) {
     ast = parse(parseString.toString());
   }
 
-  /* ============================
-     main traverse task assigner
-     hands off everything to
-     helper functions in same scope
-     ============================ */
-
   estraverse.traverse(ast, {
     enter(node) {
         // create initial d3Node for a function scope
         if (createsNewFunctionScope(node)) {
           currentD3Node = createD3Node(node);
-
           if (node.type === 'Program') {
             currentD3Node.parent = null;
           } else {
@@ -233,6 +229,7 @@ function getVisPaneNodes(parseString) {
           createD3Node has captured the
           correct parent node at the end of chain */
           d3Nodes.push(currentD3Node);
+          d3ScopeChain.push(currentD3Node);
         }
 
         if (node.type === 'VariableDeclaration') {
@@ -307,7 +304,7 @@ function getVisPaneNodes(parseString) {
             // call refers to a user-declared variable, add it to array for that variable.
             scopeChainForFunction = variablesDeclaredKeyMapChain.get(calleeName);
             nodeWhereFunctionDeclared = scopeChainForFunction[scopeChainForFunction.length - 1];
-            currentD3Node.functionsCalled.add({
+            currentD3Node.functionsCalled.push({
               calleeName, nodeWhereFunctionDeclared,
             });
           } else if (!isCalleeParamOrBuiltin(currentD3Node, calleeName, node, variablesDeclaredKeyMapChain)) {
@@ -324,29 +321,32 @@ function getVisPaneNodes(parseString) {
         }
       },
 
-      exit(node) {
+      leave(node) {
+
         if (createsNewFunctionScope(node)) {
           /* heading up the scope chain - so find the first
              point at which the target name of a declaration
              matches the source link name */
-          let currentD3Link = d3links[d3Links.length - 1];
-          if (currentD3Node.functionsCalled
-            .has(currentD3Link.source.name) &&
-            currentD3Link.target !== null) {
-            currentD3Link.target = currentD3Node;
+          if (d3Links.length > 0) {
+            let currentD3Link = d3Links[d3Links.length - 1];
+            if (includes(currentD3Node.functionsCalled, currentD3Link.source.name) &&
+              currentD3Link.target !== null) {
+              currentD3Link.target = currentD3Node;
+            }
           }
           /* we're back up to the parent scope,
              remove variables defined in this scope
              (deletion of object property whilst looping
              over properties is safe in JS) */
-          variablesDeclared.forEach((scopeChain, variableName) => {
+          variablesDeclaredKeyMapChain.forEach((scopeChain, variableName) => {
             if (scopeChain[scopeChain.length - 1] === currentD3Node) {
               scopeChain.pop();
               if (scopeChain.length === 0) {
-                variablesDeclared.delete(variableName);
+                variablesDeclaredKeyMapChain.delete(variableName);
               }
             }
           });
+          createDisplayText(d3ScopeChain.pop());
         }
       },
   });
@@ -365,19 +365,54 @@ function createD3Node(node) {
   if (node.id && node.id.name) {
     name = node.id.name;
   } else {
-    name = (node.type === 'Program') ? 'Global' : 'Anonymous';
+    name = (node.type === 'Program') ? 'Global scope' : 'Anonymous';
+  }
+  let params = [];
+  let paramsText = '';
+  if (node.params) {
+    node.params.forEach((param) => {
+      params.push(param.name);
+    });
+    paramsText =  '('.concat(params.join(', ')).concat(')');
   }
 
   let d3Node = {
-    name: name,
     params: node.params || null,
+    displayText: {
+      functionName: name,
+      params: paramsText,
+      variablesDeclared: '',
+      variablesMutated: '',
+      functionsCalled: '',
+    }, // do the work here for d3 so it doesn't repeat transformations on update
     variablesDeclared: [], // {name, type} all arrays because declarations/mutations may happen multiple times (incorrectly) in single scope
     variablesMutated: [], // {name, nodeWhereDeclared}
-    functionsCalled: new Set(), // {name, nodeWhereDeclared}
+    functionsCalled: [], // {name, nodeWhereDeclared}
   };
   // TODO - for debugging only, can remove once structure correct
   d3Node.astNode = node;
   return d3Node;
+}
+
+function createDisplayText(currentD3Node) {
+  let displayTextgroupEntries = ['variablesDeclared', 'variablesMutated', 'functionsCalled'];
+
+  displayTextgroupEntries.forEach((textGroup) => {
+    currentD3Node.displayText[textGroup] = getTextFromArray(currentD3Node[textGroup]);
+  });
+
+  function getTextFromArray(d) {
+    // extract into array then remove duplicates
+    if (d.length === 0) {
+      return 'No entries.';
+    }
+    let textArray = d.reduce((a, b) => {
+      let name = (b.name) ? b.name : 'Anonymous';
+      return a.concat(name);
+    }, []);
+    let textSet = unique(textArray);
+    return textSet;
+  }
 }
 
 function addToKeyMapChain(keyMap, variable, d3Node) {

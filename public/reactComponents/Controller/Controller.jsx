@@ -22,7 +22,7 @@ class Controller extends React.Component {
     this.state = {
       showNavBar: false,
       // TODO - TESTING - to be changed to null
-      selectedExample: optionStore.getOptions().examples.sum.functional,
+      selectedExample: optionStore.getOptions().examples.sum.imperative,
       selectedMarkdown: null,
     };
   }
