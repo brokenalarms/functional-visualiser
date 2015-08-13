@@ -30,7 +30,7 @@ function getVisPaneNodes(parseString) {
           if (node.type === 'Program') {
             currentD3Node.parent = null;
           } else {
-            currentD3Node.parent = last(d3Nodes);
+            currentD3Node.parent = last(d3ScopeChain);
 
             d3HierarchyLinks.push({
               source: currentD3Node.parent,
@@ -153,10 +153,6 @@ function getVisPaneNodes(parseString) {
       },
   });
 
-  // helps to avoid initial entanglement of graph
-  d3CallLinks.sort((a, b) => {
-    return a.source.functionsCalled.length < b.source.functionsCalled.length;
-  });
   return [d3Nodes, {
     d3CallLinks, d3HierarchyLinks,
   }];

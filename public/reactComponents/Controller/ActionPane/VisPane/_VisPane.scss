@@ -14,6 +14,7 @@
 
 .function-link {
     stroke: #999;
+    fill: white;
     stroke-width: 3px;
     stroke-opacity: 1;
 }
@@ -26,17 +27,20 @@
 }
 
 .function-name {
+    font-family: Roboto;
     cursor: default;
     font-size: 1em;
 }
 
 .function-heading {
+    font-family: Roboto;
     cursor: default;
     font-size: 0.85em;
     fill: blue;
 }
 
 .function-text {
+    font-family: Roboto;
     cursor: default;
     font-size: 0.8em;
     fill: black;

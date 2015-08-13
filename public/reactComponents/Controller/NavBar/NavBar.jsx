@@ -36,7 +36,7 @@ export default class LeftNavBar {
       type: 'example',
       text: 'sample code from eScope',
       moduleId: 'escopeDemo',
-      functionId: 'demo',
+      functionId: 'MONAD',
     }, {
       type: MenuItem.Types.SUBHEADER,
       text: 'Docs',

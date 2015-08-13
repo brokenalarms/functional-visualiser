@@ -10,16 +10,17 @@ let cola = require('webcola');
    but D3 doesn't seem to allow this. */
 // TODO - extract options into d3OptionsStore
 let options = {
-  graphType: 'cola',
+  graphType: 'd3',
   globalScopeFixed: true,
   d3Force: {
-    charge: -400,
-    gravity: 0.025,
+    charge: -800,
+    chargeDistance: 500,
+    gravity: 0.01,
   },
   width: null,
   height: null,
   funcBlock: {
-    height: 190,
+    height: 200,
     width: 200,
     text: {
       lineHeight: 20,
@@ -27,6 +28,9 @@ let options = {
   },
   links: {
     display: 'call', // call, hierarchy, or both
+    strength: function(d) {
+      return 0;
+    },
     distance: function(nodeCount) {
       return options.width / Math.min(4, nodeCount - 1);
     },
@@ -37,30 +41,22 @@ function initialize(element, nodes, linksObj, dimensions) {
   options.width = dimensions[0];
   options.height = dimensions[1];
 
-  // TODO extract into codeOptionsStore
+
+  // TODO extract into codeOptionsStore =============
   nodes.forEach((node) => {
     Object.assign(node, {
       width: options.funcBlock.width,
       height: options.funcBlock.height,
-    })
+    });
   });
 
-  // cleanup if React udpates and doesn't re-mount DOM element
-  d3.select(element).selectAll('*').remove();
-
-  let svg = d3.select(element).append('svg')
-    .attr('class', 'd3-root')
-    .attr('width', options.width)
-    .attr('height', options.height);
-
-  // take the global scope out and fix it
+  // take the global scope out and fix it in the top right to start
   if (options.globalScopeFixed) {
     let globalScope = nodes[0];
     globalScope.x = options.width;
     globalScope.y = 0;
     globalScope.fixed = true;
   }
-
   // TODO - extract this to codeOptionsStore to control from there
   let links = (() => {
     switch (options.links.display) {
@@ -73,11 +69,33 @@ function initialize(element, nodes, linksObj, dimensions) {
     }
   })();
 
-  let forceLayout = createNewForceLayout(options.graphType, nodes, links);
+  // end TODO =========================================
 
-  // allow for dragging of nodes to reposition functions
+  // cleanup if React udpates and doesn't re-mount DOM element
+  d3.select(element).selectAll('*').remove();
+
+  let svg = d3.select(element).append('svg')
+    .attr('class', 'd3-root')
+    .attr('width', options.width)
+    .attr('height', options.height);
+
+  // save arrow SVG
+  svg.append('svg:defs')
+    .append('svg:marker')
+    .attr('id', 'arrow')
+    .attr('refX', 3)
+    .attr('refY', 6)
+    .attr('markerWidth', 20)
+    .attr('markerHeight', 20)
+    .attr('orient', 'auto')
+    .style('fill', 'lightgray')
+    .append('svg:path')
+    .attr('d', 'M2,2 L2,11 L10,6 L2,2');
+
+  let forceLayout = createNewForceLayout(options.graphType, nodes, links)
+    // allow for dragging of nodes to reposition functions
   let drag = forceLayout.drag()
-    .on('dragstart', onDragNode);
+    .on('dragstart', onDragStart);
 
 
   let link = svg.selectAll('.function-link')
@@ -86,10 +104,11 @@ function initialize(element, nodes, linksObj, dimensions) {
     .data(nodes);
 
   function update() {
+    link.enter().append('polyline');
     drawFunctionLink(link);
     node.enter().append('g')
       .on('click', onClickNode)
-      .on('dblclick', onDoubleclickNode);
+      .on('dblclick', onDoubleclickNode)
     drawFunctionBlock(node);
     node.exit().remove();
     node.call(drag);
@@ -101,8 +120,21 @@ function initialize(element, nodes, linksObj, dimensions) {
   const yBuffer = inlay + options.funcBlock.height / 2;
   const maxAllowedX = options.width - options.funcBlock.width;
   const maxAllowedY = options.height - options.funcBlock.height;
-  forceLayout.on('tick',
-    function tick(e) {
+  forceLayout.on('tick', function() {
+    link.attr('points', (d) => {
+    let x1 = Math.max(xBuffer, Math.min(options.width - xBuffer, d.source.x + xBuffer));
+    let y1 = Math.max(yBuffer, Math.min(options.height - yBuffer, d.source.y + yBuffer))
+    let x2 = Math.max(xBuffer, Math.min(options.width - xBuffer, d.target.x + xBuffer));
+    let y2 = Math.max(yBuffer, Math.min(options.height - yBuffer, d.target.y + yBuffer));
+    let midX = (x1 + x2) / 2;
+    let midY = (y1 + y2) / 2;
+
+      return `${x1},${y1} ${midX},${midY} ${x2},${y2}`;
+    });
+
+
+
+    /*function tick(e) {
       link.attr('x1', (d) => {
           return Math.max(xBuffer, Math.min(options.width - xBuffer, d.source.x + xBuffer));
         })
@@ -114,15 +146,14 @@ function initialize(element, nodes, linksObj, dimensions) {
         })
         .attr('y2', (d) => {
           return Math.max(yBuffer, Math.min(options.height - yBuffer, d.target.y + yBuffer));
-        });
+        });*/
 
-      node.attr('transform', (d) => {
-        d.x = Math.max(inlay, Math.min(maxAllowedX, d.x));
-        d.y = Math.max(inlay, Math.min(maxAllowedY, d.y));
-        return `translate(${d.x}, ${d.y})`;
-      });
+    node.attr('transform', (d) => {
+      d.x = Math.max(inlay, Math.min(maxAllowedX, d.x));
+      d.y = Math.max(inlay, Math.min(maxAllowedY, d.y));
+      return `translate(${d.x}, ${d.y})`;
     });
-
+  });
   update();
 }
 
@@ -150,19 +181,22 @@ function createNewForceLayout(graphType, nodes, links, constraints) {
     forceLayout
       .charge(options.d3Force.charge)
       .gravity(options.d3Force.gravity)
+      .linkStrength(options.links.strength)
+      .chargeDistance(options.d3Force.chargeDistance)
       .start();
   } else if (graphType === 'cola') {
     forceLayout
       .avoidOverlaps(true)
-      //.symmetricDiffLinkLengths(300)
+      // .symmetricDiffLinkLengths(300)
       .start([10, 15, 20]);
   }
   return forceLayout;
 }
 
 function drawFunctionLink(link) {
-  link.enter().append('line')
-    .attr('class', 'function-link');
+  link
+    .attr('class', 'function-link')
+    .attr('marker-mid', 'url(#arrow)');
 }
 
 function drawFunctionBlock(funcBlock) {
@@ -219,10 +253,14 @@ function drawFunctionBlock(funcBlock) {
 
 function onClickNode(d) {}
 
-function onDragNode(d) {
+function onDragStart(d) {
   d3.select(this).select('rect').classed('fixed', d.fixed = true);
   // prevents browser scrolling whilst dragging about node
   d3.event.sourceEvent.preventDefault();
+}
+
+function onDragEnd(d) {
+  return;
 }
 
 function onDoubleclickNode(d) {
