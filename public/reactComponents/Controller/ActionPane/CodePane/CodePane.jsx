@@ -19,7 +19,7 @@ class CodePane {
       styleActiveLine: true,
       readOnly: false,
       style: {
-        maxHeight: 500 px,
+        maxHeight: '500px',
       },
     },
   }

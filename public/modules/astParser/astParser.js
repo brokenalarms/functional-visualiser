@@ -31,6 +31,13 @@ function getVisPaneNodes(parseString) {
             currentD3Node.parent = null;
           } else {
             currentD3Node.parent = last(d3Nodes);
+
+            d3HierarchyLinks.push({
+              source: currentD3Node.parent,
+              target: currentD3Node,
+              type: 'hierarchy',
+            });
+
             /* add parameters passed to scope chain */
             currentD3Node.params.forEach((param) => {
               varTracker.set(param.name, currentD3Node);
@@ -111,6 +118,7 @@ function getVisPaneNodes(parseString) {
 
           currentD3Node.functionsCalled.push({
             name: calleeName,
+            source: currentD3Node,
             target: null,
           });
         }
@@ -126,6 +134,7 @@ function getVisPaneNodes(parseString) {
               if (nodeForFunction) {
                 // call refers to a user-declared variable, add it to array for that variable.
                 callee.target = nodeForFunction;
+                callee.type = 'call';
                 d3CallLinks.push(callee);
               } else if (!isCalleeParamOrBuiltin(callee.name, currentD3Node.params)) {
                 throw new Error(`Attempt to look up built-in function failed.
@@ -143,7 +152,14 @@ function getVisPaneNodes(parseString) {
         }
       },
   });
-  return [d3Nodes, d3CallLinks, d3HierarchyLinks];
+
+  // helps to avoid initial entanglement of graph
+  d3CallLinks.sort((a, b) => {
+    return a.source.functionsCalled.length < b.source.functionsCalled.length;
+  });
+  return [d3Nodes, {
+    d3CallLinks, d3HierarchyLinks,
+  }];
 }
 
 function variablesTracker() {

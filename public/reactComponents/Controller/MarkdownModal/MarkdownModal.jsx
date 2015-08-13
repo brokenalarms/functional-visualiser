@@ -4,34 +4,35 @@ import Markdown from 'react-remarkable';
 
 class MarkdownModal {
 
-  static defaultProps = {
-    title: 'test',
-    markdown: null,
+  static propTypes = {
+    markdown: React.PropTypes.object,
   }
 
   componentDidMount() {
     this.refs.dialog.show();
-}
+  }
 
 
   componentDidUpdate() {
-//    this.refs.dialog.show();
+    //    this.refs.dialog.show();
   }
 
   render() {
-    const customActions = [<FlatButton
+    let customActions = [<FlatButton
     label="Close"
     primary={true}
     onTouchTap={this.handleDialogClose} />];
 
     return (
       <Dialog  ref="dialog"
-            title={this.props.title}
+            title={this.props.markdown.title}
             actions={customActions}
-  			autoDetectWindowHeight={true}
-  			autoScrollBodyContent={true}>
-  			<Markdown source={this.props.markdown}/>
-     	  </Dialog>
+        autoDetectWindowHeight={true}
+        autoScrollBodyContent={true}>
+        <div style={{height: '500px', 'overflowY': 'auto'}}>
+         <Markdown source={this.props.markdown.body}/>
+        </div>
+        </Dialog>
     );
   }
 

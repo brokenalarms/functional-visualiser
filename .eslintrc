@@ -8,7 +8,8 @@
     "no-use-before-define": 1,
     "no-unused-vars": 1,
     "no-trailing-spaces": 1,
-    "comma-dangle": 1
+    "comma-dangle": 1,
+    "default-case": 1
   }
 }
 

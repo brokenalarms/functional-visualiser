@@ -1,3 +1,8 @@
+const earlyDeliverable = {
+
+  title: 'Early Deliverable',
+  body: `
+
 Any references I make to folders or files in the code base can be followed through in my work-in-progress GitHub repository here:
 
 [https://github.com/breakingco/functional-visualiser](https://github.com/breakingco/functional-visualiser)
@@ -46,7 +51,7 @@ Besides these major choices, below is a summary of the technologies I have resea
 
 - SASS, a CSS pre-processor which enables me to more neatly package the related style class information up with each component as I create them.
 - BrowserSync, for live-reloading of the browser;
-- Gulp, a build tool . This automates the watching of my codebase for changes, and accordingly re-runs associated necessary preparation tasks (to create the content in `/public/build`. The code in `gulpfile.js` was written from scratch so I now can fully use this tool.
+- Gulp, a build tool . This automates the watching of my codebase for changes, and accordingly re-runs associated necessary preparation tasks (to create the content in \`/public/build\`. The code in \`gulpfile.js\` was written from scratch so I now can fully use this tool.
 - D3, for taking the AST data steps and calculating the layout for each display component.
 - React (with JSX for allowing HTML-like syntax in Javascript), for creating the base interface - it should have a fairly minimal involvement in this project given that D3 will be doing most of the work.
 - acorn, for generating an estree-spec AST. I investigated and tried the newer Shift-AST format, but there is less documentation and tools available for it so I think I should go with the established JS AST creator for now.
@@ -58,8 +63,8 @@ So far I have learned how to use ES6, enough Node to set up the basic server and
 - decide how D3 should manage this layout using pre-provided functionality wherever possible.
 	- The D3 force-layout graph would seem like a good choice for representing the AST of a whole program (and was what I originally hoped to present as a prototype here), but it does not lend itself to displaying the actual flow of data through a time-based sequence. However, none of the baked-in graphs supplied with D3 seem to be good for this, so I think I will have to create this myself, somehow.
 - create visual function components by:
-	- designing the first component (representing a function) in the frontend, and displaying it using D3 (this is currently most basically implemented without any style/design yet in `/public/modules/components/functionBlock`.
-	-  parse and examine the AST from my simplest function `sumDemo` examples (in `/modules/examples`) and decide how to map the AST information given to that particular frontend-created component;
+	- designing the first component (representing a function) in the frontend, and displaying it using D3 (this is currently most basically implemented without any style/design yet in \`/public/modules/components/functionBlock\`.
+	-  parse and examine the AST from my simplest function \`sumDemo\` examples (in \`/modules/examples\`) and decide how to map the AST information given to that particular frontend-created component;
 	-  add that information to the D3 engine so as to adjust the layout to accommodate it or that component.
 
 I would then iterate through the above for each new component, adding functionality to the D3 engine as I went. I don't think it will become apparent as to how best to step through the actual code, evaluate it and animate the changes in the D3 graph until I have a few of these components to play with.
@@ -76,4 +81,7 @@ Ideally, a number of prototypes would be built and tweaked to evaluate the best,
 In the time available, I plan to first very simply represent the AST of the same program, one coded functionally and one imperatively,  using two D3 force-directed graphs side by side. Then, I can try as a first step to perhaps dynamically show the clean passing of variables as parameters between functions in the functional version, whilst the global variables in the imperative version could perhaps be 'floating' outside the functions, and could perhaps flash red if modified by a function with a different scope to show undesired side effects. Even to get to this stage though will still take some time due to the functionality that must be in place underneath, so I am concerned about not ending up with anything near a complete representation in the time period.
 
 ##Evaluating and representing data flow through AST representation
-Whilst I think that mapping out the display of a single AST in D3 is more a question of time than complexity (just creating a visual component for each function, a variable, etc, and the relevant part of the AST that causes it to appear), trying to determine how to actually evaluate and step through the tree in a sequential fashion mimicking the actual operation of a program ('meta programming') and displaying an update to the graph seems to be quite challenging.
+Whilst I think that mapping out the display of a single AST in D3 is more a question of time than complexity (just creating a visual component for each function, a variable, etc, and the relevant part of the AST that causes it to appear), trying to determine how to actually evaluate and step through the tree in a sequential fashion mimicking the actual operation of a program ('meta programming') and displaying an update to the graph seems to be quite challenging.`
+};
+
+export default earlyDeliverable;

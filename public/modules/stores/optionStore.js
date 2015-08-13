@@ -1,5 +1,6 @@
 const event = require('events');
 import examples from '../examples/examples.js';
+import earlyDeliverable from '../../docs/earlyDeliverable.js';
 
 /* simple event store / emitter singleton.
    I have done this without using the flux helper library
@@ -12,6 +13,9 @@ function OptionStore() {
 
   // read in available examples from constants file
   options.examples = examples;
+  options.markdown = {
+    earlyDeliverable,
+  };
 
   function subscribeListener(callback) {
     optionStore.on('change', callback);

@@ -6,30 +6,44 @@
 import d3 from 'd3';
 let cola = require('webcola');
 
-/* it would be better if I could take these variables from a CSS class,
+/* it would be better if I could take these letiables from a CSS class,
    but D3 doesn't seem to allow this. */
+// TODO - extract options into d3OptionsStore
 let options = {
   graphType: 'cola',
+  globalScopeFixed: true,
+  d3Force: {
+    charge: -400,
+    gravity: 0.025,
+  },
   width: null,
   height: null,
   funcBlock: {
-    height: 200,
+    height: 190,
     width: 200,
     text: {
       lineHeight: 20,
     },
   },
   links: {
-    distance: 300,
+    display: 'call', // call, hierarchy, or both
+    distance: function(nodeCount) {
+      return options.width / Math.min(4, nodeCount - 1);
+    },
   },
 };
 
-function initialize(element, nodes, links, dimensions) {
+function initialize(element, nodes, linksObj, dimensions) {
   options.width = dimensions[0];
   options.height = dimensions[1];
 
-  // for the bounding box when dragging functions
-  const inlay = 5;
+  // TODO extract into codeOptionsStore
+  nodes.forEach((node) => {
+    Object.assign(node, {
+      width: options.funcBlock.width,
+      height: options.funcBlock.height,
+    })
+  });
 
   // cleanup if React udpates and doesn't re-mount DOM element
   d3.select(element).selectAll('*').remove();
@@ -39,66 +53,85 @@ function initialize(element, nodes, links, dimensions) {
     .attr('width', options.width)
     .attr('height', options.height);
 
-  // TODO links don't work
-  links = [{
-    source: 0,
-    target: 1,
-  }, {
-    source: 1,
-    target: 2
-  }];
-  const forceLayout = createNewForceLayout(options.graphType, nodes, links);
+  // take the global scope out and fix it
+  if (options.globalScopeFixed) {
+    let globalScope = nodes[0];
+    globalScope.x = options.width;
+    globalScope.y = 0;
+    globalScope.fixed = true;
+  }
 
-  /* event listeners (lodged issue with WebCola:
-  does not return all properties for functional piping from events */
-  forceLayout.on('tick', forceTick);
+  // TODO - extract this to codeOptionsStore to control from there
+  let links = (() => {
+    switch (options.links.display) {
+      case 'call':
+        return linksObj.d3CallLinks;
+      case 'hierarchy':
+        return linksObj.d3HierarchyLinks;
+      case 'both':
+        return linksObj.d3HierarchyLinks.concat(linksObj.d3CallLinks);
+    }
+  })();
+
+  let forceLayout = createNewForceLayout(options.graphType, nodes, links);
+
   // allow for dragging of nodes to reposition functions
   let drag = forceLayout.drag()
     .on('dragstart', onDragNode);
 
-  let node = svg.append('g').selectAll('.function-node');
-  let link = svg.append('g').selectAll('.function-link');
 
-  function forceTick() {
-    node.attr('transform', (d) => {
-      d.x = Math.max(inlay, Math.min(options.width - options.funcBlock.width, d.x));
-      d.y = Math.max(inlay, Math.min(options.height - options.funcBlock.height, d.y));
-      return `translate(${d.x},${d.y})`;
-    });
-    link.attr('x1', (d) => {
-        return d.source.x;
-      })
-      .attr('y1', (d) => {
-        return d.source.y;
-      })
-      .attr('x2', (d) => {
-        return d.target.x;
-      })
-      .attr('y2', (d) => {
-        return d.target.y;
-      });
-  }
+  let link = svg.selectAll('.function-link')
+    .data(links);
+  let node = svg.selectAll('.function-node')
+    .data(nodes);
 
   function update() {
-    node = node.data(forceLayout.nodes());
-    updateDrawFunctionBlocks(node, drag);
-
-    link = link.data(forceLayout.links());
-    updateDrawFunctionLinks(link);
-
-    forceLayout.start();
+    drawFunctionLink(link);
+    node.enter().append('g')
+      .on('click', onClickNode)
+      .on('dblclick', onDoubleclickNode);
+    drawFunctionBlock(node);
+    node.exit().remove();
+    node.call(drag);
   }
+
+  // for the bounding window when dragging functionBlocks
+  const inlay = 0;
+  const xBuffer = inlay + options.funcBlock.width / 2;
+  const yBuffer = inlay + options.funcBlock.height / 2;
+  const maxAllowedX = options.width - options.funcBlock.width;
+  const maxAllowedY = options.height - options.funcBlock.height;
+  forceLayout.on('tick',
+    function tick(e) {
+      link.attr('x1', (d) => {
+          return Math.max(xBuffer, Math.min(options.width - xBuffer, d.source.x + xBuffer));
+        })
+        .attr('y1', (d) => {
+          return Math.max(yBuffer, Math.min(options.height - yBuffer, d.source.y + yBuffer));
+        })
+        .attr('x2', (d) => {
+          return Math.max(xBuffer, Math.min(options.width - xBuffer, d.target.x + xBuffer));
+        })
+        .attr('y2', (d) => {
+          return Math.max(yBuffer, Math.min(options.height - yBuffer, d.target.y + yBuffer));
+        });
+
+      node.attr('transform', (d) => {
+        d.x = Math.max(inlay, Math.min(maxAllowedX, d.x));
+        d.y = Math.max(inlay, Math.min(maxAllowedY, d.y));
+        return `translate(${d.x}, ${d.y})`;
+      });
+    });
+
   update();
 }
 
 
-// ===========================================
-// Helper functions for use by update function
-// (Deliberately left after declaration for readability
-// as they will be hoisted anyway)
-// ===========================================
+// ===================
+// Helper functions
+// ===================
 
-function createNewForceLayout(graphType, nodes, links) {
+function createNewForceLayout(graphType, nodes, links, constraints) {
   let forceLayout;
   if (graphType === 'd3') {
     forceLayout = d3.layout.force();
@@ -111,37 +144,39 @@ function createNewForceLayout(graphType, nodes, links) {
   forceLayout.size([options.width, options.height])
     .nodes(nodes)
     .links(links)
-    .linkDistance(options.width / 3.5);
+    .linkDistance(options.links.distance.bind(this, nodes.length));
 
   if (graphType === 'd3') {
     forceLayout
-      .charge(-10)
-      .gravity(0.000);
+      .charge(options.d3Force.charge)
+      .gravity(options.d3Force.gravity)
+      .start();
   } else if (graphType === 'cola') {
     forceLayout
       .avoidOverlaps(true)
-      .start(10, 15, 20);
+      //.symmetricDiffLinkLengths(300)
+      .start([10, 15, 20]);
   }
   return forceLayout;
 }
 
-function updateDrawFunctionBlocks(node, drag) {
-  const funcBlock = node.enter().append('g');
+function drawFunctionLink(link) {
+  link.enter().append('line')
+    .attr('class', 'function-link');
+}
 
+function drawFunctionBlock(funcBlock) {
   funcBlock.append('rect')
     .attr('class', 'function-node')
-    .attr('height', options.funcBlock.height)
-    .attr('width', options.funcBlock.width)
+    .attr('width', (d) => {
+      return d.width;
+    })
+    .attr('height', (d) => {
+      return d.height;
+    })
     .attr('rx', 10)
     .attr('ry', 10);
 
-  /*  funcBlock.append('text')
-      .attr('class', 'function-heading')
-      .attr('x', 5)
-      .attr('y', 20)
-      .text(function(d) {
-        return d.name;
-      });*/
   let addText = appendText(funcBlock, 10, 25);
   addText('function-name', 'functionName');
   let hoverText = appendText(funcBlock, 170, 10, 180, 'rect');
@@ -180,25 +215,17 @@ function updateDrawFunctionBlocks(node, drag) {
       y += options.funcBlock.text.lineHeight;
     };
   }
-  // set up event listeners for interactivity
-  funcBlock
-    .on('click', onClickNode)
-    .call(drag);
-
-  node.exit().remove();
 }
 
-function updateDrawFunctionLinks(link) {
-  link.enter().append('line')
-    .attr('class', 'function-link');
+function onClickNode(d) {}
+
+function onDragNode(d) {
+  d3.select(this).select('rect').classed('fixed', d.fixed = true);
+  // prevents browser scrolling whilst dragging about node
+  d3.event.sourceEvent.preventDefault();
 }
 
-function onClickNode() {
-  console.log('functionBlock clicked');
+function onDoubleclickNode(d) {
+  d3.select(this).select('rect').classed('fixed', d.fixed = false);
 }
-
-function onDragNode() {
-
-}
-
 export default initialize;

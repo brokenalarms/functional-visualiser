@@ -3,9 +3,13 @@
 }
 
 .function-node {
-    fill: white;
-    stroke: black;
+    fill: lightgray;
+    stroke: white;
     stroke-width: 2px;
+}
+
+.fixed {
+    stroke: blue;
 }
 
 .function-link {
@@ -36,10 +40,4 @@
     cursor: default;
     font-size: 0.8em;
     fill: black;
-}
-
-circle {
-    fill: #ccc;
-    stroke: #fff;
-    stroke-width: 1.5px;
 }

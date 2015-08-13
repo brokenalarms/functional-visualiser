@@ -91,8 +91,9 @@ export default class LeftNavBar {
         });
         break;
       case 'markdown':
+        let selectedMarkdown = optionStore.getOptions().markdown[menuItem.id]
         optionStore.setOptions({
-          selectedMarkdown: menuItem.id,
+          selectedMarkdown,
           lastClickedItem: menuItem,
         });
 
