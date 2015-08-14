@@ -58,7 +58,7 @@ class Controller extends React.Component {
     return (
       <div>
           <AppBar
-            title="Functional Visualiser Demo"
+            title="Functional Visualiser Prototype"
             onLeftIconButtonTouchTap={this.showMenuOnClick.bind(this, true)}
           />
           <NavBar

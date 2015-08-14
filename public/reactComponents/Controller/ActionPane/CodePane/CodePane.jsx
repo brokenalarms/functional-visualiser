@@ -19,13 +19,13 @@ class CodePane {
       styleActiveLine: true,
       readOnly: false,
       style: {
-        maxHeight: '500px',
+        'max-height': '1000px',
       },
     },
   }
 
   render() {
-    //let {...other} = this.props.options;
+    // let {...other} = this.props.options;
     return (
       <div className="flex-code-pane">
         <CodeMirror ref={'CodeMirror'}

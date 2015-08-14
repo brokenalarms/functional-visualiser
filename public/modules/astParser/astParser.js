@@ -19,7 +19,10 @@ function getVisPaneNodes(parseString) {
     ast = parse(parseString.toString());
   }
 
-  let varTracker = variablesTracker();
+  let varTracker = new VariablesTracker();
+  let calleeBuiltins = new CalleeBuiltins();
+  let builtins = createD3Node(null);
+  builtins.displayText.name = 'Built in functions';
 
   estraverse.traverse(ast, {
     enter(node) {
@@ -55,7 +58,7 @@ function getVisPaneNodes(parseString) {
           node.declarations.forEach((declaration) => {
             let variable = {
               name: declaration.id.name,
-              type: declaration.init.type.replace('Expression', ''),
+              type: declaration.init.type,
             };
             currentD3Node.variablesDeclared.push(variable);
             varTracker.set(variable.name, currentD3Node);
@@ -105,12 +108,41 @@ function getVisPaneNodes(parseString) {
 
         if (node.type === 'CallExpression') {
           let calleeName;
+          let calleeMethod;
+          let calleeType;
           if (node.callee.type === 'Identifier') {
             // function is being called directly
-            calleeName = node.callee.name;
+            calleeName = calleeMethod = node.callee.name;
           } else if (node.callee.type === 'MemberExpression') {
-            // function called is an object property, e.g foo.reduce() - take the last property
-            calleeName = node.callee.property.name;
+            /* function called is an object property,
+               e.g foo.bar.reduce(). */
+            let _ = node.callee;
+
+            // callee is in the highest property name
+            calleeMethod = _.property.name;
+            if (_.object.property) {
+              // method is in the second-highest nested property
+              calleeName = _.object.property.name;
+            } else {
+              calleeName = _.object.name || _.object.type; // catches 'ThisExpression'
+            }
+
+            if (_.object.elements) {
+              // allow for expression of array literals at top level only
+              // TODO - make calleeName an array of _.object.elements[]
+              calleeName = 'Literal';
+              calleeType = _.object.type;
+            }
+            /* check if function is a builtin; if so get the top memberExpression
+               instead; this is the deepest nested object.name in the array */
+            if (calleeBuiltins.has(calleeName)) {
+              calleeType = calleeBuiltins.getObj(calleeName);
+              while (_.object) {
+                _ = _.object;
+              }
+              calleeName = 'Literal';
+              calleeType = _.name;
+            }
           } else {
             // all possibilities need to be handled here - kill program if there's an error
             throw new Error('Unrecognised type of CallExpression encountered.');
@@ -118,6 +150,8 @@ function getVisPaneNodes(parseString) {
 
           currentD3Node.functionsCalled.push({
             name: calleeName,
+            method: calleeMethod,
+            type: calleeType,
             source: currentD3Node,
             target: null,
           });
@@ -130,35 +164,47 @@ function getVisPaneNodes(parseString) {
           if (currentD3Node.functionsCalled.length > 0) {
             // finish building our callLinks now we have the lower scope info
             currentD3Node.functionsCalled.forEach((callee) => {
-              let nodeForFunction = varTracker.get(callee.name);
-              if (nodeForFunction) {
-                // call refers to a user-declared variable, add it to array for that variable.
+              let nodeForFunction;
+              // allow for callee being encoded as Array object literal
+              // TODO loop through and check all callee names
+              let calleeName = (Array.isArray(callee.name)) ? callee.name[0] : callee.method;
+              nodeForFunction = varTracker.get(calleeName);
+              if (nodeForFunction && !isCalleeParam(calleeName, currentD3Node.params)) {
+                /* call refers to a user-declared variable, add it to array for that variable.
+                   If this is a function passed in via a param, we have no idea 
+                   of what scope it came from via static analysis so need to exclude. */
                 callee.target = nodeForFunction;
                 callee.type = 'call';
                 d3CallLinks.push(callee);
-              } else if (!isCalleeParamOrBuiltin(callee.name, currentD3Node.params)) {
+              } else if (calleeBuiltins.has(callee.method)) {
+                /* add it to the separate object used for tracking builtins used
+                   TODO: distinguish by type
+                */
+                callee.target = builtins;
+                builtins.functionsCalled.push(callee.method);
+                d3CallLinks.push(callee);
+              } else if (!isCalleeParam(callee.name, currentD3Node.params)) {
                 throw new Error(`Attempt to look up built-in function failed.
                              Only objects, arrays and literals are being considered
                              in this exercise - not e.g., "new Set()"`);
               }
             });
           }
-
-
           varTracker.exitNode(currentD3Node);
           addDisplayText(last(d3ScopeChain));
-
           d3ScopeChain.pop();
         }
       },
   });
 
+  addDisplayText(builtins);
+  d3Nodes.unshift(builtins);
   return [d3Nodes, {
     d3CallLinks, d3HierarchyLinks,
   }];
 }
 
-function variablesTracker() {
+function VariablesTracker() {
   /* keep track of variable/function declaration set via:
    {variable string: [array containing each d3 scope node the variable is declared in]}
   (so this allows for same name being shadowed at deeper scope)
@@ -186,7 +232,7 @@ function variablesTracker() {
     let node = last(variablesDeclared.get(variable));
     let varType = (node.variablesDeclared.filter((varObj) => {
       return varObj.name === variable;
-    })).type;
+    }))[0].type;
     if (varType === 'Function') {
       return node.parent;
     }
@@ -223,27 +269,9 @@ function createsNewFunctionScope(node) {
 
 
 function createD3Node(node) {
-  let name;
-  if (node.id && node.id.name) {
-    name = node.id.name;
-  } else {
-    name = (node.type === 'Program') ? 'Global scope' : 'Anonymous';
-  }
-  let params = [];
-  let paramsText = '';
-  if (node.params) {
-    node.params.forEach((param) => {
-      params.push(param.name);
-    });
-    paramsText = '('.concat(params.join(', ')).concat(')');
-  }
-
   let d3Node = {
-    name: name,
-    params: node.params || null,
     displayText: {
-      functionName: name,
-      params: paramsText,
+      params: null,
       variablesDeclared: '',
       variablesMutated: '',
       functionsCalled: '',
@@ -252,8 +280,30 @@ function createD3Node(node) {
     variablesMutated: [], // {name, nodeWhereDeclared}
     functionsCalled: [], // {name, nodeWhereDeclared}
   };
-  // TODO - for debugging only, can remove once structure correct
-  d3Node.astNode = node;
+
+  if (node) {
+    let name;
+    if (node.id && node.id.name) {
+      name = node.id.name;
+    } else {
+      name = (node.type === 'Program') ? 'Global scope' : 'Anonymous';
+    }
+    let paramsArr = [];
+    let params = '';
+    if (node.params) {
+      node.params.forEach((param) => {
+        paramsArr.push(param.name);
+      });
+      params = '('.concat(paramsArr.join(', ')).concat(')');
+    }
+    Object.assign(d3Node, {
+        params: node.params || null,
+        displayText: {
+          params, name,
+        },
+        astNode: node,
+      }) // TODO - for debugging only, can remove once structure correct
+  }
   return d3Node;
 }
 
@@ -279,34 +329,49 @@ function addDisplayText(currentD3Node) {
   }
 }
 
-function isCalleeParamOrBuiltin(calleeName, params) {
+function isCalleeParam(calleeName, params) {
+  let paramNames = pluck(params, 'name');
+  return includes(paramNames, calleeName);
+}
+
+function CalleeBuiltins() {
   /* we've been tracking all variable declarations,
    so the unfound callee -should- either be a named param or a JS built-in.
    I am only dealing with object, arrays and literal built-in functions
    for this exercise but I want to have these tests for stability and
     to make sure the user knows this and that I'm expecting this error. */
-  let paramNames = pluck(params, 'name');
 
-  if (includes(paramNames, calleeName)) {
-    return true;
-  }
   /* I can't do this exactly in a static context for params
      without type checking. So all I can do is check against
      all builtins in scope for this exercise, and assume that
      the program is correct, e.g reduce() only called against arrays. */
 
-  const builtInObjs = [Object, Function, Array, String, Number];
+  const builtinObjs = [Object, Function, Array, String, Number];
 
-  let builtIns = builtInObjs.reduce((a, b) => {
-    return a.concat(Object.getOwnPropertyNames(b))
-      .concat(Object.getOwnPropertyNames(b.prototype));
-  }, []);
-  if (includes(builtIns, calleeName)) {
-    /* a built-in function such as map() or reduce() is being used:
+  let builtins = builtinObjs.map((builtInObj) => {
+    return Object.getOwnPropertyNames(builtInObj)
+      .concat(Object.getOwnPropertyNames(builtInObj.prototype));
+  });
+
+  function has(name) {
+    /* if included, a built-in function such as map() or reduce() is being used:
        it's OK that we don't have this in the variablesDeclared. */
-    return true;
+    return builtins.some((builtinArr) => {
+      return includes(builtinArr, name);
+    });
   }
-  return false;
+
+  function getObj(name) {
+    builtins.forEach((builtin, i) => {
+      if (includes(builtin, name)) {
+        return builtinObjs[i];
+      }
+    });
+  }
+
+  return {
+    has, getObj,
+  };
 }
 
 

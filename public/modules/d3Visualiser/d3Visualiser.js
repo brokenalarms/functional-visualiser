@@ -6,30 +6,31 @@
 import d3 from 'd3';
 let cola = require('webcola');
 
-/* it would be better if I could take these letiables from a CSS class,
-   but D3 doesn't seem to allow this. */
 // TODO - extract options into d3OptionsStore
 let options = {
   graphType: 'd3',
-  globalScopeFixed: true,
   d3Force: {
     charge: -800,
     chargeDistance: 500,
     gravity: 0.01,
   },
+  layout: {
+    globalScopeFixed: true,
+  },
   width: null,
   height: null,
   funcBlock: {
     height: 200,
-    width: 200,
+    width: 195,
     text: {
       lineHeight: 20,
     },
   },
   links: {
     display: 'call', // call, hierarchy, or both
+    showBuiltinCalls: false,
     strength: function(d) {
-      return 0;
+      return 0.01;
     },
     distance: function(nodeCount) {
       return options.width / Math.min(4, nodeCount - 1);
@@ -51,11 +52,19 @@ function initialize(element, nodes, linksObj, dimensions) {
   });
 
   // take the global scope out and fix it in the top right to start
-  if (options.globalScopeFixed) {
-    let globalScope = nodes[0];
-    globalScope.x = options.width;
-    globalScope.y = 0;
-    globalScope.fixed = true;
+  if (options.layout.globalScopeFixed) {
+    let builtins = nodes[0];
+    Object.assign(builtins, {
+      x: 0,
+      y: 0,
+      fixed: true,
+    });
+    let globalScope = nodes[1];
+    Object.assign(globalScope, {
+      x: options.width,
+      y: 0,
+      fixed: true,
+    });
   }
   // TODO - extract this to codeOptionsStore to control from there
   let links = (() => {
@@ -68,6 +77,13 @@ function initialize(element, nodes, linksObj, dimensions) {
         return linksObj.d3HierarchyLinks.concat(linksObj.d3CallLinks);
     }
   })();
+
+  if (options.links.display === 'call' && !options.links.showBuiltinCalls) {
+    links = links.filter((link) => {
+      return link.target !== nodes[0];
+    });
+  }
+
 
   // end TODO =========================================
 
@@ -88,12 +104,12 @@ function initialize(element, nodes, linksObj, dimensions) {
     .attr('markerWidth', 20)
     .attr('markerHeight', 20)
     .attr('orient', 'auto')
-    .style('fill', 'lightgray')
+    .style('fill', 'darkgray')
     .append('svg:path')
     .attr('d', 'M2,2 L2,11 L10,6 L2,2');
 
-  let forceLayout = createNewForceLayout(options.graphType, nodes, links)
-    // allow for dragging of nodes to reposition functions
+  let forceLayout = createNewForceLayout(options.graphType, nodes, links);
+  // allow for dragging of nodes to reposition functions
   let drag = forceLayout.drag()
     .on('dragstart', onDragStart);
 
@@ -122,31 +138,15 @@ function initialize(element, nodes, linksObj, dimensions) {
   const maxAllowedY = options.height - options.funcBlock.height;
   forceLayout.on('tick', function() {
     link.attr('points', (d) => {
-    let x1 = Math.max(xBuffer, Math.min(options.width - xBuffer, d.source.x + xBuffer));
-    let y1 = Math.max(yBuffer, Math.min(options.height - yBuffer, d.source.y + yBuffer))
-    let x2 = Math.max(xBuffer, Math.min(options.width - xBuffer, d.target.x + xBuffer));
-    let y2 = Math.max(yBuffer, Math.min(options.height - yBuffer, d.target.y + yBuffer));
-    let midX = (x1 + x2) / 2;
-    let midY = (y1 + y2) / 2;
+      let x1 = Math.max(xBuffer, Math.min(options.width - xBuffer, d.source.x + xBuffer));
+      let y1 = Math.max(yBuffer, Math.min(options.height - yBuffer, d.source.y + yBuffer))
+      let x2 = Math.max(xBuffer, Math.min(options.width - xBuffer, d.target.x + xBuffer));
+      let y2 = Math.max(yBuffer, Math.min(options.height - yBuffer, d.target.y + yBuffer));
+      let midX = (x1 + x2) / 2;
+      let midY = (y1 + y2) / 2;
 
       return `${x1},${y1} ${midX},${midY} ${x2},${y2}`;
     });
-
-
-
-    /*function tick(e) {
-      link.attr('x1', (d) => {
-          return Math.max(xBuffer, Math.min(options.width - xBuffer, d.source.x + xBuffer));
-        })
-        .attr('y1', (d) => {
-          return Math.max(yBuffer, Math.min(options.height - yBuffer, d.source.y + yBuffer));
-        })
-        .attr('x2', (d) => {
-          return Math.max(xBuffer, Math.min(options.width - xBuffer, d.target.x + xBuffer));
-        })
-        .attr('y2', (d) => {
-          return Math.max(yBuffer, Math.min(options.height - yBuffer, d.target.y + yBuffer));
-        });*/
 
     node.attr('transform', (d) => {
       d.x = Math.max(inlay, Math.min(maxAllowedX, d.x));
@@ -156,7 +156,6 @@ function initialize(element, nodes, linksObj, dimensions) {
   });
   update();
 }
-
 
 // ===================
 // Helper functions
@@ -212,9 +211,9 @@ function drawFunctionBlock(funcBlock) {
     .attr('ry', 10);
 
   let addText = appendText(funcBlock, 10, 25);
-  addText('function-name', 'functionName');
-  let hoverText = appendText(funcBlock, 170, 10, 180, 'rect');
-  hoverText('function-hover');
+  addText('function-name', 'name');
+  let addHoverText = appendText(funcBlock, 160, 10, 170, 'rect');
+  addHoverText('function-hover');
   addText('function-text', 'params');
   addText('function-heading', 'Variables declared:');
   addText('function-text', 'variablesDeclared');
