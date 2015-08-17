@@ -67,8 +67,7 @@ var buildJs = function(watch) {
     'acorn',
     'estraverse',
     'escodegen',
-    'codemirror',
-    'react-codemirror',
+    'brace',
     'react-remarkable',
   ];
 

@@ -2,6 +2,7 @@
 
 import {parse} from 'acorn';
 import estraverse from 'estraverse';
+import escodegen from 'escodegen';
 import {includes, pluck, uniq as unique, last} from 'lodash';
 
 function getVisPaneNodes(parseString) {
@@ -13,16 +14,20 @@ function getVisPaneNodes(parseString) {
 
   let ast;
   if (typeof parseString === 'string') {
-    ast = parse(parseString);
+    ast = parse(parseString, {
+      locations: true
+    });
   } else {
     // allows for the actual function to be passed in
-    ast = parse(parseString.toString());
+    ast = parse(parseString.toString(), {
+      locations: true
+    });
   }
 
   let varTracker = new VariablesTracker();
   let calleeBuiltins = new CalleeBuiltins();
   let builtins = createD3Node(null);
-  builtins.displayText.name = 'Built in functions';
+  builtins.name = builtins.displayText.name = 'Built in functions';
 
   estraverse.traverse(ast, {
     enter(node) {
@@ -68,7 +73,7 @@ function getVisPaneNodes(parseString) {
         if (node.type === 'FunctionDeclaration') {
           let func = {
             name: node.id.name,
-            type: 'Function',
+            type: node.type,
           };
           /* in this case it was actually declared in its parent,
              since we've already created a new d3Node for this scope. */
@@ -118,30 +123,30 @@ function getVisPaneNodes(parseString) {
                e.g foo.bar.reduce(). */
             let _ = node.callee;
 
-            // callee is in the highest property name
+            // function Name is always in the highest property name
             calleeMethod = _.property.name;
+
+            // method is in the second-highest nested property
             if (_.object.property) {
-              // method is in the second-highest nested property
               calleeName = _.object.property.name;
             } else {
-              calleeName = _.object.name || _.object.type; // catches 'ThisExpression'
+              calleeName = _.object.name;
+              calleeType = _.object.type; // for 'ThisExpression' 
             }
 
             if (_.object.elements) {
               // allow for expression of array literals at top level only
               // TODO - make calleeName an array of _.object.elements[]
-              calleeName = 'Literal';
+              calleeName = 'Native object';
               calleeType = _.object.type;
-            }
-            /* check if function is a builtin; if so get the top memberExpression
-               instead; this is the deepest nested object.name in the array */
-            if (calleeBuiltins.has(calleeName)) {
-              calleeType = calleeBuiltins.getObj(calleeName);
+            } else if (calleeBuiltins.has(calleeMethod)) {
+              /* check if function is a builtin; if so get the top memberExpression
+                 instead; this is the deepest nested object.name in the array */
+              calleeType = calleeBuiltins.getObj(calleeMethod).name;
               while (_.object) {
                 _ = _.object;
               }
-              calleeName = 'Literal';
-              calleeType = _.name;
+              calleeName = _.name;
             }
           } else {
             // all possibilities need to be handled here - kill program if there's an error
@@ -158,9 +163,9 @@ function getVisPaneNodes(parseString) {
         }
       },
       leave(node) {
-        let currentD3Node = last(d3ScopeChain);
 
         if (createsNewFunctionScope(node)) {
+          let currentD3Node = last(d3ScopeChain);
           if (currentD3Node.functionsCalled.length > 0) {
             // finish building our callLinks now we have the lower scope info
             currentD3Node.functionsCalled.forEach((callee) => {
@@ -197,6 +202,21 @@ function getVisPaneNodes(parseString) {
       },
   });
 
+  console.log(escodegen.generate({
+    "type": "ReturnStatement",
+    "argument": {
+      "type": "BinaryExpression",
+      "operator": "+",
+      "left": {
+        "type": "Identifier",
+        "name": "a"
+      },
+      "right": {
+        "type": "Identifier",
+        "name": "b"
+      }
+    }
+  }));
   addDisplayText(builtins);
   d3Nodes.unshift(builtins);
   return [d3Nodes, {
@@ -233,7 +253,7 @@ function VariablesTracker() {
     let varType = (node.variablesDeclared.filter((varObj) => {
       return varObj.name === variable;
     }))[0].type;
-    if (varType === 'Function') {
+    if (varType === 'FunctionDeclaration') {
       return node.parent;
     }
     return node;
@@ -297,11 +317,12 @@ function createD3Node(node) {
       params = '('.concat(paramsArr.join(', ')).concat(')');
     }
     Object.assign(d3Node, {
+        name,
         params: node.params || null,
-        displayText: {
-          params, name,
-        },
-        astNode: node,
+          displayText: {
+            params, name,
+          },
+          astNode: node,
       }) // TODO - for debugging only, can remove once structure correct
   }
   return d3Node;
@@ -347,26 +368,28 @@ function CalleeBuiltins() {
      the program is correct, e.g reduce() only called against arrays. */
 
   const builtinObjs = [Object, Function, Array, String, Number];
+  const browserMethods = ['log', 'error'];
 
   let builtins = builtinObjs.map((builtInObj) => {
     return Object.getOwnPropertyNames(builtInObj)
       .concat(Object.getOwnPropertyNames(builtInObj.prototype));
-  });
+  }).concat(browserMethods);
 
   function has(name) {
     /* if included, a built-in function such as map() or reduce() is being used:
        it's OK that we don't have this in the variablesDeclared. */
     return builtins.some((builtinArr) => {
-      return includes(builtinArr, name);
-    });
+        return includes(builtinArr, name);
+      });
   }
 
   function getObj(name) {
-    builtins.forEach((builtin, i) => {
-      if (includes(builtin, name)) {
-        return builtinObjs[i];
-      }
+    let index;
+    let _ = builtins.some((builtin, i) => {
+      index = i;
+      return includes(builtin, name);
     });
+    return builtinObjs[index];
   }
 
   return {

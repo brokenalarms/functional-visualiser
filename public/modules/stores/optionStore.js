@@ -1,5 +1,6 @@
 const event = require('events');
-import examples from '../examples/examples.js';
+import {map} from 'lodash';
+import codeExamples from '../examples/examples.js';
 import earlyDeliverable from '../../docs/earlyDeliverable.js';
 
 /* simple event store / emitter singleton.
@@ -8,14 +9,19 @@ import earlyDeliverable from '../../docs/earlyDeliverable.js';
    of a callback registry / events emitter. */
 
 function OptionStore() {
-  const options = {};
   const optionStore = Object.create(event.EventEmitter.prototype);
+  const options = {};
 
   // read in available examples from constants file
-  options.examples = examples;
-  options.markdown = {
-    earlyDeliverable,
-  };
+  Object.assign(options, {
+    clickedItem: null,
+    codeExamples,
+    markdown: {
+      earlyDeliverable,
+    },
+    selectedMarkdown: null,
+    selectedCode: null,
+  });
 
   function subscribeListener(callback) {
     optionStore.on('change', callback);
@@ -27,6 +33,12 @@ function OptionStore() {
 
   function setOptions(newOpts) {
     Object.assign(options, newOpts);
+    /*    if (map(newOpts, (value, key) => {
+            return value;
+          }).every((opt) => {
+            return opt !== null;
+          })) {
+        }*/
     optionStore.emit('change');
   }
 

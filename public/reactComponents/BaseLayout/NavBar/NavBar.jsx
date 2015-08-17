@@ -9,8 +9,9 @@ import optionStore from '../../../modules/stores/optionStore.js';
 const LeftNav = mui.LeftNav;
 const MenuItem = mui.MenuItem;
 
-export default class LeftNavBar {
-  static displayName = 'LeftNavBar';
+class NavBar extends React.Component {
+  static displayName = 'NavBar';
+
 
   static propTypes = {
     menuItems: React.PropTypes.array.isRequired,
@@ -23,20 +24,20 @@ export default class LeftNavBar {
       type: MenuItem.Types.SUBHEADER,
       text: 'Examples',
     }, {
-      type: 'example',
+      optionGroup: 'codeExamples',
       text: 'Sum: imperative',
       moduleId: 'sum',
       functionId: 'imperative',
     }, {
-      type: 'example',
+      optionGroup: 'codeExamples',
       text: 'Sum: functional',
       moduleId: 'sum',
       functionId: 'functional',
     }, {
-      type: 'example',
-      text: 'sample code from eScope',
-      moduleId: 'escopeDemo',
-      functionId: 'MONAD',
+      optionGroup: 'codeExamples',
+      text: 'Smashing Magazine demo',
+      moduleId: 'smashingMagazineDemo',
+      functionId: 'demo',
     }, {
       type: MenuItem.Types.SUBHEADER,
       text: 'Docs',
@@ -45,11 +46,11 @@ export default class LeftNavBar {
       payload: 'https://github.com/breakingco/functional-visualiser',
       text: 'GitHub source',
     }, {
-      type: 'markdown',
+      optionGroup: 'markdown',
       text: 'Early Deliverable',
       id: 'earlyDeliverable',
     }, {
-      type: 'markdown',
+      optionGroup: 'markdown',
       payload: 'https://www.google.com',
       text: 'Dissertation',
       'id': 'dissertation',
@@ -58,45 +59,48 @@ export default class LeftNavBar {
   }
 
   componentDidMount = () => {
-    // TODO - uncomment
-    // this.refs.leftNav.toggle();
+    if (this.props.showNavBar) {
+      this.refs.leftNav.toggle();
+    }
   }
 
-  componentWillUpdate() {}
-
   componentDidUpdate() {
-    // only show navBar if allowed by parent
     if (this.props.showNavBar) {
       this.refs.leftNav.toggle();
     }
   }
   render() {
     return (
+      <div>
       <LeftNav ref="leftNav"
             menuItems={this.props.menuItems}
             docked={false}
+            style={{'line-height': 1.5}}
             onChange={this.handleClick}
-            onNavClose={this.props.onNavClose.bind(this, false)} />
+            onNavClose={this.props.onNavClose} />
+      </div>
     );
   }
 
   handleClick = (e, selectedIndex, menuItem) => {
-    switch (menuItem.type) {
-      case 'example':
-        let selectedExample =
-          optionStore.getOptions().examples[menuItem.moduleId][menuItem.functionId];
+    switch (menuItem.optionGroup) {
+      case 'codeExamples':
+        let selectedCode =
+          optionStore.getOptions()[menuItem.optionGroup][menuItem.moduleId][menuItem.functionId];
         optionStore.setOptions({
-          selectedExample,
-          lastClickedItem: menuItem,
+          selectedCode,
+          clickedItem: menuItem,
         });
         break;
       case 'markdown':
-        let selectedMarkdown = optionStore.getOptions().markdown[menuItem.id]
+        let selectedMarkdown = optionStore.getOptions()[menuItem.optionGroup][menuItem.id];
         optionStore.setOptions({
           selectedMarkdown,
-          lastClickedItem: menuItem,
+          clickedItem: menuItem,
         });
-
+        break;
     }
   };
 }
+
+export default NavBar;

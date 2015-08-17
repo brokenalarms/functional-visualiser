@@ -20,8 +20,8 @@ let options = {
   width: null,
   height: null,
   funcBlock: {
-    height: 200,
-    width: 195,
+    height: 20,
+    width: 19,
     text: {
       lineHeight: 20,
     },
@@ -83,7 +83,7 @@ function initialize(element, nodes, linksObj, dimensions) {
       return link.target !== nodes[0];
     });
   }
-
+// links = [];
 
   // end TODO =========================================
 

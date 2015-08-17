@@ -1,10 +1,7 @@
 'use strict';
 // ==========================================
 // Main root-level app module.
-// The App class is used purely to set up boilerplate.
-// Subscriptions to data begin in the 'Controller'
-// React component, and all state flows uni-directionally
-// down from the 'Controller' module.
+// The App class is used purely to set up theme boilerplate.
 // ==========================================
 
 // dependencies
@@ -13,7 +10,7 @@ import mui from 'material-ui';
 import injectTapEventPlugin from 'react-tap-event-plugin';
 
 // React components
-import Controller from './Controller/Controller.jsx';
+import BaseLayout from './BaseLayout/BaseLayout.jsx';
 
 class App extends React.Component {
 
@@ -43,7 +40,7 @@ class App extends React.Component {
   render() {
     return (
       <div className="app">
-        <Controller/>
+        <BaseLayout/>
       </div>
     );
   }

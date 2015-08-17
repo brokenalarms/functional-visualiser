@@ -17,6 +17,8 @@ function imperative() {
   sumFunction();
 }
 
+
+
 function functional() {
   function sumFunction(arrayToSum) {
     return arrayToSum.reduce(function(a, b) {
@@ -24,7 +26,8 @@ function functional() {
     }, 0);
   }
 
-  sumFunction([3, 5, 5, 10]);
+  sumFunction([1, 1]);
+  sumFunction([2, 2]);
 }
 
 export default {

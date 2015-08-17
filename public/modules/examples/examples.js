@@ -9,8 +9,8 @@
 	*/
 
 import sum from './exampleFiles/sum.js';
-import escopeDemo from './exampleFiles/escopeDemo.js';
+import smashingMagazineDemo from './exampleFiles/smashingMagazine.js';
 const examples = {
-  sum, escopeDemo,
+  sum, smashingMagazineDemo,
 };
 export default examples;
