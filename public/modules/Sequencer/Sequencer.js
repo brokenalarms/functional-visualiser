@@ -1,7 +1,7 @@
-//import OptionStore from '../stores/OptionStore.js';
-//import UpdateStore from '../stores/UpdateStore.js';
+import OptionStore from '../stores/OptionStore.js';
+import UpdateStore from '../stores/UpdateStore.js';
 import Interpreter from '../vendor/JS-Interpreter/interpreter.js';
-
+import astTools from '../astTransforms/astTools.js';
 
 function Sequencer() {
 
@@ -13,16 +13,16 @@ function Sequencer() {
 
 
   function start() {
-  	let code = OptionStore.getOptions().
-    let interpreter = new Interpreter(sampleCode.toString(), initFunc)
+    let codeString = OptionStore.getOptions().selectedCode;
+    let runString = '(' + codeString + ')()';
+    let interpreter = new Interpreter(runString);
+    let delay = OptionStore.getOptions().sequencer.delay;
 
     function nextStep() {
-      setTimeout(() => {
-        while (interpreter.step()) {
-          console.log(interpreter.stackTrace[0]);
-          nextStep();
-        }
-      }, 500);
+      UpdateStore.sendUpdate(interpreter.stateStack[0]);
+      if (interpreter.step()) {
+        setTimeout(nextStep, delay);
+      }
     }
     nextStep();
   }

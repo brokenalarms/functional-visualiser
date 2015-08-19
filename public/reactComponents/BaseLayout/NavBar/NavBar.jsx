@@ -1,10 +1,10 @@
 /*
-All setting of the optionStore is done directly through here.
+All setting of the OptionStore is done directly through here.
 */
 
 import React from 'react';
 import mui from 'material-ui';
-import optionStore from '../../../modules/stores/optionStore.js';
+import OptionStore from '../../../modules/stores/OptionStore.js';
 
 const LeftNav = mui.LeftNav;
 const MenuItem = mui.MenuItem;
@@ -86,15 +86,15 @@ class NavBar extends React.Component {
     switch (menuItem.optionGroup) {
       case 'codeExamples':
         let selectedCode =
-          optionStore.getOptions()[menuItem.optionGroup][menuItem.moduleId][menuItem.functionId];
-        optionStore.setOptions({
+          OptionStore.getOptions()[menuItem.optionGroup][menuItem.moduleId][menuItem.functionId];
+        OptionStore.setOptions({
           selectedCode,
           clickedItem: menuItem,
         });
         break;
       case 'markdown':
-        let selectedMarkdown = optionStore.getOptions()[menuItem.optionGroup][menuItem.id];
-        optionStore.setOptions({
+        let selectedMarkdown = OptionStore.getOptions()[menuItem.optionGroup][menuItem.id];
+        OptionStore.setOptions({
           selectedMarkdown,
           clickedItem: menuItem,
         });

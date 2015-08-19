@@ -4,11 +4,7 @@ const event = require('events');
 function UpdateStore() {
   const updateStore = Object.create(event.EventEmitter.prototype);
 
-  const state = Object.create({}, {
-    newNodes: [],
-    newLinks: [],
-    // probably just get all each time, or use stateStack?
-  });
+  const state = [];
 
   function subscribeListener(callback) {
     updateStore.on('update', callback);
@@ -19,8 +15,9 @@ function UpdateStore() {
   }
 
   function sendUpdate(newState) {
-    Object.assign(state, newState);
-    updateStore.emit('update');
+    state.push(newState);
+    //Object.assign(state, newState);
+    updateStore.emit('update', state);
   }
   return {
     subscribeListener,

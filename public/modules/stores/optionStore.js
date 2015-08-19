@@ -21,7 +21,12 @@ function OptionStore() {
     },
     selectedMarkdown: null,
     selectedCode: null,
+    sequencer: {
+      delay: 100,
+    },
   });
+  // TODO - just for testing, set to null initially
+  options.selectedCode = options.codeExamples.assorted.nestedReturn;
 
   function subscribeListener(callback) {
     optionStore.on('change', callback);
@@ -33,12 +38,6 @@ function OptionStore() {
 
   function setOptions(newOpts) {
     Object.assign(options, newOpts);
-    /*    if (map(newOpts, (value, key) => {
-            return value;
-          }).every((opt) => {
-            return opt !== null;
-          })) {
-        }*/
     optionStore.emit('change');
   }
 

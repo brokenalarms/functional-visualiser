@@ -2,7 +2,7 @@ import React from 'react';
 import {Dialog, FlatButton} from 'material-ui';
 import Markdown from 'react-remarkable';
 
-import optionStore from '../../../modules/stores/optionStore.js';
+import OptionStore from '../../../modules/stores/OptionStore.js';
 
 class MarkdownModal extends React.Component {
 
@@ -14,7 +14,7 @@ class MarkdownModal extends React.Component {
   }
 
   componentDidMount() {
-    optionStore.subscribeListener(this.onOptionsChanged);
+    OptionStore.subscribeListener(this.onOptionsChanged);
   }
 
 
@@ -26,13 +26,13 @@ class MarkdownModal extends React.Component {
 
 
   componentWillUnmount = () => {
-    optionStore.unsubscribeListener(this.onOptionsChanged);
+    OptionStore.unsubscribeListener(this.onOptionsChanged);
   }
 
 
   onOptionsChanged = () => {
     this.setState({
-      markdown: optionStore.getOptions().selectedMarkdown,
+      markdown: OptionStore.getOptions().selectedMarkdown,
     });
   }
 
@@ -68,7 +68,7 @@ class MarkdownModal extends React.Component {
     }
   */
   handleDialogClose = (clickedClose) => {
-    optionStore.setOptions({
+    OptionStore.setOptions({
       selectedMarkdown: null,
     });
     if (clickedClose) {

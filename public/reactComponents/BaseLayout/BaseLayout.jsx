@@ -1,7 +1,7 @@
 /*
   Responsible for showing/hiding main NavBar
   and UserOptions components.
-  Markdownmodal subscribes to optionStore separately
+  Markdownmodal subscribes to OptionStore separately
   so as to not trigger re-render of ActionPane
   on modal view.
 */

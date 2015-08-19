@@ -9,12 +9,16 @@ import {includes, pluck, uniq as unique, last, chain} from 'lodash';
 
 function astTools() {
 
-  function createAst(codeToParse) {
+  function createAst(codeToParse, createLocations) {
     let parseString = (typeof codeToParse === 'Function') ?
       codeToParse.toString() : codeToParse;
     return parse(parseString, {
-      locations: true,
+      locations: createLocations,
     });
+  }
+
+  function createCode(ast){
+    return escodegen.generate(ast);
   }
 
   function createsNewFunctionScope(node) {
@@ -23,12 +27,12 @@ function astTools() {
       node.type === 'FunctionExpression');
   }
 
-  function getScopeAndStepsForFunction(node) {
+  function getFirstActionSteps(node) {
     if (node.type === 'FunctionDeclaration') {
-      return [node, node.body.body];
+      return node.body.body;
     } else if (node.type === 'Program' &&
       node.body[0].type === 'FunctionDeclaration') {
-      return [node.body[0], node.body[0].body.body];
+      return node.body[0].body.body;
     }
     console.error(`unrecognised scope passed in`);
   }
@@ -62,7 +66,7 @@ function astTools() {
 
   return {
     astTools, createAst, createsNewFunctionScope,
-    addScopeInfo, getScopeAndStepsForFunction,
+    addScopeInfo, getFirstActionSteps,
   };
 }
 

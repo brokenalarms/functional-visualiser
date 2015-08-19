@@ -4,7 +4,7 @@
 // uses the standard D3 initialize / update pattern
 // ======================================================
 import d3 from 'd3';
-//import UpdateStore from '../stores/UpdateStore.js';
+import UpdateStore from '../stores/UpdateStore.js';
 import Sequencer from '../Sequencer/Sequencer.js';
 let cola = require('webcola');
 
@@ -119,9 +119,9 @@ function initialize(element, nodes, links, dimensions) {
   let link = svg.selectAll('.function-link')
     .data(links);
   let node = svg.selectAll('.function-node')
-    .data(nodes);
 
-  function update() {
+  function update(nodes, links) {
+    node = node.data(nodes);
     link.enter().append('polyline');
     drawFunctionLink(link);
     node.enter().append('g')
@@ -160,7 +160,9 @@ function initialize(element, nodes, links, dimensions) {
   /* start sequencer to drive CodePane and VisPane, and
      listen for updates 
      the event listener will be destroyed when React updates. */
-  UpdateStore.subscribeListener(update);
+  UpdateStore.subscribeListener(function(newState){
+    update(newState);
+  });
   let sequencer = new Sequencer().start();
 }
 

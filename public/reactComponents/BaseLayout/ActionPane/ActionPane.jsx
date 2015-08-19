@@ -2,7 +2,7 @@ import React from 'react';
 import CodePane from './CodePane/CodePane.jsx';
 import VisPane from './VisPane/Vispane.jsx';
 
-import optionStore from '../../../modules/stores/optionStore.js';
+import OptionStore from '../../../modules/stores/OptionStore.js';
 import StaticCallGraph from '../../../modules/astTransforms/StaticCallGraph.js';
 
 
@@ -11,8 +11,7 @@ class ActionPane extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      // TODO - TESTING - to be changed to null
-      selectedCode: optionStore.getOptions().codeExamples.assorted.nestedReturn,
+      selectedCode: OptionStore.getOptions().selectedCode,
     };
   }
 
@@ -21,21 +20,21 @@ class ActionPane extends React.Component {
   }
 
   componentDidMount() {
-    optionStore.subscribeListener(this.onOptionsChanged);
+    OptionStore.subscribeListener(this.onOptionsChanged);
   }
 
   componentWillUnmount = () => {
-    optionStore.unsubscribeListener(this.onOptionsChanged);
+    OptionStore.unsubscribeListener(this.onOptionsChanged);
   }
 
   onOptionsChanged = () => {
     this.setState({
-      selectedCode: optionStore.getOptions().selectedCode,
+      selectedCode: OptionStore.getOptions().selectedCode,
     });
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    let clickedItem = optionStore.getOptions().clickedItem;
+    let clickedItem = OptionStore.getOptions().clickedItem;
     return (!nextProps.isNavBarShowing && nextState.selectedCode &&
       clickedItem && clickedItem.optionGroup === 'codeExamples');
   }
