@@ -4,6 +4,8 @@
 // uses the standard D3 initialize / update pattern
 // ======================================================
 import d3 from 'd3';
+//import UpdateStore from '../stores/UpdateStore.js';
+import Sequencer from '../Sequencer/Sequencer.js';
 let cola = require('webcola');
 
 // TODO - extract options into d3OptionsStore
@@ -15,13 +17,13 @@ let options = {
     gravity: 0.01,
   },
   layout: {
-    globalScopeFixed: true,
+    globalScopeFixed: false,
   },
   width: null,
   height: null,
   funcBlock: {
-    height: 20,
-    width: 19,
+    height: 200,
+    width: 190,
     text: {
       lineHeight: 20,
     },
@@ -67,23 +69,23 @@ function initialize(element, nodes, links, dimensions) {
     });
   }
   // TODO - extract this to codeOptionsStore to control from there
-/*  let links = (() => {
-    switch (options.links.display) {
-      case 'call':
-        return linksObj.d3CallLinks;
-      case 'hierarchy':
-        return linksObj.d3HierarchyLinks;
-      case 'both':
-        return linksObj.d3HierarchyLinks.concat(linksObj.d3CallLinks);
-    }
-  })();*/
+  /*  let links = (() => {
+      switch (options.links.display) {
+        case 'call':
+          return linksObj.d3CallLinks;
+        case 'hierarchy':
+          return linksObj.d3HierarchyLinks;
+        case 'both':
+          return linksObj.d3HierarchyLinks.concat(linksObj.d3CallLinks);
+      }
+    })();*/
 
   if (options.links.display === 'call' && !options.links.showBuiltinCalls) {
     links = links.filter((link) => {
       return link.target !== nodes[0];
     });
   }
-// links = [];
+  // links = [];
 
   // end TODO =========================================
 
@@ -154,7 +156,12 @@ function initialize(element, nodes, links, dimensions) {
       return `translate(${d.x}, ${d.y})`;
     });
   });
-  update();
+
+  /* start sequencer to drive CodePane and VisPane, and
+     listen for updates 
+     the event listener will be destroyed when React updates. */
+  UpdateStore.subscribeListener(update);
+  let sequencer = new Sequencer().start();
 }
 
 // ===================
@@ -211,12 +218,12 @@ function drawFunctionBlock(funcBlock) {
     .attr('ry', 10);
 
   let addText = appendText(funcBlock, 10, 25);
-  addText('function-name', 'name');
+  addText('function-name', 'id');
   let addHoverText = appendText(funcBlock, 160, 10, 170, 'rect');
   addHoverText('function-hover');
   addText('function-text', 'params');
   addText('function-heading', 'Variables declared:');
-  addText('function-text', 'variablesDeclared');
+  addText('function-text', 'declarationsMade');
   addText('function-heading', 'Variables mutated:');
   addText('function-text', 'variablesMutated');
   addText('function-heading', 'Functions called:');

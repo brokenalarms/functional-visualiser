@@ -5,9 +5,9 @@ function UpdateStore() {
   const updateStore = Object.create(event.EventEmitter.prototype);
 
   const state = Object.create({}, {
-  	newNodes: [],
-  	newLinks: [],
-  	// probably just get all each time, or use stateStack?
+    newNodes: [],
+    newLinks: [],
+    // probably just get all each time, or use stateStack?
   });
 
   function subscribeListener(callback) {
@@ -22,6 +22,11 @@ function UpdateStore() {
     Object.assign(state, newState);
     updateStore.emit('update');
   }
+  return {
+    subscribeListener,
+    unsubscribeListener,
+    sendUpdate,
+  };
 }
 
-export default new UpdateStore();
+export default new UpdateStore;

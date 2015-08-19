@@ -3,7 +3,7 @@
 	name
 	functional
 	imperative
-	this reads in all the exports and adds them to the optionStore
+	this reads in all the exports and adds them to the OptionStore
 
 	not doing it programatically via fs for security
 	*/
