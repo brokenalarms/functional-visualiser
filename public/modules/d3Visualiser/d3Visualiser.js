@@ -38,7 +38,7 @@ let options = {
   },
 };
 
-function initialize(element, nodes, linksObj, dimensions) {
+function initialize(element, nodes, links, dimensions) {
   options.width = dimensions[0];
   options.height = dimensions[1];
 
@@ -67,7 +67,7 @@ function initialize(element, nodes, linksObj, dimensions) {
     });
   }
   // TODO - extract this to codeOptionsStore to control from there
-  let links = (() => {
+/*  let links = (() => {
     switch (options.links.display) {
       case 'call':
         return linksObj.d3CallLinks;
@@ -76,7 +76,7 @@ function initialize(element, nodes, linksObj, dimensions) {
       case 'both':
         return linksObj.d3HierarchyLinks.concat(linksObj.d3CallLinks);
     }
-  })();
+  })();*/
 
   if (options.links.display === 'call' && !options.links.showBuiltinCalls) {
     links = links.filter((link) => {
@@ -240,7 +240,7 @@ function drawFunctionBlock(funcBlock) {
       }
       if (element === 'text') {
         textBlock.text((d) => {
-          let keyLookupText = d.displayText[textOrKey];
+          let keyLookupText = d.scopeInfo[textOrKey];
           return (keyLookupText !== undefined) ? keyLookupText : textOrKey;
         });
       }

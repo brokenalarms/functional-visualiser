@@ -8,9 +8,9 @@
 	not doing it programatically via fs for security
 	*/
 
-import sum from './exampleFiles/sum.js';
+import assorted from './exampleFiles/assorted.js';
 import smashingMagazineDemo from './exampleFiles/smashingMagazine.js';
 const examples = {
-  sum, smashingMagazineDemo,
+  assorted, smashingMagazineDemo,
 };
 export default examples;

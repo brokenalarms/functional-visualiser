@@ -4,6 +4,7 @@ import {parse} from 'acorn';
 import estraverse from 'estraverse';
 import escodegen from 'escodegen';
 import {includes, pluck, uniq as unique, last} from 'lodash';
+import DeclarationTracker from './DeclarationTracker.js'
 
 function getVisPaneNodes(parseString) {
   let d3Nodes = [];
@@ -24,7 +25,7 @@ function getVisPaneNodes(parseString) {
     });
   }
 
-  let varTracker = new VariablesTracker();
+  let decTracker = new DeclarationTracker();
   let calleeBuiltins = new CalleeBuiltins();
   let builtins = createD3Node(null);
   builtins.name = builtins.displayText.name = 'Built in functions';
@@ -48,7 +49,7 @@ function getVisPaneNodes(parseString) {
 
             /* add parameters passed to scope chain */
             currentD3Node.params.forEach((param) => {
-              varTracker.set(param.name, currentD3Node);
+              decTracker.set(param.name, currentD3Node);
             });
           }
           /* only push onto d3Nodes once
@@ -66,7 +67,7 @@ function getVisPaneNodes(parseString) {
               type: declaration.init.type,
             };
             currentD3Node.variablesDeclared.push(variable);
-            varTracker.set(variable.name, currentD3Node);
+            decTracker.set(variable.name, currentD3Node);
           });
         }
 
@@ -79,7 +80,7 @@ function getVisPaneNodes(parseString) {
              since we've already created a new d3Node for this scope. */
           currentD3Node.parent.variablesDeclared.push(func);
           // but we want to keep track of the scope of the actual function for referring to later
-          varTracker.set(func.name, currentD3Node);
+          decTracker.set(func.name, currentD3Node);
         }
 
         if (node.type === 'AssignmentExpression') {
@@ -104,7 +105,7 @@ function getVisPaneNodes(parseString) {
           }
 
           // save reference to where the variable was actually defined
-          let nodeWhereVariableDeclared = last(varTracker.get(variableName));
+          let nodeWhereVariableDeclared = last(decTracker.get(variableName));
           currentD3Node.variablesMutated.push({
             'name': variableName,
             'nodeWhereDeclared': nodeWhereVariableDeclared,
@@ -173,7 +174,7 @@ function getVisPaneNodes(parseString) {
               // allow for callee being encoded as Array object literal
               // TODO loop through and check all callee names
               let calleeName = (Array.isArray(callee.name)) ? callee.name[0] : callee.method;
-              nodeForFunction = varTracker.get(calleeName);
+              nodeForFunction = decTracker.get(calleeName);
               if (nodeForFunction && !isCalleeParam(calleeName, currentD3Node.params)) {
                 /* call refers to a user-declared variable, add it to array for that variable.
                    If this is a function passed in via a param, we have no idea 
@@ -195,7 +196,7 @@ function getVisPaneNodes(parseString) {
               }
             });
           }
-          varTracker.exitNode(currentD3Node);
+          decTracker.exitNode(currentD3Node);
           addDisplayText(last(d3ScopeChain));
           d3ScopeChain.pop();
         }
@@ -222,63 +223,6 @@ function getVisPaneNodes(parseString) {
   return [d3Nodes, {
     d3CallLinks, d3HierarchyLinks,
   }];
-}
-
-function VariablesTracker() {
-  /* keep track of variable/function declaration set via:
-   {variable string: [array containing each d3 scope node the variable is declared in]}
-  (so this allows for same name being shadowed at deeper scope)
-   extended normal Map functions to manage array access and confine
-   the different management of choosing node.parent for function declarations */
-  let variablesDeclared = new Map();
-
-  function set(variable, d3Node) {
-    if (variablesDeclared.has(variable)) {
-      variablesDeclared.get(variable).push(d3Node);
-    } else {
-      variablesDeclared.set(variable, [d3Node]);
-    }
-  }
-
-  function get(variable) {
-    return last(variablesDeclared.get(variable));
-  }
-
-  function has(variable) {
-    return variablesDeclared.has(variable);
-  }
-
-  function getDeclaredScope(variable) {
-    let node = last(variablesDeclared.get(variable));
-    let varType = (node.variablesDeclared.filter((varObj) => {
-      return varObj.name === variable;
-    }))[0].type;
-    if (varType === 'FunctionDeclaration') {
-      return node.parent;
-    }
-    return node;
-  }
-
-  function exitNode(d3Node) {
-    /* clean up - remove any nested function scopes.
-       This process allows for same-named variables
-       on different scopes to be matched. */
-    variablesDeclared.forEach((scopeChain, key) => {
-      if (scopeChain.length > 1) {
-        let outerScope = scopeChain[length - 2];
-        if (outerScope === d3Node) {
-          scopeChain.pop();
-          if (scopeChain.length === 1) {
-            variablesDeclared.delete(key);
-          }
-        }
-      }
-    });
-  }
-
-  return {
-    get, set, has, exitNode,
-  };
 }
 
 function createsNewFunctionScope(node) {

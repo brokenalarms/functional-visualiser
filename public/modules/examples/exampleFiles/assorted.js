@@ -4,7 +4,7 @@ const id = 'sum';
 const name = 'Sum';
 const desc = 'Add an array of numbers';
 
-function imperative() {
+function imperativeSum() {
   const arrayToSum = [3, 5, 5, 10];
   let sum = 0;
 
@@ -17,9 +17,7 @@ function imperative() {
   sumFunction();
 }
 
-
-
-function functional() {
+function functionalSum() {
   function sumFunction(arrayToSum) {
     return arrayToSum.reduce(function(a, b) {
       return a + b;
@@ -27,9 +25,21 @@ function functional() {
   }
 
   sumFunction([1, 1]);
-  sumFunction([2, 2]);
+}
+
+function nestedReturn() {
+  function foo() {
+    function bar() {
+      function baz() {
+        return 'result';
+      }
+      return baz();
+    }
+    return bar();
+  }
+  var result = foo();
 }
 
 export default {
-  id, name, desc, imperative, functional,
+  id, name, desc, imperativeSum, functionalSum, nestedReturn,
 };

@@ -9,7 +9,10 @@
     "no-unused-vars": 1,
     "no-trailing-spaces": 1,
     "comma-dangle": 1,
-    "default-case": 1
+    "default-case": 1,
+    "no-param-reassign": 1,
+    "indent": 1,
+    "padded-blocks": 0,
   }
 }
 

@@ -2,17 +2,15 @@ import React from 'react';
 import initialize from '../../../../modules/d3Visualiser/d3Visualiser.js';
 
 // Interface between React and D3.
+// Initialize and code is pushed from above via ActionPane,
+// updates are pushed directly from updateStore without React knowing.
 
 class D3Root extends React.Component {
 
   static propTypes = {
     nodes: React.PropTypes.array,
-    links: React.PropTypes.object, // contains two different types of links
+    links: React.PropTypes.array,
     dimensions: React.PropTypes.array,
-  }
-
-  constructor() {
-    super();
   }
 
   componentDidMount = () => {

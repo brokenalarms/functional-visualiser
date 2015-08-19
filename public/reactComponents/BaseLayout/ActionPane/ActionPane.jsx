@@ -1,20 +1,18 @@
-// TODO - responsible for layout of windows (multiple vis panes?)
-
 import React from 'react';
-
-import optionStore from '../../../modules/stores/optionStore.js';
-import getVisPaneNodes from '../../../modules/astParser/astParser.js';
-
 import CodePane from './CodePane/CodePane.jsx';
 import VisPane from './VisPane/Vispane.jsx';
 
+import optionStore from '../../../modules/stores/optionStore.js';
+import StaticCallGraph from '../../../modules/astTransforms/StaticCallGraph.js';
+
+
 class ActionPane extends React.Component {
 
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
       // TODO - TESTING - to be changed to null
-      selectedCode: optionStore.getOptions().codeExamples.sum.imperative,
+      selectedCode: optionStore.getOptions().codeExamples.assorted.nestedReturn,
     };
   }
 
@@ -43,9 +41,10 @@ class ActionPane extends React.Component {
   }
 
   render = () => {
+    let codeString = this.state.selectedCode.toString();
     if (this.state.selectedCode) {
-      let exampleString = this.state.selectedCode.toString();
-      const [nodes, links] = getVisPaneNodes(exampleString);
+      const [nodes, links] =
+      StaticCallGraph.get(codeString);
       return (
         <div className="flex-action-pane">
         <VisPane
@@ -53,7 +52,7 @@ class ActionPane extends React.Component {
           links={links}
           dimensions={[1000, 800]}/>
         <CodePane
-          codeString={exampleString} />
+          codeString={codeString} />
       </div>
       );
     }

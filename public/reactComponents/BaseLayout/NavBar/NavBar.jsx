@@ -26,13 +26,13 @@ class NavBar extends React.Component {
     }, {
       optionGroup: 'codeExamples',
       text: 'Sum: imperative',
-      moduleId: 'sum',
-      functionId: 'imperative',
+      moduleId: 'assorted',
+      functionId: 'imperativeSum',
     }, {
       optionGroup: 'codeExamples',
       text: 'Sum: functional',
-      moduleId: 'sum',
-      functionId: 'functional',
+      moduleId: 'assorted',
+      functionId: 'functionalSum',
     }, {
       optionGroup: 'codeExamples',
       text: 'Smashing Magazine demo',
