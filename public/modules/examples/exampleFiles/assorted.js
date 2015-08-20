@@ -28,16 +28,16 @@ function functionalSum() {
 }
 
 function nestedReturn() {
-  function foo() {
-    function bar() {
-      function baz() {
+  function foo(fooParamReceived) {
+    function bar(barParamReceived) {
+      function baz(bazParamReceived) {
         return 'result';
       }
-      return baz();
+      return baz(barParamReceived);
     }
-    return bar();
+    return bar(fooParamReceived);
   }
-  var result = foo();
+  var result = foo('fooParamPassed');
 }
 
 export default {

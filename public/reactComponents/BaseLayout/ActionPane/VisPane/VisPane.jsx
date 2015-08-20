@@ -10,7 +10,7 @@ class D3Root extends React.Component {
   static propTypes = {
     nodes: React.PropTypes.array,
     links: React.PropTypes.array,
-    dimensions: React.PropTypes.array,
+    dimensions: React.PropTypes.object,
   }
 
   componentDidMount = () => {

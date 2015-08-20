@@ -49,7 +49,7 @@ class ActionPane extends React.Component {
         <VisPane
           nodes={nodes}
           links={links}
-          dimensions={[1000, 800]}/>
+          dimensions={{width: 1000, height: 800}}/>
         <CodePane
           codeString={codeString} />
       </div>
