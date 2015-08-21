@@ -4,7 +4,9 @@ const event = require('events');
 function UpdateStore() {
   const updateStore = Object.create(event.EventEmitter.prototype);
 
-  const state = [];
+  const state = {
+    range: {},
+  };
 
   function subscribeListener(callback) {
     updateStore.on('update', callback);
@@ -14,15 +16,20 @@ function UpdateStore() {
     updateStore.removeListener('update', callback);
   }
 
-  function sendUpdate(newState) {
-    state.push(newState);
-    //Object.assign(state, newState);
+  function getState() {
+    return state;
+  }
+
+  function updateState(newOpts) {
+    Object.assign(state, newOpts);
+    //state.push(newState);
     updateStore.emit('update', state);
   }
   return {
     subscribeListener,
     unsubscribeListener,
-    sendUpdate,
+    updateState,
+    getState,
   };
 }
 

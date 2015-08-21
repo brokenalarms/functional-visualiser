@@ -16,19 +16,43 @@ function Sequencer() {
   function start() {
     let codeString = OptionStore.getOptions().selectedCode;
     let runString = '(' + codeString + ')()';
-    let interpreter = new Interpreter(runString);
+    let astWithLocations = astTools.createAst(runString, true);
+    let interpreter = new Interpreter(astWithLocations);
     let sequencerOptions = OptionStore.getOptions().sequencer;
     let delay = sequencerOptions.delay;
 
     function nextStep() {
-      let newState = cloneDeep(interpreter.stateStack[0]).valueOf();
-      UpdateStore.sendUpdate(newState);
-      console.log(newState);
       if (interpreter.step()) {
+        // TODO - check state, if we don't care (ie superflous navigations into uncalled function declarations) then advance to the next
+        // only then set the timeout and tell d3 to draw, to keep the animation smooth
+        //let newState = cloneDeep(interpreter.stateStack[0]).valueOf();
+        let newState = interpreter.stateStack[0];
+        let state = {
+          range: getCodeRange(newState),
+        };
+        UpdateStore.updateState(state);
         setTimeout(nextStep, delay);
       }
     }
     nextStep();
+  }
+
+  function getCodeRange(newState) {
+    if (newState.node) {
+      let loc = newState.node.loc;
+      let range = {
+        start: {
+          row: loc.start.line,
+          column: loc.start.column,
+        },
+        end: {
+          row: loc.end.line,
+          column: loc.end.column,
+        },
+      };
+      return range;
+    }
+    return null;
   }
 
   return {

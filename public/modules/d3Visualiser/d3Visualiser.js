@@ -103,8 +103,11 @@ function initialize(element, nodes, links, dimensions) {
   });
 
   // TODO this can be moved to the play button
-   let sequencer = Sequencer.start();
- //update();
+  // delay to let everything load so the animation doesn't start jerky
+  setTimeout(() => {
+      let sequencer = Sequencer.start();
+    }, 1000);
+    // update();
 }
 
 function appendArrow(svg) {
@@ -114,8 +117,8 @@ function appendArrow(svg) {
     .attr('id', 'arrow')
     .attr('refX', 3)
     .attr('refY', 6)
-    .attr('markerWidth', 20)
-    .attr('markerHeight', 20)
+    .attr('markerWidth', 10)
+    .attr('markerHeight', 10)
     .attr('orient', 'auto')
     .style('fill', 'darkgray')
     .append('svg:path')

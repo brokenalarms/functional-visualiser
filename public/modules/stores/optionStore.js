@@ -22,7 +22,7 @@ function OptionStore() {
     selectedMarkdown: null,
     selectedCode: null,
     sequencer: {
-      delay: 100,
+      delay: 500,
     },
   });
   // TODO - just for testing, set to null initially

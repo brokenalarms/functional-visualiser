@@ -1,16 +1,15 @@
 import React from 'react';
-
+import UpdateStore from '../../../../modules/stores/UpdateStore.js';
 let brace = require('brace');
-  // made my own modifications to this and submitted PR
+// made my own modifications to this and added to open source on GitHub
 import AceEditor from '../../../../modules/vendor/react-ace/index.js';
 require('brace/mode/javascript');
 require('brace/theme/solarized_dark');
-//require('brace/range').Range;
 
-// Interface between React and CodeMirror
-
-/* TODO: codePane and d3Visualizer are going to subscribe to the same store
-   so that d3Visualizer can update independent of React, but this doesn't */
+/* Interface between React and Ace Editor:
+   subscriptions to codeupdating via the UpdateStore
+   change the underlying Ace Editor state directly and 
+   so don't trigger React re-rendering */
 
 class CodePane {
 
@@ -23,17 +22,28 @@ class CodePane {
   static defaultProps = {
     options: {
       theme: 'solarized_dark',
+      mode: 'javascript',
       $blockScrolling: 'infinity',
       height: '800px',
       width: '100%',
       fontSize: 18,
-      cursorStart: 1,
+      cursorStart: -1,
     },
   }
 
   componentDidMount = () => {
-  //  let selection = new Range(1, 1, 3, 4);
- //   this.refs.aceEditor.editor.selection.setSelectionRange(selection);
+    UpdateStore.subscribeListener(this.onUpdate);
+  }
+
+  componentWillUnmount() {
+    UpdateStore.unsubscribeListener(this.onUpdate);
+  }
+
+  onUpdate = () => {
+    let range = UpdateStore.getState().range;
+    if (range !== null) {
+      this.refs.aceEditor.editor.selection.setSelectionRange(range);
+    }
   }
 
   render() {
@@ -48,6 +58,7 @@ class CodePane {
       </div>
     );
   }
+
 }
 
 
