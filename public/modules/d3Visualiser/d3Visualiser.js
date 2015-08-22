@@ -47,6 +47,12 @@ let cola = require('webcola');
 function initialize(element, nodes, links, dimensions) {
   options.dimensions = dimensions;
 
+  // TODO - these settings take over when we switch from
+  // static to dynamic graph
+  UpdateStore.resetState();
+  nodes = UpdateStore.getState().nodes;
+  links = UpdateStore.getState().links;
+
   // cleanup if React udpates and doesn't re-mount DOM element
   d3.select(element).selectAll('*').remove();
 
@@ -63,34 +69,42 @@ function initialize(element, nodes, links, dimensions) {
   let node = svg.selectAll('.node');
 
   function tick() {
-    node.attr("cx", function(d) {
+    node.attr('cx', function(d) {
         return d.x;
       })
-      .attr("cy", function(d) {
+      .attr('cy', function(d) {
         return d.y;
-      })
-
-    link.attr("x1", function(d) {
-        return d.source.x;
-      })
-      .attr("y1", function(d) {
-        return d.source.y;
-      })
-      .attr("x2", function(d) {
-        return d.target.x;
-      })
-      .attr("y2", function(d) {
-        return d.target.y;
       });
+
+    node.attr('transform', (d) => {
+      return `translate(${d.x},${d.y})`;
+    });
+
+    /*    link.attr('x1', function(d) {
+            return d.source.x;
+          })
+          .attr('y1', function(d) {
+            return d.source.y;
+          })
+          .attr('x2', function(d) {
+            return d.target.x;
+          })
+          .attr('y2', function(d) {
+            return d.target.y;
+          });*/
   }
 
   function update() {
-    link = link.data(forceLayout.links());
     node = node.data(forceLayout.nodes());
-    link.enter().insert("line", ".node").attr("class", "function-link");
-    link.exit().remove();
-
-    node.enter().append("circle").attr("class", "function-node").attr("r", 8);
+    /*    link = link.data(forceLayout.links());
+        link.enter().insert('line', '.node').attr('class', 'function-link');
+        link.exit().remove();
+    */
+    let nodeGroup = node.enter().append('g');
+    nodeGroup.append('circle').attr('class', 'function-node').attr('r', 8);
+    nodeGroup.append('text').text((d) => {
+      return d.d3Info.name;
+    });
     node.exit().remove();
 
     forceLayout.start();
@@ -98,16 +112,14 @@ function initialize(element, nodes, links, dimensions) {
 
   /* subscribe listener to start redrawing
      when the dynamic simulation is started */
-  UpdateStore.subscribeListener(function(newState) {
-    update(newState);
-  });
+  UpdateStore.subscribeListener(update);
 
   // TODO this can be moved to the play button
   // delay to let everything load so the animation doesn't start jerky
   setTimeout(() => {
-      let sequencer = Sequencer.start();
-    }, 1000);
-    // update();
+    let sequencer = Sequencer.start();
+  }, 1000);
+  // update();
 }
 
 function appendArrow(svg) {

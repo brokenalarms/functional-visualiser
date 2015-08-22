@@ -69,6 +69,7 @@ var buildJs = function(watch) {
     'escodegen',
     'brace',
     'react-remarkable',
+    'uuid-js',
   ];
 
   var vendorBundler = browserify({

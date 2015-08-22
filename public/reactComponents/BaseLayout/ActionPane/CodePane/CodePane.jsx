@@ -23,7 +23,6 @@ class CodePane {
     options: {
       theme: 'solarized_dark',
       mode: 'javascript',
-      $blockScrolling: 'infinity',
       height: '800px',
       width: '100%',
       fontSize: 18,
@@ -32,7 +31,8 @@ class CodePane {
   }
 
   componentDidMount = () => {
-    UpdateStore.subscribeListener(this.onUpdate);
+    this.refs.aceEditor.editor.$blockScrolling = Infinity;
+      UpdateStore.subscribeListener(this.onUpdate);
   }
 
   componentWillUnmount() {

@@ -4,12 +4,23 @@ const event = require('events');
 function UpdateStore() {
   const updateStore = Object.create(event.EventEmitter.prototype);
 
-  const state = {
+  let state = {
     range: {},
+    nodes: [],
+    links: [],
   };
 
   function subscribeListener(callback) {
     updateStore.on('update', callback);
+  }
+
+
+  function resetState() {
+    state = {
+      range: {},
+      nodes: [],
+      links: [],
+    };
   }
 
   function unsubscribeListener(callback) {
@@ -20,16 +31,16 @@ function UpdateStore() {
     return state;
   }
 
-  function updateState(newOpts) {
-    Object.assign(state, newOpts);
-    //state.push(newState);
+  // sequencer controls this
+  function sendUpdate() {
     updateStore.emit('update', state);
   }
   return {
     subscribeListener,
     unsubscribeListener,
-    updateState,
+    sendUpdate,
     getState,
+    resetState,
   };
 }
 
