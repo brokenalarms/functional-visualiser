@@ -17,7 +17,7 @@ function astTools() {
     });
   }
 
-  function createCode(ast){
+  function createCode(ast) {
     return escodegen.generate(ast);
   }
 
@@ -65,7 +65,7 @@ function astTools() {
   }
 
   return {
-    astTools, createAst, createsNewFunctionScope,
+    astTools, createAst, createCode, createsNewFunctionScope,
     addScopeInfo, getFirstActionSteps,
   };
 }

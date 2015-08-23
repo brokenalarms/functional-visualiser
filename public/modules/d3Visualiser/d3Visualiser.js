@@ -114,11 +114,11 @@ function initialize(element, nodes, links, dimensions) {
      when the dynamic simulation is started */
   UpdateStore.subscribeListener(update);
 
-  // TODO this can be moved to the play button
+  // TODO this can be anywhere, move to the play button
   // delay to let everything load so the animation doesn't start jerky
   setTimeout(() => {
     let sequencer = Sequencer.start();
-  }, 1000);
+  }, 0);
   // update();
 }
 
