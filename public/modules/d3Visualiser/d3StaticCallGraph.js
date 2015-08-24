@@ -2,10 +2,10 @@
 // D3 functions
 // D3 controls the VisPane React component contents
 // uses the standard D3 initialize / update pattern
-// except update occurs through UpdateStore emit event
+// except update occurs through SequencerStore emit event
 // ======================================================
 import d3 from 'd3';
-import UpdateStore from '../stores/UpdateStore.js';
+import SequencerStore from '../stores/SequencerStore.js';
 import Sequencer from '../Sequencer/Sequencer.js';
 let cola = require('webcola');
 
@@ -163,7 +163,7 @@ function initialize(element, nodes, links, dimensions) {
   /* start sequencer to drive CodePane and VisPane, and
      listen for updates
      the event listener will be destroyed when React updates. */
-  UpdateStore.subscribeListener(function(newState) {
+  SequencerStore.subscribeListener(function(newState) {
     update(newState);
   });
   let sequencer = new Sequencer().start();

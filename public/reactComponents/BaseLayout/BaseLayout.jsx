@@ -33,11 +33,10 @@ class BaseLayout extends React.Component {
   render = () => {
     return (
       <div>
-      <MarkdownModal />
+      <MarkdownModal zDepth={5}/>
           <AppBar
             title="Functional Visualiser Prototype"
-            iconElementRight={<IconButton style={{zIndex: '2'}} tooltip="Live Options"><i className="material-icons" style={{color: '#D7F4F8'}}>expand_more</i></IconButton>}   
-            zDepth={0}
+            iconElementRight={<IconButton style={{zIndex: '2'}} tooltip="Live Options"><i className="material-icons" style={{color: '#D7F4F8'}}>expand_more</i></IconButton>}
             onLeftIconButtonTouchTap={this.setIsNavBarShowing.bind(this, true)}
           />
           <NavBar

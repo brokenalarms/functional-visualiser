@@ -35,6 +35,11 @@ class NavBar extends React.Component {
       functionId: 'functionalSum',
     }, {
       optionGroup: 'codeExamples',
+      text: 'Fibonnaci: recursion',
+      moduleId: 'assorted',
+      functionId: 'fibonnaci',
+    }, {
+      optionGroup: 'codeExamples',
       text: 'Smashing Magazine demo',
       moduleId: 'smashingMagazineDemo',
       functionId: 'demo',

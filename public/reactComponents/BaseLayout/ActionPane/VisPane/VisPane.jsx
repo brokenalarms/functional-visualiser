@@ -3,13 +3,11 @@ import initialize from '../../../../modules/d3Visualiser/d3Visualiser.js';
 
 // Interface between React and D3.
 // Initialize and code is pushed from above via ActionPane,
-// updates are pushed directly from updateStore without React knowing.
+// updates are pushed directly from SequencerStore without React knowing.
 
 class D3Root extends React.Component {
 
   static propTypes = {
-    nodes: React.PropTypes.array,
-    links: React.PropTypes.array,
     dimensions: React.PropTypes.object,
   }
 
@@ -31,13 +29,9 @@ class D3Root extends React.Component {
   }
 
   handoverToD3 = () => {
-    if (this.props.nodes) {
-      const element = React.findDOMNode(this);
-      initialize(element,
-        this.props.nodes,
-        this.props.links,
-        this.props.dimensions);
-    }
+    const element = React.findDOMNode(this);
+    initialize(element,
+      this.props.dimensions);
   }
 }
 export default D3Root;

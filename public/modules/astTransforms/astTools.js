@@ -1,6 +1,6 @@
 'use strict';
 
-// helper tools for various AST transforms.
+/* helper tools for various AST transforms. */
 
 import {parse} from 'acorn';
 import estraverse from 'estraverse';

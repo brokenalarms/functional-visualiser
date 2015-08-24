@@ -1,5 +1,7 @@
 import React from 'react';
-import UpdateStore from '../../../../../modules/stores/UpdateStore.js';
+import SequencerStore from '../../../../../modules/stores/SequencerStore.js';
+import CodeStore from '../../../../../modules/stores/CodeStore.js';
+import {throttle} from 'lodash';
 
 // made my own modifications to this and added to open source on GitHub
 import AceEditor from '../../../../../modules/vendor/react-ace/index.js';
@@ -9,7 +11,7 @@ require('brace/theme/solarized_dark');
 
 
 /* Interface between React and Ace Editor:
-   subscriptions to codeupdating via the UpdateStore
+   subscriptions to codeupdating via the SequencerStore
    change the underlying Ace Editor state directly and 
    so don't trigger React re-rendering */
 
@@ -37,49 +39,56 @@ class Editor {
   }
 
   componentDidMount = () => {
-    UpdateStore.subscribeListener(this.onUpdate);
+    SequencerStore.subscribeListener(this.onUpdate);
   }
 
   componentWillUnmount() {
-    UpdateStore.unsubscribeListener(this.onUpdate);
+    SequencerStore.unsubscribeListener(this.onUpdate);
   }
 
   onUpdate = () => {
     let editor = this.refs.aceEditor.editor;
-    if (UpdateStore.getLiveOptions().codeRunning) {
+    if (SequencerStore.getState().codeRunning) {
       editor.setReadOnly(true);
-      let execCode = UpdateStore.getState().execCode;
+      let execCode = SequencerStore.getState().execCode;
       if (execCode && editor.getValue() !== execCode) {
         editor.setValue(execCode, 1);
       }
-      let execCodeLine = UpdateStore.getState().execCodeLine;
+      let execCodeLine = SequencerStore.getState().execCodeLine;
       let range = editor.find(execCodeLine);
       if (!range) {
         /* backup selection due to potential of escodegen not rebuilding
            the exact same code string: selects whole row only.
            (loc selection info in node doesn't work due to indenting
             in editor) */
-        range = UpdateStore.getState().range.collapseRows();
+        range = SequencerStore.getState().range.collapseRows();
       }
       editor.selection.setSelectionRange(range);
     } else {
       // we have finished, need to allow editing again
       editor.setReadOnly(false);
+      editor.selection.clearSelection();
+      editor.moveCursorTo(0, 0);
     }
   }
+
+  onChangeCodeInEditor = () => {
+    if (this.refs && this.refs.aceEditor) {
+        CodeStore.set(this.refs.aceEditor.editor.getValue());
+    }
+  }
+
 
   render() {
     let {...other
     } = this.props.options;
-    return ( < AceEditor ref = {
-        'aceEditor'
-      }
-      name = "aceEditor"
-      value = {
-        this.props.codeString
-      } {...other
-      }
-      />
+    return (
+      <div>
+        <AceEditor ref="aceEditor"
+        value = {this.props.codeString}
+        onChange={this.onChangeCodeInEditor}
+        {...other}/>
+      </div>
     );
   }
 

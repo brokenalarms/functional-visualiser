@@ -1,5 +1,5 @@
-/* Sequencer, controlled by React ControlBar via UpdateStore store.
-   Inteprets next state, updates UpdateStore and drives synchronized
+/* Sequencer, controlled by React ControlBar via SequencerStore store.
+   Inteprets next state, updates SequencerStore and drives synchronized
    events to the Editor and visualizer underneath React. 
 
    Follows the initialise/update pattern as D3, as essentially
@@ -8,7 +8,9 @@
 */
 
 import OptionStore from '../stores/OptionStore.js';
-import UpdateStore from '../stores/UpdateStore.js';
+import CodeStore from '../stores/CodeStore.js';
+import LiveOptionStore from '../stores/LiveOptionStore.js';
+import SequencerStore from '../stores/SequencerStore.js';
 import Interpreter from '../vendor/JS-Interpreter/interpreter.js';
 import astTools from '../astTransforms/astTools.js';
 import interpreterTools from './interpreterTools.js';
@@ -16,60 +18,80 @@ import {cloneDeep, last} from 'lodash';
 
 function Sequencer() {
 
-  let interpreter, nodes, links;
+  let interpreter;
+  let astWithLocations;
 
-  function initialize() {
+  // run once on code parse from editor. State can then be reset without re-parsing.
+  function parseCode() {
+    // prevent modifications to the editor from time of first update.
+    SequencerStore.getState().codeRunning = true;
+    let codeString = (CodeStore.get()) ?
+      CodeStore.get().toString() : OptionStore.getOptions().staticCode.toString();
 
-    // direct access so the d3 forceLayout can track added/removed nodes
-    nodes = UpdateStore.getState().nodes;
-    links = UpdateStore.getState().links;
-
-    // prevent modifications to the editor from time of first update
-    UpdateStore.getLiveOptions().codeRunning = true;
-
+    // allow for commands typed in directly without enclosing function
+    let funcString = (codeString.slice(-1) !== '}') ?
+      `function runWrapper() { ${codeString} }` : codeString;
     // parse typed code string as function expression for interpreter
-    let codeString = OptionStore.getOptions().staticCode.toString();
-    let runString = (codeString.slice(0, 1) === '(' && codeString.slice(-3) === ')()') ?
-      codeString : '(' + codeString + ')()';
-    let astWithLocations = astTools.createAst(runString, true);
-    let execCode = astTools.createCode(astWithLocations);
-    /* save back so the dynamic selection range is correct
+    let runFuncString = (funcString.slice(0, 1) === '(' && funcString.slice(-3) === ')()') ?
+      funcString : '(' + funcString + ')()';
+    astWithLocations = astTools.createAst(runFuncString, true);
+    /* save back from AST to generated code and push that to the editor,
+       so the dynamic selection of running code is still correct
        if any trivial syntactical differences exist between 
-       the user's code and ast-generated code. */
-    UpdateStore.getState().execCode = execCode;
+       the user's code and AST-generated code. */
+    let execCode = astTools.createCode(astWithLocations);
+    SequencerStore.getState().execCode = execCode;
+    restartInterpreter();
+  }
+
+  /* resets interpreter and SequencerStore state to begin the program again,
+     without re-parsing code. */
+  function restartInterpreter() {
+    SequencerStore.resetState();
     interpreter = new Interpreter(astWithLocations);
   }
 
-  let state, prevState, doneAction;
+  /* Direct access by reference so the d3 forceLayout can track
+  added/removed nodes on reset. The SequencerStore is just a helper dispatcher
+   for the Sequencer so this coupling is OK. */
+  let nodes = SequencerStore.getState().nodes;
+  let links = SequencerStore.getState().links;
+
+
+  let state;
+  let prevState;
+  let doneAction;
 
   function update(singleStep) {
 
-    if (UpdateStore.getLiveOptions().codeRunning) {
+    if (singleStep || SequencerStore.getState().codeRunning) {
       doneAction = false;
 
-      // TODO - live adjustable options
-      let sequencerOptions = UpdateStore.getLiveOptions().sequencer;
-      let delay = sequencerOptions.delay;
+      if (interpreter.step()) {
+        // TODO - live adjustable options
+        let sequencerOptions = LiveOptionStore.getOptions().sequencer;
+        let delay = sequencerOptions.delay;
 
-      state = interpreter.stateStack[0];
-      if (state) {
-        console.log(state);
-        updateVisibleFunctionCalls(state, prevState, nodes, links);
+        state = interpreter.stateStack[0];
+        if (state) {
+          console.log(state);
+          updateVisibleFunctionCalls(state, prevState, nodes, links);
 
-        if (doneAction) {
-          // TODO - prevState for enter, current state for leaving code
-          UpdateStore.getState().range = interpreterTools.getCodeRange(prevState);
-          UpdateStore.getState().execCodeLine = astTools.createCode(prevState.node);
-          UpdateStore.sendUpdate();
+          if (doneAction) {
+            // TODO - prevState for enter, current state for leaving code
+            SequencerStore.getState().range = interpreterTools.getCodeRange(prevState);
+            SequencerStore.getState().execCodeLine = astTools.createCode(prevState.node);
+            SequencerStore.sendUpdate();
+          }
+          prevState = state;
         }
-        prevState = state;
-      }
-
-      if (!singleStep && interpreter.step()) {
-        setTimeout(update, (doneAction) ? delay : 0);
+        if (!singleStep) {
+          setTimeout(update, (doneAction) ? delay : 0);
+        } else if (singleStep && !doneAction) {
+          setTimeout(update.bind(null, singleStep), 0);
+        }
       } else {
-        UpdateStore.getLiveOptions().codeRunning = false;
-        UpdateStore.sendUpdate();
+        SequencerStore.resetState();
       }
     }
   }
@@ -122,8 +144,9 @@ function Sequencer() {
 
 
   return {
-    initialize,
+    initialize: parseCode,
     update,
+    restart: restartInterpreter,
   };
 
 }

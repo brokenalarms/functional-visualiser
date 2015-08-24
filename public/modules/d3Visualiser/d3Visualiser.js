@@ -39,20 +39,20 @@ let options = {
 // D3 functions
 // D3 controls the VisPane React component contents
 // uses the standard D3 initialize / update pattern
-// except update occurs through UpdateStore emit event
+// except update occurs through SequencerStore emit event.
 // ======================================================
 import d3 from 'd3';
-import UpdateStore from '../stores/UpdateStore.js';
+import SequencerStore from '../stores/SequencerStore.js';
 let cola = require('webcola');
 
-function initialize(element, nodes, links, dimensions) {
+function initialize(element, dimensions) {
   options.dimensions = dimensions;
 
   // TODO - these settings take over when we switch from
   // static to dynamic graph
-  
-  nodes = UpdateStore.getState().nodes;
-  links = UpdateStore.getState().links;
+
+  let nodes = SequencerStore.getState().nodes;
+  let links = SequencerStore.getState().links;
 
   // cleanup if React udpates and doesn't re-mount DOM element
   d3.select(element).selectAll('*').remove();
@@ -112,8 +112,8 @@ function initialize(element, nodes, links, dimensions) {
   }
 
   /* subscribe listener to start redrawing
-     when the dynamic simulation is started */
-  UpdateStore.subscribeListener(update);
+     when the dynamic simulation is started.*/
+  SequencerStore.subscribeListener(update);
 }
 
 function appendArrow(svg) {

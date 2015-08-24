@@ -7,7 +7,7 @@ import StaticCallGraph from '../../../modules/astTransforms/StaticCallGraph.js';
 
 
 class ActionPane extends React.Component {
-
+// TODO pass in one or other d3 graph from here
   constructor(props) {
     super(props);
     this.state = {
@@ -45,8 +45,6 @@ class ActionPane extends React.Component {
       return (
         <div className="flex-action-pane">
         <VisPane
-          nodes={nodes}
-          links={links}
           dimensions={{width: 1000, height: 800}}/>
         <CodePane
           codeString={codeString}
