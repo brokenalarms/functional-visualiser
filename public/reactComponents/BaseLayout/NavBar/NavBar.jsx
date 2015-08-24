@@ -85,10 +85,10 @@ class NavBar extends React.Component {
   handleClick = (e, selectedIndex, menuItem) => {
     switch (menuItem.optionGroup) {
       case 'codeExamples':
-        let selectedCode =
+        let staticCode =
           OptionStore.getOptions()[menuItem.optionGroup][menuItem.moduleId][menuItem.functionId];
         OptionStore.setOptions({
-          selectedCode,
+          staticCode,
           clickedItem: menuItem,
         });
         break;

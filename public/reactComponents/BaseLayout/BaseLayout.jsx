@@ -7,7 +7,7 @@
 */
 
 import React from 'react';
-import {AppBar} from 'material-ui';
+import {AppBar, IconButton, SearchIcon} from 'material-ui';
 
 import NavBar from './NavBar/NavBar.jsx';
 import ActionPane from './ActionPane/ActionPane.jsx';
@@ -36,6 +36,8 @@ class BaseLayout extends React.Component {
       <MarkdownModal />
           <AppBar
             title="Functional Visualiser Prototype"
+            iconElementRight={<IconButton style={{zIndex: '2'}} tooltip="Live Options"><i className="material-icons" style={{color: '#D7F4F8'}}>expand_more</i></IconButton>}   
+            zDepth={0}
             onLeftIconButtonTouchTap={this.setIsNavBarShowing.bind(this, true)}
           />
           <NavBar

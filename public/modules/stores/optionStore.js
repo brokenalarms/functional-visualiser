@@ -14,19 +14,17 @@ function OptionStore() {
 
   // read in available examples from constants file
   Object.assign(options, {
+    visualizationType: 'dynamic',
     clickedItem: null,
     codeExamples,
     markdown: {
       earlyDeliverable,
     },
     selectedMarkdown: null,
-    selectedCode: null,
-    sequencer: {
-      delay: 1000,
-    },
+    staticCode: null,
   });
   // TODO - just for testing, set to null initially
-  options.selectedCode = options.codeExamples.assorted.nestedReturn;
+  options.staticCode = options.codeExamples.assorted.nestedReturn;
 
   function subscribeListener(callback) {
     optionStore.on('change', callback);

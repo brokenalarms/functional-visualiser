@@ -11,12 +11,9 @@ class ActionPane extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      selectedCode: OptionStore.getOptions().selectedCode,
+      staticCode: OptionStore.getOptions().staticCode,
+      visualizationType: OptionStore.getOptions().visualizationType,
     };
-  }
-
-  static propTypes = {
-    currentLine: React.PropTypes.number,
   }
 
   componentDidMount() {
@@ -29,19 +26,20 @@ class ActionPane extends React.Component {
 
   onOptionsChanged = () => {
     this.setState({
-      selectedCode: OptionStore.getOptions().selectedCode,
+      staticCode: OptionStore.getOptions().staticCode,
+      visualizationType: OptionStore.getOptions().visualizationType,
     });
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
     let clickedItem = OptionStore.getOptions().clickedItem;
-    return (!nextProps.isNavBarShowing && nextState.selectedCode &&
+    return (!nextProps.isNavBarShowing && nextState.staticCode &&
       clickedItem && clickedItem.optionGroup === 'codeExamples');
   }
 
   render = () => {
-    let codeString = this.state.selectedCode.toString();
-    if (this.state.selectedCode) {
+    let codeString = this.state.staticCode.toString();
+    if (this.state.staticCode) {
       const [nodes, links] =
       StaticCallGraph.get(codeString);
       return (
@@ -51,7 +49,8 @@ class ActionPane extends React.Component {
           links={links}
           dimensions={{width: 1000, height: 800}}/>
         <CodePane
-          codeString={codeString} />
+          codeString={codeString}
+          visualizationType={this.state.visualizationType} />
       </div>
       );
     }

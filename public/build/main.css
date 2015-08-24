@@ -4,7 +4,8 @@
   flex-direction: row; }
 
 .flex-vis-pane {
-  flex-grow: 0; }
+  flex-grow: 0;
+  max-height: 1000px; }
 
 .flex-code-pane {
   flex-grow: 1;
@@ -21,7 +22,7 @@
 
 .function-link {
   stroke: darkgrey;
-  stroke-width: 3px; }
+  stroke-width: 1px; }
 
 .builtin-link {
   stroke: grey;

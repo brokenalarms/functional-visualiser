@@ -23,8 +23,7 @@ function isReturnToCallee(state, prevState) {
 
 function isExitingFunction(state, prevState, visibleScopes) {
   if (isReturnToCallee(state, prevState)) {
-    // we have transformed the function call into a literal result
-    let calleeName = getExitingCalleeName(state, prevState);
+    let calleeName = getExitingCalleeName(state);
     if (visibleScopes.has(calleeName) &&
       visibleScopes.get(calleeName) === state.node) {
       // console.log(visibleScopes.get(calleeName) === state.node);
@@ -34,7 +33,7 @@ function isExitingFunction(state, prevState, visibleScopes) {
   return false;
 }
 
-function getExitingCalleeName(state, prevState) {
+function getExitingCalleeName(state) {
   // now assuming we have either a valid callee exit or end of expressionStatement
   if (state.node.callee.type === 'Identifier') {
     return state.node.callee.name;

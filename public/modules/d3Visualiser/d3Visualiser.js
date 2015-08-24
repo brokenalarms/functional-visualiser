@@ -2,15 +2,17 @@
 let options = {
   graphType: 'd3',
   d3Force: {
-    charge: -400,
+    charge: -100,
     chargeDistance: 500,
     gravity: 0.05,
   },
   layout: {
     globalScopeFixed: false,
   },
-  width: null,
-  height: null,
+  dimensions: {
+    width: null,
+    height: null,
+  },
   funcBlock: {
     height: 200,
     width: 190,
@@ -22,10 +24,10 @@ let options = {
     display: 'call', // call, hierarchy, or both
     showBuiltinCalls: false,
     strength: function(d) {
-      return 0.01;
+      return 0.9;
     },
     distance: function(nodeCount) {
-      return options.width / Math.min(4, nodeCount - 1);
+      return options.dimensions.width / 5;
     },
   },
 };
@@ -41,7 +43,6 @@ let options = {
 // ======================================================
 import d3 from 'd3';
 import UpdateStore from '../stores/UpdateStore.js';
-import Sequencer from '../Sequencer/Sequencer.js';
 let cola = require('webcola');
 
 function initialize(element, nodes, links, dimensions) {
@@ -49,7 +50,7 @@ function initialize(element, nodes, links, dimensions) {
 
   // TODO - these settings take over when we switch from
   // static to dynamic graph
-  UpdateStore.resetState();
+  
   nodes = UpdateStore.getState().nodes;
   links = UpdateStore.getState().links;
 
@@ -80,26 +81,26 @@ function initialize(element, nodes, links, dimensions) {
       return `translate(${d.x},${d.y})`;
     });
 
-    /*    link.attr('x1', function(d) {
-            return d.source.x;
-          })
-          .attr('y1', function(d) {
-            return d.source.y;
-          })
-          .attr('x2', function(d) {
-            return d.target.x;
-          })
-          .attr('y2', function(d) {
-            return d.target.y;
-          });*/
+    link.attr('x1', function(d) {
+        return d.source.x;
+      })
+      .attr('y1', function(d) {
+        return d.source.y;
+      })
+      .attr('x2', function(d) {
+        return d.target.x;
+      })
+      .attr('y2', function(d) {
+        return d.target.y;
+      });
   }
 
   function update() {
     node = node.data(forceLayout.nodes());
-    /*    link = link.data(forceLayout.links());
-        link.enter().insert('line', '.node').attr('class', 'function-link');
-        link.exit().remove();
-    */
+    link = link.data(forceLayout.links());
+    link.enter().insert('line', '.node').attr('class', 'function-link');
+    link.exit().remove();
+
     let nodeGroup = node.enter().append('g');
     nodeGroup.append('circle').attr('class', 'function-node').attr('r', 8);
     nodeGroup.append('text').text((d) => {
@@ -113,13 +114,6 @@ function initialize(element, nodes, links, dimensions) {
   /* subscribe listener to start redrawing
      when the dynamic simulation is started */
   UpdateStore.subscribeListener(update);
-
-  // TODO this can be anywhere, move to the play button
-  // delay to let everything load so the animation doesn't start jerky
-  setTimeout(() => {
-    let sequencer = Sequencer.start();
-  }, 0);
-  // update();
 }
 
 function appendArrow(svg) {
@@ -149,6 +143,7 @@ function createNewForceLayout(graphType, nodes, links) {
     .nodes(nodes)
     .links(links)
     .size([options.dimensions.width, options.dimensions.height])
+    // .linkDistance(options.links.distance.bind(this, nodes.length));
     .linkDistance(options.links.distance.bind(this, nodes.length));
 
   if (graphType === 'd3') {
