@@ -3,12 +3,8 @@
 // js-interpreter results. Used by the Sequencer.
 // =============================================
 
-/* taken from ace-editor: 
-   although I'm using 'brace' library to access
-   ace-editor, Range wasn't included and so
-   needed to remove 'define' function
-   and use es6 export to use on browser side */
-import Range from '../vendor/range.js';
+let ace = require('brace');
+let Range = ace.acequire('ace/range').Range;
 
 function isFunctionCall(state, prevState) {
   return (state.scope && prevState.node &&
@@ -26,7 +22,6 @@ function isExitingFunction(state, prevState, visibleScopes) {
     let calleeName = getExitingCalleeName(state);
     if (visibleScopes.has(calleeName) &&
       visibleScopes.get(calleeName) === state.node) {
-      // console.log(visibleScopes.get(calleeName) === state.node);
       return true;
     }
   }

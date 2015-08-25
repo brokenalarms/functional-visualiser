@@ -1,37 +1,23 @@
 import React from 'react';
-import initialize from '../../../../modules/d3Visualiser/d3Visualiser.js';
+import D3DynamicInterface from './D3DynamicInterface/D3DynamicInterface.jsx';
 
-// Interface between React and D3.
-// Initialize and code is pushed from above via ActionPane,
-// updates are pushed directly from SequencerStore without React knowing.
+/* Connects the static or dynamic d3 interface depending on option. */
 
-class D3Root extends React.Component {
+class VisPane extends React.Component {
 
   static propTypes = {
     dimensions: React.PropTypes.object,
+    visualizationType: React.PropTypes.string,
   }
 
-  componentDidMount = () => {
-    /* this module is stateless; the parent decides
-       whether to update with new props,
-       at which point D3 is refreshed. */
-    this.handoverToD3();
-  }
-
-  componentDidUpdate = () => {
-    this.handoverToD3();
-  }
-
-  render() {
-    return (
-      <div className="flex-vis-pane"></div>
-    );
-  }
-
-  handoverToD3 = () => {
-    const element = React.findDOMNode(this);
-    initialize(element,
-      this.props.dimensions);
+  render = () => {
+    let d3Component = (this.props.visualizationType === 'static') ?
+      null : <D3DynamicInterface dimensions={this.props.dimensions} />;
+      return (
+        <div className="flex-vis-pane">
+        {d3Component}
+        </div>
+      );
   }
 }
-export default D3Root;
+export default VisPane;

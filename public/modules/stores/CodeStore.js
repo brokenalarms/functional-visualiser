@@ -6,7 +6,7 @@ const event = require('events');
 function CodeStore() {
   const codeStore = Object.create(event.EventEmitter.prototype);
 
-  let staticCode = null;
+  let staticCodeUser = null;
 
   function subscribeListener(callback) {
     codeStore.on('change', callback);
@@ -17,15 +17,12 @@ function CodeStore() {
   }
 
   function set(newCode) {
-    staticCode = newCode;
+    staticCodeUser = newCode;
     codeStore.emit('change');
   }
 
-  function onCodeEdited() {
-  }
-
   function get() {
-    return staticCode;
+    return staticCodeUser;
   }
 
   return {
@@ -33,7 +30,6 @@ function CodeStore() {
     unsubscribeListener,
     set,
     get,
-    onCodeEdited,
   };
 }
 export default new CodeStore;

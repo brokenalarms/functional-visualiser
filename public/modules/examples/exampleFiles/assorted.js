@@ -40,7 +40,7 @@ function nestedReturn() {
   var result = foo('fooParamPassed');
 }
 
-function fibonnaci() {
+function fibonacciLoop() {
   var result = [];
 
   function fibonacci(n, output) {
@@ -48,7 +48,7 @@ function fibonnaci() {
       b = 1,
       sum;
     for (var i = 0; i < n; i++) {
-      //output.push(a);
+      output.push(a);
       sum = a + b;
       a = b;
       b = sum;
@@ -57,6 +57,18 @@ function fibonnaci() {
   fibonacci(16, result);
 }
 
+function fibonacciRecursive() {
+  function fibonacci(n) {
+    if (n <= 2) {
+      return 1;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+  }
+
+  var result = fibonacci(8);
+}
+
 export default {
-  imperativeSum, functionalSum, nestedReturn, fibonnaci,
+  imperativeSum, functionalSum, nestedReturn,
+  fibonacciLoop, fibonacciRecursive,
 };

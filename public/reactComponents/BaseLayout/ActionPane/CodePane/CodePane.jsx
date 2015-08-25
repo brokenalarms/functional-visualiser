@@ -1,18 +1,29 @@
+/* Responsible for re-rendering the editor externally
+   if the selectedExample constant changes 
+   in the OptionStore.
+   The editor can then maintain state internally
+   and independently synchronise via the CodeStore. */
+
 import React from 'react';
 import Editor from './Editor/Editor.jsx';
-import ControlBar from './ControlBar/ControlBar.jsx';
+import DynamicControlBar from './ControlBar/DynamicControlBar/DynamicControlBar.jsx';
+
 class CodePane {
 
   static propTypes = {
-    codeString: React.PropTypes.string,
-    visualizerType: React.PropTypes.string,
+    staticCodeExample: React.PropTypes.func,
+    type: React.PropTypes.string,
   }
 
   render = () => {
+    let controlBar = (this.props.type === 'dynamic') ?
+      <DynamicControlBar /> :
+      null;
+
     return (
       <div className="flex-code-pane">
-        <ControlBar visualizationType={this.props.visualizationType}/>
-        <Editor codeString={this.props.codeString} />
+        {controlBar}
+        <Editor staticCodeExample={this.props.staticCodeExample} />
       </div>
     );
   }

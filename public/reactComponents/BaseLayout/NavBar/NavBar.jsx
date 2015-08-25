@@ -5,13 +5,12 @@ All setting of the OptionStore is done directly through here.
 import React from 'react';
 import mui from 'material-ui';
 import OptionStore from '../../../modules/stores/OptionStore.js';
-
+import CodeStore from '../../../modules/stores/CodeStore.js';
 const LeftNav = mui.LeftNav;
 const MenuItem = mui.MenuItem;
 
 class NavBar extends React.Component {
   static displayName = 'NavBar';
-
 
   static propTypes = {
     menuItems: React.PropTypes.array.isRequired,
@@ -35,9 +34,19 @@ class NavBar extends React.Component {
       functionId: 'functionalSum',
     }, {
       optionGroup: 'codeExamples',
-      text: 'Fibonnaci: recursion',
+      text: 'Nested return',
       moduleId: 'assorted',
-      functionId: 'fibonnaci',
+      functionId: 'nestedReturn',
+    }, {
+      optionGroup: 'codeExamples',
+      text: 'Fibonacci: loop',
+      moduleId: 'assorted',
+      functionId: 'fibonacciLoop',
+    }, {
+      optionGroup: 'codeExamples',
+      text: 'Fibonacci: recursion',
+      moduleId: 'assorted',
+      functionId: 'fibonacciRecursive',
     }, {
       optionGroup: 'codeExamples',
       text: 'Smashing Magazine demo',
@@ -90,12 +99,15 @@ class NavBar extends React.Component {
   handleClick = (e, selectedIndex, menuItem) => {
     switch (menuItem.optionGroup) {
       case 'codeExamples':
-        let staticCode =
+        // user has selected pre-written example; this resets the user-typed code.
+        let staticCodeExample =
           OptionStore.getOptions()[menuItem.optionGroup][menuItem.moduleId][menuItem.functionId];
         OptionStore.setOptions({
-          staticCode,
+          staticCodeExample,
           clickedItem: menuItem,
         });
+        CodeStore.set(null);
+
         break;
       case 'markdown':
         let selectedMarkdown = OptionStore.getOptions()[menuItem.optionGroup][menuItem.id];

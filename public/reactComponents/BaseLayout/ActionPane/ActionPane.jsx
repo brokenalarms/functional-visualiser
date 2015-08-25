@@ -1,18 +1,16 @@
 import React from 'react';
 import CodePane from './CodePane/CodePane.jsx';
 import VisPane from './VisPane/Vispane.jsx';
-
 import OptionStore from '../../../modules/stores/OptionStore.js';
-import StaticCallGraph from '../../../modules/astTransforms/StaticCallGraph.js';
-
 
 class ActionPane extends React.Component {
-// TODO pass in one or other d3 graph from here
+
   constructor(props) {
     super(props);
     this.state = {
-      staticCode: OptionStore.getOptions().staticCode,
-      visualizationType: OptionStore.getOptions().visualizationType,
+      staticCodeExample: OptionStore.getOptions().staticCodeExample,
+      visualizationType: OptionStore.getOptions().visualization.type,
+      visualizationDimensions: OptionStore.getOptions().visualization.dimensions,
     };
   }
 
@@ -26,33 +24,29 @@ class ActionPane extends React.Component {
 
   onOptionsChanged = () => {
     this.setState({
-      staticCode: OptionStore.getOptions().staticCode,
-      visualizationType: OptionStore.getOptions().visualizationType,
+      staticCodeExample: OptionStore.getOptions().staticCodeExample,
+      visualizationType: OptionStore.getOptions().visualization.type,
+      visualizationDimensions: OptionStore.getOptions().visualization.dimensions,
     });
   }
 
-  shouldComponentUpdate = (nextProps, nextState) => {
+/*  shouldComponentUpdate = (nextProps, nextState) => {
     let clickedItem = OptionStore.getOptions().clickedItem;
-    return (!nextProps.isNavBarShowing && nextState.staticCode &&
+    return (!nextProps.isNavBarShowing && nextState.staticCodeExample &&
       clickedItem && clickedItem.optionGroup === 'codeExamples');
-  }
+  }*/
 
   render = () => {
-    let codeString = this.state.staticCode.toString();
-    if (this.state.staticCode) {
-      const [nodes, links] =
-      StaticCallGraph.get(codeString);
-      return (
-        <div className="flex-action-pane">
+    return (
+      <div className="flex-action-pane">
         <VisPane
-          dimensions={{width: 1000, height: 800}}/>
+          type={this.state.visualizationType}
+          dimensions={this.state.visualizationDimensions}/>
         <CodePane
-          codeString={codeString}
-          visualizationType={this.state.visualizationType} />
+          staticCodeExample={this.state.staticCodeExample}
+          type={this.state.visualizationType} />
       </div>
-      );
-    }
-    return null;
+    );
   }
 }
 

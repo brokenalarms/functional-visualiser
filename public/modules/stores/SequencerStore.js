@@ -1,21 +1,19 @@
 /* The SequencerStore stores state related to the Sequencer, including
-    the currently executed code string. It dispatches to the Visualizer and Code Editor. */
+    the currently executed code string.
+    It dispatches to the Visualizer and Code Editor. */
 
 const event = require('events');
 
 function SequencerStore() {
   const sequencerStore = Object.create(event.EventEmitter.prototype);
 
-  const stateInt = {
+  let state = {
+    nodes: [],
+    links: [],
     range: null,
-    codeRunning: false,
     execCode: null,
-    execCodeLine: null,
+    execCodeBlock: null,
   };
-
-  let state = Object.assign({}, stateInt);
-  state.nodes = [];
-  state.links = [];
 
   function subscribeListener(callback) {
     sequencerStore.on('update', callback);
@@ -30,17 +28,14 @@ function SequencerStore() {
   }
 
   function resetState() {
-    // d3 needs the same array reference for updating to work
-    // without re-rendering via React
-    state.nodes.length = 0;
-    state.links.length = 0;
-    Object.assign(state, stateInt);
-    sendUpdate();
+    state.nodes = [];
+    state.links = [];
+    sendUpdate(true);
   }
 
   // sequencer controls this
-  function sendUpdate() {
-    sequencerStore.emit('update', state);
+  function sendUpdate(shouldResetD3) {
+    sequencerStore.emit('update', shouldResetD3);
   }
   return {
     subscribeListener,

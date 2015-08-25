@@ -11,29 +11,37 @@ import OptionStore from '../stores/OptionStore.js';
 import CodeStore from '../stores/CodeStore.js';
 import LiveOptionStore from '../stores/LiveOptionStore.js';
 import SequencerStore from '../stores/SequencerStore.js';
-import Interpreter from '../vendor/JS-Interpreter/interpreter.js';
+import Interpreter from '../vendor_mod/JS-Interpreter/interpreter.js';
 import astTools from '../astTransforms/astTools.js';
 import interpreterTools from './interpreterTools.js';
-import {cloneDeep, last} from 'lodash';
+import {clone, cloneDeep} from 'lodash';
 
 function Sequencer() {
 
   let interpreter;
   let astWithLocations;
+  let nodes;
+  let links;
 
-  // run once on code parse from editor. State can then be reset without re-parsing.
-  function parseCode() {
-    // prevent modifications to the editor from time of first update.
-    SequencerStore.getState().codeRunning = true;
+  /* run once on code parse from editor. State can then be reset without re-parsing.
+     Parsing will select user-written code once they have worked on/changed a preset example. */
+  function parseCodeAsIIFE() {
     let codeString = (CodeStore.get()) ?
-      CodeStore.get().toString() : OptionStore.getOptions().staticCode.toString();
+      CodeStore.get().toString().trim() :
+      OptionStore.getOptions().staticCodeExample.toString().trim();
 
-    // allow for commands typed in directly without enclosing function
-    let funcString = (codeString.slice(-1) !== '}') ?
-      `function runWrapper() { ${codeString} }` : codeString;
-    // parse typed code string as function expression for interpreter
-    let runFuncString = (funcString.slice(0, 1) === '(' && funcString.slice(-3) === ')()') ?
-      funcString : '(' + funcString + ')()';
+    let runFuncString;
+    // check whether function is an immediately invokable function expression (IIFE)
+    if (!(codeString.slice(0, 1) === '(' && codeString.slice(-3) === ')()')) {
+      if (codeString.slice(-1) !== '}') {
+        // allow for commands typed in directly without enclosing function
+        runFuncString = `(function Program() { ${codeString} })()`;
+      } else {
+        // parse typed function as IIFE for interpreter
+        runFuncString = '(' + codeString + ')()';
+      }
+    }
+
     astWithLocations = astTools.createAst(runFuncString, true);
     /* save back from AST to generated code and push that to the editor,
        so the dynamic selection of running code is still correct
@@ -41,57 +49,71 @@ function Sequencer() {
        the user's code and AST-generated code. */
     let execCode = astTools.createCode(astWithLocations);
     SequencerStore.getState().execCode = execCode;
-    restartInterpreter();
+    resetInterpreterAndSequencerStore();
   }
 
   /* resets interpreter and SequencerStore state to begin the program again,
      without re-parsing code. */
-  function restartInterpreter() {
+  function resetInterpreterAndSequencerStore() {
     SequencerStore.resetState();
-    interpreter = new Interpreter(astWithLocations);
+    /* SequencerStore now has new node/link refs */
+    nodes = SequencerStore.getState().nodes;
+    links = SequencerStore.getState().links;
+    // create deep copy so that d3 direct modifications are lost
+    let sessionAst = cloneDeep(astWithLocations).valueOf();
+    interpreter = new Interpreter(sessionAst);
+    // prevent modifications to the editor from time of first update.
+    LiveOptionStore.set({
+      isCodeRunning: false,
+    });
+    // this enables the editor again (receives event without codeRunning)
+    SequencerStore.sendUpdate();
   }
-
-  /* Direct access by reference so the d3 forceLayout can track
-  added/removed nodes on reset. The SequencerStore is just a helper dispatcher
-   for the Sequencer so this coupling is OK. */
-  let nodes = SequencerStore.getState().nodes;
-  let links = SequencerStore.getState().links;
 
 
   let state;
   let prevState;
   let doneAction;
 
-  function update(singleStep) {
+  function nextStep(singleStep) {
 
-    if (singleStep || SequencerStore.getState().codeRunning) {
+    if (singleStep || LiveOptionStore.isCodeRunning()) {
       doneAction = false;
 
       if (interpreter.step()) {
         // TODO - live adjustable options
-        let sequencerOptions = LiveOptionStore.getOptions().sequencer;
+        let sequencerOptions = LiveOptionStore.get().sequencer;
         let delay = sequencerOptions.delay;
 
-        state = interpreter.stateStack[0];
-        if (state) {
+        let sampleState = interpreter.stateStack[0];
+        if (sampleState) {
+          /* clone state to allow recursion.
+             shallow clone of relevant nested objects is sufficent
+             to give unique object reference for tracking,
+             and avoid d3 duplicated values at root.
+             Noticeably faster than just deepCloning the whole object. */
+          state = {
+            node: (sampleState.node) ? clone(sampleState.node).valueOf() : null,
+            scope: (sampleState.scope) ? clone(sampleState.scope).valueOf() : null,
+          };
           console.log(state);
           updateVisibleFunctionCalls(state, prevState, nodes, links);
 
           if (doneAction) {
             // TODO - prevState for enter, current state for leaving code
             SequencerStore.getState().range = interpreterTools.getCodeRange(prevState);
-            SequencerStore.getState().execCodeLine = astTools.createCode(prevState.node);
+            SequencerStore.getState().execCodeBlock = astTools.createCode(prevState.node);
             SequencerStore.sendUpdate();
           }
           prevState = state;
         }
         if (!singleStep) {
-          setTimeout(update, (doneAction) ? delay : 0);
+          setTimeout(nextStep, (doneAction) ? delay : 0);
         } else if (singleStep && !doneAction) {
-          setTimeout(update.bind(null, singleStep), 0);
+          setTimeout(nextStep.bind(null, singleStep), 0);
         }
       } else {
-        SequencerStore.resetState();
+        resetInterpreterAndSequencerStore();
       }
     }
   }
@@ -110,45 +132,50 @@ function Sequencer() {
         state.node.d3Info = {
           name,
         };
-        addCallLink(state.node, nodes, links);
-        nodes.push(state.node);
+        addCallLink(state.node, prevState.node, nodes, links);
+        /* Working from the start of the array mimics
+           state stack and allows for representation of recursion. */
+        nodes.unshift(state.node);
       } else if (interpreterTools.isExitingFunction(state, prevState, visibleScopes)) {
         let calleeName = interpreterTools.getExitingCalleeName(state);
         let visibleCallExpressionNode = visibleScopes.get(calleeName);
         removeCallLink(visibleCallExpressionNode, links);
         visibleScopes.delete(calleeName);
         doneAction = true;
-        nodes.pop();
+        nodes.shift();
       }
     }
   }
 
-  function addCallLink(d3Node, nodes, links) {
+  function addCallLink(callee, callExpressionNode, nodes, links) {
     if (nodes.length) {
-      let source = last(nodes);
-      let target = d3Node;
-      links.push({
-        source, target,
+      // linking from scope ('BlockStatement') to scope fo d3's representation
+      let source = nodes[0];
+      let target = callee;
+      // keeping track of actual callExpressionNode node to match it on return
+      links.unshift({
+        source, target, callExpressionNode,
       });
     }
   }
 
-  function removeCallLink(visibleCallExpressionNode, links) {
+  /* match by extra 'caller' node since this is the common base for
+     comparison on entry and exit */
+  function removeCallLink(callExpressionNode, links) {
     let index = null;
     links.some((link, i) => {
       index = i;
-      return link.source.node === visibleCallExpressionNode;
+      return link.callExpressionNode === callExpressionNode;
     });
     links.splice(index, 1);
   }
 
 
   return {
-    initialize: parseCode,
-    update,
-    restart: restartInterpreter,
+    initialize: parseCodeAsIIFE,
+    update: nextStep,
+    restart: resetInterpreterAndSequencerStore,
   };
-
 }
 
 export default new Sequencer;

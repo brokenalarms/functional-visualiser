@@ -14,17 +14,23 @@ function OptionStore() {
 
   // read in available examples from constants file
   Object.assign(options, {
-    visualizationType: 'dynamic',
+    visualization: {
+      type: 'dynamic',
+      dimensions: {
+        width: 1000,
+        height: 800
+      },
+    },
     clickedItem: null,
     codeExamples,
     markdown: {
       earlyDeliverable,
     },
     selectedMarkdown: null,
-    staticCode: null,
+    staticCodeExample: null,
   });
   // TODO - just for testing, set to null initially
-  options.staticCode = options.codeExamples.assorted.nestedReturn;
+  options.staticCodeExample = options.codeExamples.assorted.fibonacciRecursive;
 
   function subscribeListener(callback) {
     optionStore.on('change', callback);

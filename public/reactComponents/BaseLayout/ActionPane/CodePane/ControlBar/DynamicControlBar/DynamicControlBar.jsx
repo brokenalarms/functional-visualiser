@@ -1,8 +1,15 @@
 import React from 'react';
 import {Toolbar, ToolbarGroup, ToolbarSeparator, IconButton, FlatButton} from 'material-ui';
 
-import SequencerStore from '../../../../../../modules/stores/SequencerStore.js';
+/* clicking buttons on the DynamicControlBar either sends
+   commands to the Sequencer, which triggers changes in 
+   the LiveOptionStore and thus disables/enables various 
+   buttons on callback, or the LiveOptionStore is 
+   set directly, which the Sequencer checks on each update
+   cycle as well as calling back to enable/disable buttons here. */
+
 import CodeStore from '../../../../../../modules/stores/CodeStore.js';
+import LiveOptionStore from '../../../../../../modules/stores/LiveOptionStore.js';
 import Sequencer from '../../../../../../modules/Sequencer/Sequencer.js';
 
 class DynamicControlBar extends React.Component {
@@ -11,23 +18,20 @@ class DynamicControlBar extends React.Component {
     super(props);
     this.state = {
       codeParsed: false,
-      codeRunning: false,
-      codeErrors: false,
+      codeRunning: LiveOptionStore.isCodeRunning(),
     };
   }
 
   onPlay = () => {
-    let codeRunning = SequencerStore.getState().codeRunning = true;
-    this.setState({
-      codeRunning,
+    LiveOptionStore.set({
+      isCodeRunning: true,
     });
     Sequencer.update();
   }
 
   onPause = () => {
-    let codeRunning = SequencerStore.getState().codeRunning = false;
-    this.setState({
-      codeRunning,
+    LiveOptionStore.set({
+      isCodeRunning: false,
     });
   }
 
@@ -36,39 +40,33 @@ class DynamicControlBar extends React.Component {
   }
 
   onReset = () => {
-    this.setState({
-      codeRunning: false,
-    });
     Sequencer.restart();
   }
 
   onParse = () => {
+    Sequencer.initialize();
     this.setState({
       codeParsed: true,
     });
-    Sequencer.initialize();
   }
 
-  onEditorCodeChanged = () => {
-    if (CodeStore.get() !== null) {
-      // no errors, OK to parse
-      this.setState({
-        codeParsed: false,
-        codeRunning: false,
-        codeErrors: false,
-      });
-    } else {
-      this.setState({
-        codeParsed: false,
-        codeRunning: false,
-        codeErrors: true,
-      });
-    }
+  handleCodeStoreChange = () => {
+    // reset buttons; code has changed in editor
+    this.setState({
+      codeParsed: false,
+    });
+  }
 
+  handleLiveOptionStoreChange = () => {
+    // loop back from button presses to disable / enable state
+    this.setState({
+      codeRunning: LiveOptionStore.isCodeRunning(),
+    });
   }
 
   componentDidMount() {
-    CodeStore.subscribeListener(this.onEditorCodeChanged);
+    CodeStore.subscribeListener(this.handleCodeStoreChange);
+    LiveOptionStore.subscribeListener(this.handleLiveOptionStoreChange);
   }
 
   render = () => {
@@ -82,7 +80,7 @@ class DynamicControlBar extends React.Component {
         </ToolbarGroup>
         <ToolbarSeparator style={{'top': 0, 'margin': '0 12px 0 12px'}}/>
         <ToolbarGroup>
-          <FlatButton disabled={this.state.codeErrors || this.state.codeParsed} onClick={this.onParse} label="Parse editor code" primary={true} />
+          <FlatButton disabled={this.state.codeParsed} onClick={this.onParse} label="Parse editor code" primary={true} />
         </ToolbarGroup>
       </Toolbar>
     );
