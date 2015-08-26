@@ -171,6 +171,7 @@ gulp.task('watch', function() {
 gulp.task('syncBrowser', ['default'], function() {
   browserSync.init({
     port: '4000',
+    open: false,
     snippetOptions: {
       async: false
     },

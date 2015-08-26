@@ -7,10 +7,14 @@ const event = require('events');
 
 function LiveOptionStore() {
   const liveOptionStore = Object.create(event.EventEmitter.prototype);
+
   let liveOptions = {
-    isCodeRunning: false,
-    sequencer: {
-      delay: 500,
+    codeRunning: false,
+    interpreterStarted: false,
+    options: {
+      sequencer: {
+        delay: 50,
+      },
     },
   };
 
@@ -22,24 +26,30 @@ function LiveOptionStore() {
     liveOptionStore.removeListener('change', callback);
   }
 
-  function set(newOpts) {
+  function setOptions(newOpts) {
     Object.assign(liveOptions, newOpts);
     liveOptionStore.emit('change');
   }
 
-  function get() {
-    return liveOptions;
+  function setCodeRunning(flag) {
+    setOptions({
+      codeRunning: flag,
+    });
+  }
+
+  function getOptions() {
+    return liveOptions.options;
   }
 
   function isCodeRunning() {
-    return liveOptions.isCodeRunning;
+    return liveOptions.codeRunning;
   }
 
   return {
     subscribeListener,
     unsubscribeListener,
-    set,
-    get,
+    getOptions,
+    setCodeRunning,
     isCodeRunning,
   };
 }

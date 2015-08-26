@@ -18,13 +18,35 @@ function imperativeSum() {
 }
 
 function functionalSum() {
+  function reduce(array, callback, initialValue) {
+    var t = array,
+      len = t.length >>> 0,
+      k = 0,
+      value;
+    if (arguments.length == 2) {
+      value = arguments[1];
+    } else {
+      while (k < len && !(k in t)) {
+        k++;
+      }
+      value = t[k++];
+    }
+    for (; k < len; k++) {
+      if (k in t) {
+        value = callback(value, t[k], k, t);
+      }
+    }
+    return value;
+  };
+
   function sumFunction(arrayToSum) {
-    return arrayToSum.reduce(function(a, b) {
+    return reduce(arrayToSum, function(a, b) {
       return a + b;
     }, 0);
   }
+  var numbers = [1, 1, 4, 6, 10, 50, 500];
+  sumFunction(numbers);
 
-  sumFunction([1, 1]);
 }
 
 function nestedReturn() {
@@ -37,6 +59,11 @@ function nestedReturn() {
     }
     return bar(fooParamReceived);
   }
+
+  function funcWithoutReturn() {
+
+  }
+  funcWithoutReturn();
   var result = foo('fooParamPassed');
 }
 
@@ -65,7 +92,7 @@ function fibonacciRecursive() {
     return fibonacci(n - 1) + fibonacci(n - 2);
   }
 
-  var result = fibonacci(8);
+  var result = fibonacci(10);
 }
 
 export default {

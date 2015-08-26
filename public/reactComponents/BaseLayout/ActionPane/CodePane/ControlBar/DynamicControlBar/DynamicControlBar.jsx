@@ -19,27 +19,33 @@ class DynamicControlBar extends React.Component {
     this.state = {
       codeParsed: false,
       codeRunning: LiveOptionStore.isCodeRunning(),
+      allowResetButton: false,
     };
   }
 
   onPlay = () => {
-    LiveOptionStore.set({
-      isCodeRunning: true,
+    LiveOptionStore.setCodeRunning(true);
+    this.setState({
+      allowResetButton: true,
     });
     Sequencer.update();
   }
 
   onPause = () => {
-    LiveOptionStore.set({
-      isCodeRunning: false,
-    });
+    LiveOptionStore.setCodeRunning(false);
   }
 
-  onAdvance() {
+  onAdvance = () => {
+    this.setState({
+      allowResetButton: true,
+    });
     Sequencer.update(true);
   }
 
   onReset = () => {
+    this.setState({
+      allowResetButton: false,
+    });
     Sequencer.restart();
   }
 
@@ -47,6 +53,7 @@ class DynamicControlBar extends React.Component {
     Sequencer.initialize();
     this.setState({
       codeParsed: true,
+      allowResetButton: false,
     });
   }
 
@@ -76,7 +83,7 @@ class DynamicControlBar extends React.Component {
           <IconButton disabled={!this.state.codeParsed || this.state.codeRunning} onClick={this.onPlay} style={{'zIndex': 3}} tooltip="Play or resume dynamic execution"><i className="material-icons">play_arrow</i></IconButton>
           <IconButton disabled={!this.state.codeParsed || !this.state.codeRunning} onClick={this.onPause} style={{'zIndex': 3}} tooltip="Pause dynamic execution"><i className="material-icons">pause</i></IconButton>
           <IconButton disabled={!this.state.codeParsed || this.state.codeRunning} onClick={this.onAdvance} style={{'zIndex': 3}} tooltip="Advance one step"><i className="material-icons">skip_next</i></IconButton>
-          <IconButton disabled={!this.state.codeParsed} onClick={this.onReset} style={{'zIndex': 10}} tooltip="Stop and reset execution to start"><i className="material-icons">replay</i></IconButton>
+          <IconButton disabled={!this.state.codeParsed || !this.state.allowResetButton} onClick={this.onReset} style={{'zIndex': 10}} tooltip="Stop and reset execution to start"><i className="material-icons">replay</i></IconButton>
         </ToolbarGroup>
         <ToolbarSeparator style={{'top': 0, 'margin': '0 12px 0 12px'}}/>
         <ToolbarGroup>

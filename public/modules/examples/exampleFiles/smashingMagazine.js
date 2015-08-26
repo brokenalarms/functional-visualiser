@@ -4,20 +4,26 @@ const description = '';
 
 function demo() {
 
+var data = [
+  { 
+    name: "Jamestown",
+    population: 2047,
+    temperatures: [-34, 67, 101, 87]
+  },
+  {
+    name: "Awesome Town",
+    population: 3568,
+    temperatures: [-3, 4, 9, 12]
+  },
+  {
+    name: "Funky Town",
+    population: 1000000,
+    temperatures: [75, 75, 75, 75, 75]
+  }
+];
+
   function addNumbers(a, b) {
     return a + b;
-  }
-
-  function totalForArray(currentTotal, arr) {
-    currentTotal = addNumbers(currentTotal, arr[0]);
-
-    var remainingArr = arr.slice(1);
-
-    if (remainingArr.length > 0) {
-      return totalForArray(currentTotal, remainingArr);
-    } else {
-      return currentTotal;
-    }
   }
 
   function totalForArray(arr) {
@@ -66,7 +72,14 @@ function demo() {
     }
   }
 
-  var processed = combineArrays(pluck(data, 'temperatures').map(averageForArray), pluck(data, 'population'));
+  //var processed = combineArrays(pluck(data, 'temperatures').map(averageForArray), pluck(data, 'population'));
+
+var populations = pluck(data, 'population');
+var allTemperatures = pluck(data, 'temperatures');
+var averageTemps = allTemperatures.map(averageForArray);
+var processed = combineArrays(averageTemps, populations);
+
+
 }
 
 export default {

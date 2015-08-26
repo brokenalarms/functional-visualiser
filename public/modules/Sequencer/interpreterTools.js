@@ -7,41 +7,23 @@ let ace = require('brace');
 let Range = ace.acequire('ace/range').Range;
 
 function isFunctionCall(state, prevState) {
+  /* if the current state has scope, 
+     the previous will have a function with args passed in*/
   return (state.scope && prevState.node &&
     prevState.node.type === 'CallExpression');
 }
 
-function isReturnToCallee(state, prevState) {
-  return ((prevState.node.type === 'ReturnStatement' || prevState.scope) &&
-    state.node.type === 'CallExpression');
+function isReturnToCaller(state, prevState) {
+  return (state.node.type === 'CallExpression' &&
+    // functions with returns, omitting those that call further functions
+    ((prevState.node.type === 'ReturnStatement' && !prevState.node.argument.callee) ||
+      // end of unassigned (non-return) FunctionExpression
+      prevState.scope));
 }
 
-
-function isExitingFunction(state, prevState, visibleScopes) {
-  if (isReturnToCallee(state, prevState)) {
-    let calleeName = getExitingCalleeName(state);
-    if (visibleScopes.has(calleeName) &&
-      visibleScopes.get(calleeName) === state.node) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function getExitingCalleeName(state) {
-  // now assuming we have either a valid callee exit or end of expressionStatement
-  if (state.node.callee.type === 'Identifier') {
-    return state.node.callee.name;
-  }
-  if (state.node.callee.type === 'FunctionExpression') {
-    return state.node.callee.id.name;
-  }
-  throw new Error('unrecognised callee type for exit from function call');
-}
-
-function getCodeRange(state) {
-  if (state.node) {
-    let loc = state.node.loc;
+function getCodeRange(node) {
+  if (node) {
+    let loc = node.loc;
     let range = new Range(loc.start.line - 1, loc.start.column,
       loc.end.line, loc.end.column);
     return range;
@@ -51,8 +33,6 @@ function getCodeRange(state) {
 
 export default {
   isFunctionCall,
-  isReturnToCallee,
-  isExitingFunction,
-  getExitingCalleeName,
+  isReturnToCaller,
   getCodeRange,
 };

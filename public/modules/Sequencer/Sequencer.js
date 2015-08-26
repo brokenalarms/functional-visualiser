@@ -1,3 +1,13 @@
+import OptionStore from '../stores/OptionStore.js';
+import CodeStore from '../stores/CodeStore.js';
+import LiveOptionStore from '../stores/LiveOptionStore.js';
+import SequencerStore from '../stores/SequencerStore.js';
+import Interpreter from '../vendor_mod/JS-Interpreter/interpreter.js';
+import initFunc from '../jsInterpreterInit/jsInterpreterInit.js';
+import astTools from '../astTransforms/astTools.js';
+import interpreterTools from './interpreterTools.js';
+import {clone, cloneDeep, find, remove, last} from 'lodash';
+
 /* Sequencer, controlled by React ControlBar via SequencerStore store.
    Inteprets next state, updates SequencerStore and drives synchronized
    events to the Editor and visualizer underneath React. 
@@ -6,25 +16,16 @@
    this module performs a pre-processing of the interpreter results
    before each D3 forceLayout update.
 */
-
-import OptionStore from '../stores/OptionStore.js';
-import CodeStore from '../stores/CodeStore.js';
-import LiveOptionStore from '../stores/LiveOptionStore.js';
-import SequencerStore from '../stores/SequencerStore.js';
-import Interpreter from '../vendor_mod/JS-Interpreter/interpreter.js';
-import astTools from '../astTransforms/astTools.js';
-import interpreterTools from './interpreterTools.js';
-import {clone, cloneDeep} from 'lodash';
-
 function Sequencer() {
 
   let interpreter;
   let astWithLocations;
-  let nodes;
-  let links;
+  let updateNodes;
 
-  /* run once on code parse from editor. State can then be reset without re-parsing.
-     Parsing will select user-written code once they have worked on/changed a preset example. */
+  /* run once on code parse from editor.
+     State can then be reset without re-parsing.
+     Parsing will select user-written code once
+     they have worked on/changed a preset example. */
   function parseCodeAsIIFE() {
     let codeString = (CodeStore.get()) ?
       CodeStore.get().toString().trim() :
@@ -55,62 +56,50 @@ function Sequencer() {
   /* resets interpreter and SequencerStore state to begin the program again,
      without re-parsing code. */
   function resetInterpreterAndSequencerStore() {
+    // this enables the editor again after resetState event
+    LiveOptionStore.setCodeRunning(false);
     SequencerStore.resetState();
-    /* SequencerStore now has new node/link refs */
-    nodes = SequencerStore.getState().nodes;
-    links = SequencerStore.getState().links;
-    // create deep copy so that d3 direct modifications are lost
+    /* SequencerStore now has new node/link refs,
+       update via function closure */
+    updateNodes =
+      new FunctionCallChecker(SequencerStore.getState().nodes,
+        SequencerStore.getState().links);
+    /* create deep copy so that d3 root modifications
+     and interpreter transformations are not maintained */
     let sessionAst = cloneDeep(astWithLocations).valueOf();
-    interpreter = new Interpreter(sessionAst);
-    // prevent modifications to the editor from time of first update.
-    LiveOptionStore.set({
-      isCodeRunning: false,
-    });
-    // this enables the editor again (receives event without codeRunning)
-    SequencerStore.sendUpdate();
+    interpreter = new Interpreter(sessionAst, initFunc);
   }
-
-
-  let state;
-  let prevState;
-  let doneAction;
 
   function nextStep(singleStep) {
 
-    if (singleStep || LiveOptionStore.isCodeRunning()) {
-      doneAction = false;
-
+    if (singleStep) {
+      LiveOptionStore.setCodeRunning(true);
+    }
+    if (LiveOptionStore.isCodeRunning()) {
       if (interpreter.step()) {
         // TODO - live adjustable options
-        let sequencerOptions = LiveOptionStore.get().sequencer;
+        let sequencerOptions = LiveOptionStore.getOptions().sequencer;
         let delay = sequencerOptions.delay;
 
-        let sampleState = interpreter.stateStack[0];
-        if (sampleState) {
-          /* clone state to allow recursion.
-             shallow clone of relevant nested objects is sufficent
-             to give unique object reference for tracking,
-             and avoid d3 duplicated values at root.
-             Noticeably faster than just deepCloning the whole object. */
-          state = {
-            node: (sampleState.node) ? clone(sampleState.node).valueOf() : null,
-            scope: (sampleState.scope) ? clone(sampleState.scope).valueOf() : null,
-          };
-          console.log(state);
-          updateVisibleFunctionCalls(state, prevState, nodes, links);
-
-          if (doneAction) {
-            // TODO - prevState for enter, current state for leaving code
-            SequencerStore.getState().range = interpreterTools.getCodeRange(prevState);
-            SequencerStore.getState().execCodeBlock = astTools.createCode(prevState.node);
-            SequencerStore.sendUpdate();
-          }
-          prevState = state;
+        //console.log(cloneDeep(interpreter.stateStack[0]))
+        let doneAction = updateNodes.action(interpreter.stateStack);
+        if (doneAction) {
+          // TODO - prevState for enter, current state for leaving code
+          let representedNode = updateNodes.getCallerNode();
+          SequencerStore.getState().range = interpreterTools.getCodeRange(representedNode);
+          SequencerStore.getState().execCodeBlock = astTools.createCode(representedNode);
+          SequencerStore.sendUpdate();
         }
-        if (!singleStep) {
+
+        if (singleStep) {
+          if (doneAction) {
+            LiveOptionStore.setCodeRunning(false);
+          } else {
+            // keep skipping forward until we see something
+            nextStep(singleStep);
+          }
+        } else {
           setTimeout(nextStep, (doneAction) ? delay : 0);
-        } else if (singleStep && !doneAction) {
-          setTimeout(nextStep.bind(null, singleStep), 0);
         }
       } else {
         resetInterpreterAndSequencerStore();
@@ -118,64 +107,92 @@ function Sequencer() {
     }
   }
 
-  /* stores CallExpression node as shared point for object equality comparison
-     on entry and exit (prevState.node on entry, state.node on exit */
-  let visibleScopes = new Map();
+  function FunctionCallChecker(resetNodes, resetLinks) {
 
-  function updateVisibleFunctionCalls(state, prevState, nodes, links) {
-    if (prevState) {
+    let nodes = resetNodes;
+    let links = resetLinks;
+    let prevState;
+    let scopeChain = [];
+
+    function action(stateStack) {
+      let doneAction = false;
+      let state = stateStack[0];
+      if (state && prevState) {
+        doneAction = (addCalledFunctions(state) ||
+          removeExitingFunctions(state, stateStack)
+        );
+      }
+      prevState = state;
+      return doneAction;
+    }
+
+    function addCalledFunctions(state) {
       if (interpreterTools.isFunctionCall(state, prevState)) {
-        doneAction = true;
-        state.scope.caller = prevState;
-        let name = prevState.node.callee.name || prevState.node.callee.id.name;
-        visibleScopes.set(name, prevState.node);
-        state.node.d3Info = {
-          name,
+        let calleeName = prevState.node.callee.name || prevState.node.callee.id.name;
+
+        // add extra info describing recursion
+        if (scopeChain.length > 0) {
+          let callerInfo = last(scopeChain).displayInfo;
+          if (calleeName === callerInfo.calleeName) {
+            calleeName = `${calleeName} (recursion ${++callerInfo.recursionCount})`;
+          }
+        }
+
+        /* In JS, the parent scope for constructed functions is the global scope,
+         even if they were constructed in some other scope. So I have to track
+         my own 'parent' (callee) scope.*/
+        let d3EnterNode = {
+          displayInfo: {
+            calleeName: calleeName,
+            recursionCount: 0,
+          },
         };
-        addCallLink(state.node, prevState.node, nodes, links);
-        /* Working from the start of the array mimics
-           state stack and allows for representation of recursion. */
-        nodes.unshift(state.node);
-      } else if (interpreterTools.isExitingFunction(state, prevState, visibleScopes)) {
-        let calleeName = interpreterTools.getExitingCalleeName(state);
-        let visibleCallExpressionNode = visibleScopes.get(calleeName);
-        removeCallLink(visibleCallExpressionNode, links);
-        visibleScopes.delete(calleeName);
-        doneAction = true;
-        nodes.shift();
+        nodes.push(d3EnterNode);
+        addCallLink(d3EnterNode, last(scopeChain));
+        /* Tracking by scope reference allows for recursion:
+           since the interpreter generates new scopes for each function,
+           (and is synchronous). 
+           Doing via a scope -> d3Node map rather than pushing the scope directly
+           in order to leave the original scopes untouched,
+           as the JS-interpreter interferes with d3-added tick values. */
+        scopeChain.push(d3EnterNode);
+        return true;
+      }
+      return false;
+    }
+
+    function removeExitingFunctions(state, stateStack) {
+      if (interpreterTools.isReturnToCaller(state, prevState)) {
+        links.pop();
+        nodes.pop();
+        scopeChain.pop();
+        return true;
+      }
+      return false;
+    }
+
+    function addCallLink(callee, caller) {
+      if (caller && callee) {
+        links.push({
+          source: caller,
+          target: callee,
+        });
       }
     }
-  }
 
-  function addCallLink(callee, callExpressionNode, nodes, links) {
-    if (nodes.length) {
-      // linking from scope ('BlockStatement') to scope fo d3's representation
-      let source = nodes[0];
-      let target = callee;
-      // keeping track of actual callExpressionNode node to match it on return
-      links.unshift({
-        source, target, callExpressionNode,
-      });
-    }
+    return {
+      getCallerNode: () => {
+        return prevState.node;
+      },
+      action,
+    };
   }
-
-  /* match by extra 'caller' node since this is the common base for
-     comparison on entry and exit */
-  function removeCallLink(callExpressionNode, links) {
-    let index = null;
-    links.some((link, i) => {
-      index = i;
-      return link.callExpressionNode === callExpressionNode;
-    });
-    links.splice(index, 1);
-  }
-
 
   return {
     initialize: parseCodeAsIIFE,
     update: nextStep,
     restart: resetInterpreterAndSequencerStore,
   };
-}
 
+}
 export default new Sequencer;

@@ -17,8 +17,8 @@ function OptionStore() {
     visualization: {
       type: 'dynamic',
       dimensions: {
-        width: 1000,
-        height: 800
+        width: 1200,
+        height: 800,
       },
     },
     clickedItem: null,
