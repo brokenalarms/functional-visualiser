@@ -31,26 +31,27 @@ function Sequencer() {
       CodeStore.get().toString().trim() :
       OptionStore.getOptions().staticCodeExample.toString().trim();
 
-    let runFuncString;
+    let runFuncString = codeString;
     // check whether function is an immediately invokable function expression (IIFE)
-    if (!(codeString.slice(0, 1) === '(' && codeString.slice(-3) === ')()')) {
-      if (codeString.slice(-1) !== '}') {
+    // code gen makes '})();' into '}());' for some reason so this is covered
+    // in the third branch
+    if (!(codeString.slice(-1) === ')' || codeString.slice(-2) === ');' || codeString.slice(-4) === '());')) {
+      if (!(codeString.slice(-1) === '}' || codeString.slice(-2) === '};')) {
         // allow for commands typed in directly without enclosing function
-        runFuncString = `(function Program() { ${codeString} })()`;
+        runFuncString = `(function Program() { ${codeString} })();`;
       } else {
         // parse typed function as IIFE for interpreter
-        runFuncString = '(' + codeString + ')()';
+        runFuncString = '(' + codeString + ')();';
       }
     }
 
     astWithLocations = astTools.createAst(runFuncString, true);
     /* save back from AST to generated code and push that to the editor,
-       so the dynamic selection of running code is still correct
-       if any trivial syntactical differences exist between 
-       the user's code and AST-generated code. */
-    let execCodeString = astTools.createCode(astWithLocations);
+       so the dynamic selection of running code is still correct,
+       as there are trivial but syntactically differences between 
+       the user's code and AST-generated code before roundtrip. */
     SequencerStore.setEditorOutput({
-      execCodeString,
+      execCodeString: astTools.createCode(astWithLocations),
     });
     resetInterpreterAndSequencerStore();
   }

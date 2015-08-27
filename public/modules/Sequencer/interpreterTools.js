@@ -24,7 +24,7 @@ function isReturnToCaller(state, prevState) {
 function getCodeRange(node) {
   if (node) {
     let loc = node.loc;
-    let range = new Range(loc.start.line - 1, loc.start.column-4,
+    let range = new Range(loc.start.line - 1, loc.start.column,
       loc.end.line, loc.end.column);
     return range;
   }
