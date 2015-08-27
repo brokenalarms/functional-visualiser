@@ -13,7 +13,7 @@ function LiveOptionStore() {
     interpreterStarted: false,
     options: {
       sequencer: {
-        delay: 50,
+        delay: 10,
       },
     },
   };

@@ -25,9 +25,6 @@ class DynamicControlBar extends React.Component {
 
   onPlay = () => {
     LiveOptionStore.setCodeRunning(true);
-    this.setState({
-      allowResetButton: true,
-    });
     Sequencer.update();
   }
 
@@ -36,9 +33,7 @@ class DynamicControlBar extends React.Component {
   }
 
   onAdvance = () => {
-    this.setState({
-      allowResetButton: true,
-    });
+    LiveOptionStore.setCodeRunning(true);
     Sequencer.update(true);
   }
 
@@ -68,6 +63,7 @@ class DynamicControlBar extends React.Component {
     // loop back from button presses to disable / enable state
     this.setState({
       codeRunning: LiveOptionStore.isCodeRunning(),
+      allowResetButton: true,
     });
   }
 

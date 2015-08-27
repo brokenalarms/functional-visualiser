@@ -39,16 +39,19 @@ class Editor {
   }
 
   componentDidMount = () => {
-    SequencerStore.subscribeListener(this.onUpdate);
+    SequencerStore.subscribeListener(this.onSequencerActionUpdate);
+    LiveOptionStore.subscribeListener(this.onPlayPauseUpdate);
   }
 
   componentWillUnmount() {
-    SequencerStore.unsubscribeListener(this.onUpdate);
+    SequencerStore.unsubscribeListener(this.onSequencerActionUpdate);
+    LiveOptionStore.unsubscribeListener(this.onPlayPauseUpdate);
   }
 
-  onUpdate = () => {
-    let editor = this.refs.aceEditor.editor;
+  onSequencerActionUpdate = () => {
+    // action happened, disable editing and select range result
     if (LiveOptionStore.isCodeRunning()) {
+      let editor = this.refs.aceEditor.editor;
       editor.setReadOnly(true);
       let execCodeBlock = SequencerStore.getState().execCodeBlock;
       let range = editor.find(execCodeBlock);
@@ -60,7 +63,12 @@ class Editor {
         range = SequencerStore.getState().range.collapseRows();
       }
       editor.selection.setSelectionRange(range);
-    } else {
+    }
+  }
+
+  onPlayPauseUpdate = () => {
+    let editor = this.refs.aceEditor.editor;
+    if (!LiveOptionStore.isCodeRunning()) {
       // we have finished, need to allow editing again
       editor.setReadOnly(false);
       editor.selection.clearSelection();

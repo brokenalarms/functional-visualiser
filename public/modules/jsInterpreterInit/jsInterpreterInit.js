@@ -12,7 +12,7 @@ function init(interpreter, scope) {
       throw new TypeError('Array.prototype.reduce called on null or undefined');
     }
 
-    var t = interpreter.createObject(this),
+    var t = this,
       len = t.length >>> 0,
       k = 0,
       value;

@@ -72,16 +72,13 @@ function Sequencer() {
 
   function nextStep(singleStep) {
 
-    if (singleStep) {
-      LiveOptionStore.setCodeRunning(true);
-    }
     if (LiveOptionStore.isCodeRunning()) {
       if (interpreter.step()) {
         // TODO - live adjustable options
         let sequencerOptions = LiveOptionStore.getOptions().sequencer;
         let delay = sequencerOptions.delay;
 
-        //console.log(cloneDeep(interpreter.stateStack[0]))
+        console.log(cloneDeep(interpreter.stateStack[0]))
         let doneAction = updateNodes.action(interpreter.stateStack);
         if (doneAction) {
           // TODO - prevState for enter, current state for leaving code
@@ -96,7 +93,7 @@ function Sequencer() {
             LiveOptionStore.setCodeRunning(false);
           } else {
             // keep skipping forward until we see something
-            nextStep(singleStep);
+            setTimeout(nextStep.bind(null, singleStep), 0);
           }
         } else {
           setTimeout(nextStep, (doneAction) ? delay : 0);
@@ -112,7 +109,6 @@ function Sequencer() {
     let nodes = resetNodes;
     let links = resetLinks;
     let prevState;
-    let scopeChain = [];
 
     function action(stateStack) {
       let doneAction = false;
@@ -131,8 +127,8 @@ function Sequencer() {
         let calleeName = prevState.node.callee.name || prevState.node.callee.id.name;
 
         // add extra info describing recursion
-        if (scopeChain.length > 0) {
-          let callerInfo = last(scopeChain).displayInfo;
+        if (nodes.length > 0) {
+          let callerInfo = last(nodes).displayInfo;
           if (calleeName === callerInfo.calleeName) {
             calleeName = `${calleeName} (recursion ${++callerInfo.recursionCount})`;
           }
@@ -147,15 +143,14 @@ function Sequencer() {
             recursionCount: 0,
           },
         };
+        addCallLink(d3EnterNode, last(nodes));
         nodes.push(d3EnterNode);
-        addCallLink(d3EnterNode, last(scopeChain));
         /* Tracking by scope reference allows for recursion:
            since the interpreter generates new scopes for each function,
            (and is synchronous). 
            Doing via a scope -> d3Node map rather than pushing the scope directly
            in order to leave the original scopes untouched,
            as the JS-interpreter interferes with d3-added tick values. */
-        scopeChain.push(d3EnterNode);
         return true;
       }
       return false;
@@ -165,7 +160,6 @@ function Sequencer() {
       if (interpreterTools.isReturnToCaller(state, prevState)) {
         links.pop();
         nodes.pop();
-        scopeChain.pop();
         return true;
       }
       return false;
