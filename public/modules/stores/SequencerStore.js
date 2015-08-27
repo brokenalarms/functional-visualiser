@@ -1,17 +1,23 @@
-/* The SequencerStore stores state related to the Sequencer, including
+/* The SequencerStore stores d3LinkedState related to the Sequencer, including
     the currently executed code string.
-    It dispatches to the Visualizer and Code Editor. */
+    It dispatches to the Visualizer and Code Editor.
+    Update is controlled by the Sequencer, when
+    d3 and the editor both have the relevant info
+    a single event is sent to both. */
 
 const event = require('events');
 
 function SequencerStore() {
   const sequencerStore = Object.create(event.EventEmitter.prototype);
 
-  let state = {
+  let d3LinkedState = {
     nodes: [],
     links: [],
+  };
+
+  let editorOutput = {
     range: null,
-    execCode: null,
+    execCodeString: null,
     execCodeBlock: null,
   };
 
@@ -23,13 +29,21 @@ function SequencerStore() {
     sequencerStore.removeListener('update', callback);
   }
 
-  function getState() {
-    return state;
+  function linkSequencerToD3Data() {
+    return d3LinkedState;
+  }
+
+  function getEditorOutput() {
+    return editorOutput;
+  }
+
+  function setEditorOutput(output) {
+    Object.assign(editorOutput, output);
   }
 
   function resetState() {
-    state.nodes = [];
-    state.links = [];
+    d3LinkedState.nodes = [];
+    d3LinkedState.links = [];
     sendUpdate(true);
   }
 
@@ -41,8 +55,10 @@ function SequencerStore() {
     subscribeListener,
     unsubscribeListener,
     sendUpdate,
-    getState,
-    resetState,
+    linkState: linkSequencerToD3Data,
+      getEditorOutput,
+      setEditorOutput,
+      resetState,
   };
 }
 

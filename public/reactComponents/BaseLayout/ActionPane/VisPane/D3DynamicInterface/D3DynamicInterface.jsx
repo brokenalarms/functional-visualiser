@@ -16,8 +16,8 @@ class D3DynamicInterface extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      nodes: SequencerStore.getState().nodes,
-      links: SequencerStore.getState().links,
+      nodes: SequencerStore.linkState().nodes,
+      links: SequencerStore.linkState().links,
     };
   }
 
@@ -53,8 +53,8 @@ class D3DynamicInterface extends React.Component {
       // SequencerStore has new array ref,
       // re-link to Store and re-initialize force layout
       this.setState({
-        nodes: SequencerStore.getState().nodes,
-        links: SequencerStore.getState().links,
+        nodes: SequencerStore.linkState().nodes,
+        links: SequencerStore.linkState().links,
       });
     } else {
       d3Update();

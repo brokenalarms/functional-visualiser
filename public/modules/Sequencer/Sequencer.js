@@ -48,8 +48,10 @@ function Sequencer() {
        so the dynamic selection of running code is still correct
        if any trivial syntactical differences exist between 
        the user's code and AST-generated code. */
-    let execCode = astTools.createCode(astWithLocations);
-    SequencerStore.getState().execCode = execCode;
+    let execCodeString = astTools.createCode(astWithLocations);
+    SequencerStore.setEditorOutput({
+      execCodeString,
+    });
     resetInterpreterAndSequencerStore();
   }
 
@@ -62,8 +64,8 @@ function Sequencer() {
     /* SequencerStore now has new node/link refs,
        update via function closure */
     updateNodes =
-      new FunctionCallChecker(SequencerStore.getState().nodes,
-        SequencerStore.getState().links);
+      new FunctionCallChecker(SequencerStore.linkState().nodes,
+        SequencerStore.linkState().links);
     /* create deep copy so that d3 root modifications
      and interpreter transformations are not maintained */
     let sessionAst = cloneDeep(astWithLocations).valueOf();
@@ -78,26 +80,26 @@ function Sequencer() {
         let sequencerOptions = LiveOptionStore.getOptions().sequencer;
         let delay = sequencerOptions.delay;
 
-        console.log(cloneDeep(interpreter.stateStack[0]))
+        console.log(cloneDeep(interpreter.stateStack[0]));
         let doneAction = updateNodes.action(interpreter.stateStack);
         if (doneAction) {
-          // TODO - prevState for enter, current state for leaving code
-          let representedNode = updateNodes.getCallerNode();
-          SequencerStore.getState().range = interpreterTools.getCodeRange(representedNode);
-          SequencerStore.getState().execCodeBlock = astTools.createCode(representedNode);
+          let representedNode = updateNodes.getCodeSelectionNode();
+          SequencerStore.setEditorOutput({
+            execCodeBlock: astTools.createCode(representedNode),
+            range: interpreterTools.getCodeRange(representedNode),
+          });
           SequencerStore.sendUpdate();
-        }
 
-        if (singleStep) {
-          if (doneAction) {
+          if (singleStep) {
             LiveOptionStore.setCodeRunning(false);
           } else {
-            // keep skipping forward until we see something
-            setTimeout(nextStep.bind(null, singleStep), 0);
+            setTimeout(nextStep, (doneAction) ? delay : 0);
           }
         } else {
-          setTimeout(nextStep, (doneAction) ? delay : 0);
+          // keep skipping forward until we see something
+          setTimeout(nextStep.bind(null, singleStep), 0);
         }
+        updateNodes.setPrevState();
       } else {
         resetInterpreterAndSequencerStore();
       }
@@ -108,17 +110,16 @@ function Sequencer() {
 
     let nodes = resetNodes;
     let links = resetLinks;
-    let prevState;
+    let state, prevState;
 
     function action(stateStack) {
       let doneAction = false;
-      let state = stateStack[0];
+      state = stateStack[0];
       if (state && prevState) {
         doneAction = (addCalledFunctions(state) ||
           removeExitingFunctions(state, stateStack)
         );
       }
-      prevState = state;
       return doneAction;
     }
 
@@ -174,10 +175,20 @@ function Sequencer() {
       }
     }
 
+    function getCodeSelectionNode() {
+      let codeSelectionNode = prevState.node;
+      return codeSelectionNode;
+    }
+
+    function setPrevState() {
+      if (state) {
+        prevState = state;
+      }
+    }
+
     return {
-      getCallerNode: () => {
-        return prevState.node;
-      },
+      getCodeSelectionNode,
+      setPrevState,
       action,
     };
   }
