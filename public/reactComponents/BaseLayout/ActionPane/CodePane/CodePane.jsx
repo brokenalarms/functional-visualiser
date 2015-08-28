@@ -12,11 +12,16 @@ class CodePane {
 
   static propTypes = {
     staticCodeExample: React.PropTypes.func,
-    type: React.PropTypes.string,
+    showDynamic: React.PropTypes.bool,
   }
 
+/*  shouldComponentUpdate = (nextProps) => {
+    return (this.props.staticCodeExample !== nextProps.staticCodeExample ||
+      this.props.showDynamic !== nextProps.showDynamic);
+  }
+*/
   render = () => {
-    let controlBar = (this.props.type === 'dynamic') ?
+    let controlBar = (this.props.showDynamic) ?
       <DynamicControlBar /> :
       null;
 

@@ -16,9 +16,11 @@ function CodeStore() {
     codeStore.removeListener('change', callback);
   }
 
-  function set(newCode) {
+  function set(newCode, surpressUpdate) {
     staticCodeUser = newCode;
+    if(!surpressUpdate){
     codeStore.emit('change');
+    }
   }
 
   function get() {

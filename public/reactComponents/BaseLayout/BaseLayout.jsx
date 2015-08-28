@@ -30,14 +30,6 @@ class BaseLayout extends React.Component {
     });
   }
 
-  handleRightIconClick = () => {}
-
-  handleDrag = (e, ui) => {
-    let slider = this.refs.slider;
-    console.log('reoauoea')
-    debugger;
-  }
-
   render = () => {
 
     return (

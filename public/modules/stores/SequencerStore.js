@@ -17,8 +17,8 @@ function SequencerStore() {
   };
 
   let delay = {
-    showDelayBetweenEditorAndAction: true,
-    sequencer: 10,
+    staggeEditorAndVisualizer: true,
+    sequencerDelay: 1000,
   };
 
   let editorOutput = {
@@ -55,12 +55,12 @@ function SequencerStore() {
     Object.assign(editorOutput, output);
   }
 
-  function setDelay(newDelay) {
-    delay.sequencer = newDelay;
+  function setDelayOptions(delayOpts) {
+    Object.assign(delay, delayOpts);
   }
 
-  function getDelay() {
-    return delay.sequencer;
+  function getDelayOptions() {
+    return delay;
   }
 
   function resetState() {
@@ -69,21 +69,34 @@ function SequencerStore() {
     sendUpdate(true);
   }
 
+  // synchronise code/visualizer steps or
+  // stagger them evenly to see cause/effect
+  // relationship.
   function sendUpdate(shouldResetD3) {
     let editorVisualizerGap = 0;
-    if (delay.showDelayBetweenEditorAndAction) {
+    if (delay.delayBetweenEditorAndAction) {
       editorVisualizerGap = delay.sequencer / 2;
     }
-    let stepComplete = new Promise((resolve) => {
-      sequencerStore.emit('updateEditor');
-      setTimeout(function() {
-          sequencerStore.emit('update', shouldResetD3);
+
+    let editorComplete = new Promise((resolve) => {
+      setTimeout(() => {
+          sequencerStore.emit('updateEditor');
           resolve(true);
         },
         editorVisualizerGap);
     });
-    return stepComplete;
+
+    editorComplete.then(() => {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          sequencerStore.emit('update', shouldResetD3);
+          resolve(true);
+        }, editorVisualizerGap);
+      });
+    });
   }
+
+
   return {
     subscribeListener, subscribeEditor,
     unsubscribeListener, unsubscribeEditor,
@@ -91,8 +104,8 @@ function SequencerStore() {
     linkState: linkSequencerToD3Data,
       getEditorOutput,
       setEditorOutput,
-      setDelay,
-      getDelay,
+      setDelayOptions,
+      getDelayOptions,
       resetState,
   };
 }

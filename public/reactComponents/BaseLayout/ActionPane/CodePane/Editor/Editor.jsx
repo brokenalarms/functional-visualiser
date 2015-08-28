@@ -92,7 +92,12 @@ class Editor {
        the OptionStore for user-modified code that has overwritten
        the selectedExample.*/
     if (this.refs && this.refs.aceEditor) {
-      CodeStore.set(this.refs.aceEditor.editor.getValue());
+      let editor = this.refs.aceEditor.editor;
+      // don't trigger change for programmatic events (adding IIFE info)
+      // as this will clear the state of the DynamicControlBar
+      if (editor.curOp && editor.curOp.command.name) {
+        CodeStore.set(this.refs.aceEditor.editor.getValue());
+      }
     }
   }
 

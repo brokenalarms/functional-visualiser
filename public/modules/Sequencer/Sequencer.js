@@ -59,9 +59,9 @@ function Sequencer() {
   /* resets interpreter and SequencerStore state to begin the program again,
      without re-parsing code. */
   function resetInterpreterAndSequencerStore() {
+    SequencerStore.resetState();
     // this enables the editor again after resetState event
     LiveOptionStore.setCodeRunning(false);
-    SequencerStore.resetState();
     /* SequencerStore now has new node/link refs,
        update via function closure */
     updateNodes =
@@ -77,7 +77,7 @@ function Sequencer() {
 
     if (LiveOptionStore.isCodeRunning()) {
       if (interpreter.step()) {
-        let delay = SequencerStore.getDelay();
+        let delay = SequencerStore.getDelayOptions().sequencerDelay;
 
         console.log(cloneDeep(interpreter.stateStack[0]));
         let doneAction = updateNodes.action(interpreter.stateStack);

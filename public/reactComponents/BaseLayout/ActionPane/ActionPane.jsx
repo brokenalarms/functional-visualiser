@@ -9,8 +9,8 @@ class ActionPane extends React.Component {
     super(props);
     this.state = {
       staticCodeExample: OptionStore.getOptions().staticCodeExample,
-      visualizationType: OptionStore.getOptions().visualization.type,
-      visualizationDimensions: OptionStore.getOptions().visualization.dimensions,
+      showDynamic: OptionStore.getOptions().showDynamic,
+      visualizationDimensions: OptionStore.getOptions().dimensions,
     };
   }
 
@@ -25,26 +25,20 @@ class ActionPane extends React.Component {
   onOptionsChanged = () => {
     this.setState({
       staticCodeExample: OptionStore.getOptions().staticCodeExample,
-      visualizationType: OptionStore.getOptions().visualization.type,
-      visualizationDimensions: OptionStore.getOptions().visualization.dimensions,
+      showDynamic: OptionStore.getOptions().showDynamic,
+      visualizationDimensions: OptionStore.getOptions().dimensions,
     });
   }
-
-/*  shouldComponentUpdate = (nextProps, nextState) => {
-    let clickedItem = OptionStore.getOptions().clickedItem;
-    return (!nextProps.isNavBarShowing && nextState.staticCodeExample &&
-      clickedItem && clickedItem.optionGroup === 'codeExamples');
-  }*/
 
   render = () => {
     return (
       <div className="flex-action-pane">
         <VisPane
-          type={this.state.visualizationType}
+          showDynamic={this.state.showDynamic}
           dimensions={this.state.visualizationDimensions}/>
         <CodePane
           staticCodeExample={this.state.staticCodeExample}
-          type={this.state.visualizationType} />
+          showDynamic={this.state.showDynamic} />
       </div>
     );
   }

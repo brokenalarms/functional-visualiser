@@ -40,14 +40,6 @@ class D3DynamicInterface extends React.Component {
     SequencerStore.unsubscribeListener(this.handleSequencerUpdate);
   }
 
-  render() {
-
-
-    return (
-      <div></div>
-    );
-  }
-
   handleSequencerUpdate = (shouldResetD3) => {
     if (shouldResetD3) {
       // SequencerStore has new array ref,
@@ -67,6 +59,12 @@ class D3DynamicInterface extends React.Component {
       this.state.nodes,
       this.state.links,
       this.props.dimensions);
+  }
+
+  render() {
+    return (
+      <div></div>
+    );
   }
 }
 export default D3DynamicInterface;

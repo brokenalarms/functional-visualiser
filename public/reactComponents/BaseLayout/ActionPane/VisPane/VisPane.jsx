@@ -7,12 +7,12 @@ class VisPane extends React.Component {
 
   static propTypes = {
     dimensions: React.PropTypes.object,
-    visualizationType: React.PropTypes.string,
+    showDynamic: React.PropTypes.bool,
   }
 
   render = () => {
-    let d3Component = (this.props.visualizationType === 'static') ?
-      null : <D3DynamicInterface dimensions={this.props.dimensions} />;
+    let d3Component = (this.props.showDynamic) ?
+      <D3DynamicInterface dimensions={this.props.dimensions} /> : null;
       return (
         <div className="flex-vis-pane">
         {d3Component}
