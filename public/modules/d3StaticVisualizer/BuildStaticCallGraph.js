@@ -5,8 +5,8 @@ import {parse} from 'acorn';
 import estraverse from 'estraverse';
 import escodegen from 'escodegen';
 import {includes, pluck, uniq as unique, last} from 'lodash';
-import DeclarationTracker from './DeclarationTracker.js';
-import astTools from './astTools.js';
+import DeclarationTracker from '../astTools/DeclarationTracker.js';
+import astTools from '../astTools/astTools.js';
 
 function StaticCallGraph() {
 
@@ -93,7 +93,7 @@ function StaticCallGraph() {
   }
 
   function typeIsIdentifier(type) {
-    if (type !== 'Identifier') {
+    if (!(type === 'Identifier' || type === 'FunctionExpression')) {
       throw new Error('Only Identifier variable types currently supported.');
     }
     return true;

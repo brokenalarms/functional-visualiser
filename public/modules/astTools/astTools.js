@@ -6,6 +6,8 @@ import {parse} from 'acorn';
 import estraverse from 'estraverse';
 import escodegen from 'escodegen';
 import {includes, pluck, uniq as unique, last, chain} from 'lodash';
+let ace = require('brace');
+let Range = ace.acequire('ace/range').Range;
 
 function astTools() {
 
@@ -74,9 +76,26 @@ function astTools() {
     return functionNodes;
   }
 
+  function getRunCodeString(codeString) {
+    let runFuncString = codeString;
+    // check whether function is an immediately invokable function expression (IIFE)
+    // code gen makes '})();' into '}());' for some reason so this is covered
+    // in the third branch
+    if (!(codeString.slice(-1) === ')' || codeString.slice(-2) === ');' || codeString.slice(-4) === '());')) {
+      if (!(codeString.slice(-1) === '}' || codeString.slice(-2) === '};')) {
+        // allow for commands typed in directly without enclosing function
+        runFuncString = `(function Program() { ${codeString} })();`;
+      } else {
+        // parse typed function as IIFE for interpreter
+        runFuncString = '(' + codeString + ')();';
+      }
+    }
+    return runFuncString;
+  }
+
   return {
     astTools, createAst, createCode, createsNewFunctionScope,
-    addScopeInfo, getFirstActionSteps, getCodeRange,
+    addScopeInfo, getFirstActionSteps, getCodeRange, getRunCodeString,
   };
 }
 

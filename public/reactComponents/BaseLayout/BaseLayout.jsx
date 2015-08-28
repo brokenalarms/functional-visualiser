@@ -36,7 +36,7 @@ class BaseLayout extends React.Component {
       <div>
       <MarkdownModal zDepth={5}/>
           <AppBar
-            title="Functional Visualiser Prototype"
+            title="Functional Visualiser"
             iconElementRight={<OptionMenu />}
             onLeftIconButtonTouchTap={this.setIsNavBarShowing.bind(this, true)} />
           <NavBar

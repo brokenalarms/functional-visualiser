@@ -1,5 +1,5 @@
 import React from 'react';
-import {initialize as d3Initialize, update as d3Update} from '../../../../../modules/d3DynamicVisualiser/d3DynamicVisualiser.js';
+import d3Dynamic from '../../../../../modules/d3DynamicVisualiser/d3DynamicVisualiser.js';
 import SequencerStore from '../../../../../modules/stores/SequencerStore.js';
 
 // Interface between React and D3.
@@ -38,6 +38,9 @@ class D3DynamicInterface extends React.Component {
 
   componentWillUnmount() {
     SequencerStore.unsubscribeListener(this.handleSequencerUpdate);
+    let element = React.findDOMNode(this);
+    d3Dynamic.destroy(element);
+    React.unmountComponentAtNode(element);
   }
 
   handleSequencerUpdate = (shouldResetD3) => {
@@ -49,13 +52,13 @@ class D3DynamicInterface extends React.Component {
         links: SequencerStore.linkState().links,
       });
     } else {
-      d3Update();
+      d3Dynamic.update();
     }
   }
 
   d3Restart = () => {
     let element = React.findDOMNode(this);
-    d3Initialize(element,
+    d3Dynamic.initialize(element,
       this.state.nodes,
       this.state.links,
       this.props.dimensions);
@@ -63,7 +66,7 @@ class D3DynamicInterface extends React.Component {
 
   render() {
     return (
-      <div></div>
+      <div className='d3-root'></div>
     );
   }
 }

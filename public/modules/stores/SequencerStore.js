@@ -17,8 +17,9 @@ function SequencerStore() {
   };
 
   let delay = {
-    staggeEditorAndVisualizer: true,
-    sequencerDelay: 1000,
+    staggerEditorAndVisualizer: true,
+    sequencerDelay: 0.1, // * 1000 = ms, this is sliderValue
+    delayFactor: 3000,
   };
 
   let editorOutput = {
@@ -69,30 +70,46 @@ function SequencerStore() {
     sendUpdate(true);
   }
 
-  // synchronise code/visualizer steps or
-  // stagger them evenly to see cause/effect
-  // relationship.
   function sendUpdate(shouldResetD3) {
-    let editorVisualizerGap = 0;
-    if (delay.delayBetweenEditorAndAction) {
-      editorVisualizerGap = delay.sequencer / 2;
+
+    if (shouldResetD3) {
+      sequencerStore.emit('updateEditor');
+      sequencerStore.emit('update', shouldResetD3);
+      return;
     }
+    let stepDelay = delay.sequencerDelay * delay.delayFactor;
+    return new Promise((resolveAll) => {
 
-    let editorComplete = new Promise((resolve) => {
-      setTimeout(() => {
-          sequencerStore.emit('updateEditor');
-          resolve(true);
-        },
-        editorVisualizerGap);
-    });
 
-    editorComplete.then(() => {
-      return new Promise((resolve) => {
+      if (delay.staggerEditorAndVisualizer) {
+        // stagger code/visualizer steps evenly
+        // to see cause/effect relationship.
+        stepDelay = stepDelay / 2;
+
+        let editorComplete = new Promise((resolveEditorStep) => {
+          setTimeout(() => {
+              sequencerStore.emit('updateEditor');
+              resolveEditorStep(true);
+            },
+            stepDelay);
+        });
+
+        editorComplete.then(() => {
+          setTimeout(() => {
+            sequencerStore.emit('update');
+            resolveAll(true);
+          }, stepDelay);
+        });
+
+      } else {
+        // run both events synchronously at the
+        // end of the stepDelay the return
         setTimeout(() => {
-          sequencerStore.emit('update', shouldResetD3);
-          resolve(true);
-        }, editorVisualizerGap);
-      });
+          sequencerStore.emit('update');
+          sequencerStore.emit('updateEditor');
+          resolveAll(true);
+        }, stepDelay);
+      }
     });
   }
 

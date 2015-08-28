@@ -6,8 +6,6 @@
 // =============================================
 
 import {last} from 'lodash';
-let ace = require('brace');
-let Range = ace.acequire('ace/range').Range;
 
 function isFunctionCall(state, prevState) {
   /* if the current state has scope, 
@@ -19,7 +17,8 @@ function isFunctionCall(state, prevState) {
 function isReturnToCaller(state, prevState) {
   return (state.node.type === 'CallExpression' &&
     // functions with returns, omitting those that call further functions
-    ((prevState.node.type === 'ReturnStatement' && !prevState.node.argument.callee) ||
+    ((prevState.node.type === 'ReturnStatement' &&
+        !(prevState.node.argument.callee)) ||
       // end of unassigned (non-return) FunctionExpression
       prevState.scope));
 }
@@ -107,9 +106,8 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   return {
     getCodeSelectionNode,
     nextStep: setPrevState,
-    action,
+      action,
   };
 }
 
 export default VisibleFunctionUpdater;
-

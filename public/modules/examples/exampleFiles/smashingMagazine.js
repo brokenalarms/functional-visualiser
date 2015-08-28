@@ -4,30 +4,26 @@ const description = '';
 
 function demo() {
 
-var data = [
-  { 
+  var data = [{
     name: "Jamestown",
     population: 2047,
     temperatures: [-34, 67, 101, 87]
-  },
-  {
+  }, {
     name: "Awesome Town",
     population: 3568,
     temperatures: [-3, 4, 9, 12]
-  },
-  {
+  }, {
     name: "Funky Town",
     population: 1000000,
     temperatures: [75, 75, 75, 75, 75]
-  }
-];
+  }];
 
   function addNumbers(a, b) {
     return a + b;
   }
 
   function totalForArray(arr) {
-    return arr.reduce(addNumbers);
+    return reduce(arr, addNumbers);
   }
 
   function average(total, count) {
@@ -45,11 +41,11 @@ var data = [
     // array.
     return function(item) {
       return item[propertyName];
-    }
+    };
   }
 
   function pluck(arr, propertyName) {
-    return arr.map(getItem(propertyName));
+    return map(getItem(propertyName), arr);
   }
 
   function combineArrays(arr1, arr2, finalArr) {
@@ -74,13 +70,66 @@ var data = [
 
   //var processed = combineArrays(pluck(data, 'temperatures').map(averageForArray), pluck(data, 'population'));
 
-var populations = pluck(data, 'population');
-var allTemperatures = pluck(data, 'temperatures');
-var averageTemps = allTemperatures.map(averageForArray);
-var processed = combineArrays(averageTemps, populations);
+  var populations = pluck(data, 'population');
+  var allTemperatures = pluck(data, 'temperatures');
+  var averageTemps = map(averageForArray, allTemperatures);
+  var processed = combineArrays(averageTemps, populations);
 
 
+  function map(callback, thisArg) {
+
+    var T, A, k;
+    // 1. Let O be the result of calling ToObject passing the |this| 
+    //    value as the argument.
+    var O = Object(this);
+
+    // 2. Let lenValue be the result of calling the Get internal 
+    //    method of O with the argument "length".
+    // 3. Let len be ToUint32(lenValue).
+    var len = O.length >>> 0;
+    if (typeof callback !== 'function') {
+      throw new TypeError(callback + ' is not a function');
+    }
+    if (arguments.length > 1) {
+      T = thisArg;
+    }
+    A = new Array(len);
+    k = 0;
+    while (k < len) {
+
+      var kValue, mappedValue;
+      if (k in O) {
+        kValue = O[k];
+        mappedValue = callback.call(T, kValue, k, O);
+        A[k] = mappedValue;
+      }
+      k++;
+    }
+    return A;
+  }
+
+  function reduce(array, callback, initialValue) {
+    var t = array,
+      len = t.length >>> 0,
+      k = 0,
+      value;
+    if (arguments.length == 2) {
+      value = arguments[1];
+    } else {
+      while (k < len && !(k in t)) {
+        k++;
+      }
+      value = t[k++];
+    }
+    for (; k < len; k++) {
+      if (k in t) {
+        value = callback(value, t[k], k, t);
+      }
+    }
+    return value;
+  }
 }
+
 
 export default {
   id, name, description, demo,

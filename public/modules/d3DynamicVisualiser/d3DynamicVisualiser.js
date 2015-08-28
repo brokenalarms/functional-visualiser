@@ -29,7 +29,7 @@ let options = {
 // ======================================================
 import d3 from 'd3';
 // shared by externally available update function
-let node, link, forceLayout;
+let svg, node, link, forceLayout;
 
 function initialize(element, nodes, links, dimensions) {
   options.dimensions.width = dimensions.width;
@@ -38,7 +38,7 @@ function initialize(element, nodes, links, dimensions) {
   // cleanup if React udpates and doesn't re-mount DOM element
   d3.select(element).selectAll('*').remove();
 
-  let svg = d3.select(element).append('svg')
+  svg = d3.select(element).append('svg')
     .attr('class', 'd3-root')
     .attr('width', options.dimensions.width)
     .attr('height', options.dimensions.height);
@@ -125,6 +125,11 @@ function update() {
   forceLayout.start();
 }
 
+function destroy() {
+  forceLayout.stop();
+  svg.selectAll('*').remove();
+}
+
 export default {
-  initialize, update,
+  initialize, update, destroy,
 };

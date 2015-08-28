@@ -116,9 +116,8 @@ function initialize(element, nodes, links, dimensions) {
   // allow for dragging of nodes to reposition functions
   let drag = forceLayout.drag()
     .on('dragstart', onDragStart);
-
-
-  let link = svg.selectAll('.function-link')
+    
+  let link = svg.selectAll('.function-link');
   let node = svg.selectAll('.function-node');
 
   function update(nodes, links) {

@@ -53,16 +53,10 @@ class DynamicControlBar extends React.Component {
   }
 
   handleCodeStoreChange = () => {
-    // reset buttons; code has changed in editor
-    // but doesn't matter if the code hasn't yet
-    // been parsed (which happens when the code
-    // is initially read in and replaced with an
-    // IIFE)
-    if (this.state.codeParsed) {
-      this.setState({
-        codeParsed: false,
-      });
-    }
+    // reset buttons; (user has) changed code in editor
+    this.setState({
+      codeParsed: false,
+    });
   }
 
   handleLiveOptionStoreChange = () => {

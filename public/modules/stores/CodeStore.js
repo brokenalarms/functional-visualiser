@@ -18,8 +18,8 @@ function CodeStore() {
 
   function set(newCode, surpressUpdate) {
     staticCodeUser = newCode;
-    if(!surpressUpdate){
-    codeStore.emit('change');
+    if (!surpressUpdate) {
+      codeStore.emit('change');
     }
   }
 
