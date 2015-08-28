@@ -8,13 +8,15 @@
 import React from 'react';
 import mui from 'material-ui';
 import injectTapEventPlugin from 'react-tap-event-plugin';
-
-// React components
 import BaseLayout from './BaseLayout/BaseLayout.jsx';
+
+// boilerplate for material-UI initialisation
+let ThemeManager = new mui.Styles.ThemeManager();
+ThemeManager.setTheme(ThemeManager.types.DARK);
+injectTapEventPlugin();
 
 class App extends React.Component {
 
-  // boilerplate for material-UI initialisation
   static childContextTypes = {
     muiTheme: React.PropTypes.object,
   }
@@ -22,9 +24,6 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     // boilerplate for Material-UI initialisation
-    this.ThemeManager = new mui.Styles.ThemeManager();
-    this.ThemeManager.setTheme(this.ThemeManager.types.DARK);
-    injectTapEventPlugin();
     this.state = {
       showNavBar: true,
     };
@@ -33,7 +32,7 @@ class App extends React.Component {
   // boilerplate for material-UI initialisation
   getChildContext() {
     return {
-      muiTheme: this.ThemeManager.getCurrentTheme(),
+      muiTheme: ThemeManager.getCurrentTheme(),
     };
   }
 

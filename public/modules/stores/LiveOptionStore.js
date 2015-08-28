@@ -1,22 +1,13 @@
-/* specifically for those options that can be applied on-the-fly as the dynamic
-   visualiser runs; the options are read directly on each pass of update() and so don't 
-   cause React to rerender the components involved.
-*/
+/* specifically to announce when the code is running or not, 
+   to give immediate timeout independent feedback to Editor
+   and ControlBar, and checked on each pass of the Sequencer. */
 
 const event = require('events');
 
 function LiveOptionStore() {
   const liveOptionStore = Object.create(event.EventEmitter.prototype);
 
-  let liveOptions = {
-    codeRunning: false,
-    interpreterStarted: false,
-    options: {
-      sequencer: {
-        delay: 10,
-      },
-    },
-  };
+  let codeRunning = false;
 
   function subscribeListener(callback) {
     liveOptionStore.on('change', callback);
@@ -26,29 +17,18 @@ function LiveOptionStore() {
     liveOptionStore.removeListener('change', callback);
   }
 
-  function setOptions(newOpts) {
-    Object.assign(liveOptions, newOpts);
+  function setCodeRunning(flag) {
+    codeRunning = flag;
     liveOptionStore.emit('change');
   }
 
-  function setCodeRunning(flag) {
-    setOptions({
-      codeRunning: flag,
-    });
-  }
-
-  function getOptions() {
-    return liveOptions.options;
-  }
-
   function isCodeRunning() {
-    return liveOptions.codeRunning;
+    return codeRunning;
   }
 
   return {
     subscribeListener,
     unsubscribeListener,
-    getOptions,
     setCodeRunning,
     isCodeRunning,
   };

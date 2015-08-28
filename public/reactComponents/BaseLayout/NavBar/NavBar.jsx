@@ -89,7 +89,7 @@ class NavBar extends React.Component {
       <LeftNav ref="leftNav"
             menuItems={this.props.menuItems}
             docked={false}
-            style={{'line-height': 1.5}}
+            style={{'lineHeight': 1.5}}
             onChange={this.handleClick}
             onNavClose={this.props.onNavClose} />
       </div>

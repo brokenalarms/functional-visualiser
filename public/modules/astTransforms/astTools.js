@@ -21,6 +21,16 @@ function astTools() {
     return escodegen.generate(ast);
   }
 
+  function getCodeRange(node) {
+    if (node) {
+      let loc = node.loc;
+      let range = new Range(loc.start.line - 1, loc.start.column,
+        loc.end.line, loc.end.column);
+      return range;
+    }
+    return null;
+  }
+
   function createsNewFunctionScope(node) {
     return (node.type === 'Program' ||
       node.type === 'FunctionDeclaration' ||
@@ -66,7 +76,7 @@ function astTools() {
 
   return {
     astTools, createAst, createCode, createsNewFunctionScope,
-    addScopeInfo, getFirstActionSteps,
+    addScopeInfo, getFirstActionSteps, getCodeRange,
   };
 }
 

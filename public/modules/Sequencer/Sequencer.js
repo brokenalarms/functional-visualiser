@@ -5,8 +5,8 @@ import SequencerStore from '../stores/SequencerStore.js';
 import Interpreter from '../vendor_mod/JS-Interpreter/interpreter.js';
 import initFunc from '../jsInterpreterInit/jsInterpreterInit.js';
 import astTools from '../astTransforms/astTools.js';
-import interpreterTools from './interpreterTools.js';
-import {clone, cloneDeep, find, remove, last} from 'lodash';
+import VisibleFunctionsUpdater from './VisibleFunctionsUpdater.js';
+import {cloneDeep} from 'lodash';
 
 /* Sequencer, controlled by React ControlBar via SequencerStore store.
    Inteprets next state, updates SequencerStore and drives synchronized
@@ -65,7 +65,7 @@ function Sequencer() {
     /* SequencerStore now has new node/link refs,
        update via function closure */
     updateNodes =
-      new FunctionCallChecker(SequencerStore.linkState().nodes,
+      new VisibleFunctionsUpdater(SequencerStore.linkState().nodes,
         SequencerStore.linkState().links);
     /* create deep copy so that d3 root modifications
      and interpreter transformations are not maintained */
@@ -77,9 +77,7 @@ function Sequencer() {
 
     if (LiveOptionStore.isCodeRunning()) {
       if (interpreter.step()) {
-        // TODO - live adjustable options
-        let sequencerOptions = LiveOptionStore.getOptions().sequencer;
-        let delay = sequencerOptions.delay;
+        let delay = SequencerStore.getDelay();
 
         console.log(cloneDeep(interpreter.stateStack[0]));
         let doneAction = updateNodes.action(interpreter.stateStack);
@@ -87,111 +85,28 @@ function Sequencer() {
           let representedNode = updateNodes.getCodeSelectionNode();
           SequencerStore.setEditorOutput({
             execCodeBlock: astTools.createCode(representedNode),
-            range: interpreterTools.getCodeRange(representedNode),
+            range: astTools.getCodeRange(representedNode),
           });
-          SequencerStore.sendUpdate();
-
-          if (singleStep) {
-            LiveOptionStore.setCodeRunning(false);
-          } else {
-            setTimeout(nextStep, (doneAction) ? delay : 0);
-          }
+          // wait until sequencer has completed timedout editor/d3
+          // output before recursing
+          SequencerStore.sendUpdate().then(() => {
+            if (singleStep) {
+              LiveOptionStore.setCodeRunning(false);
+            } else {
+              setTimeout(nextStep, (doneAction) ? delay : 0);
+            }
+          });
         } else {
           // keep skipping forward until we see something
+          // representing one of the actions that has
+          // a visualization component built for it
           setTimeout(nextStep.bind(null, singleStep), 0);
         }
-        updateNodes.setPrevState();
+        updateNodes.nextStep();
       } else {
         resetInterpreterAndSequencerStore();
       }
     }
-  }
-
-  function FunctionCallChecker(resetNodes, resetLinks) {
-
-    let nodes = resetNodes;
-    let links = resetLinks;
-    let state, prevState;
-
-    function action(stateStack) {
-      let doneAction = false;
-      state = stateStack[0];
-      if (state && prevState) {
-        doneAction = (addCalledFunctions(state) ||
-          removeExitingFunctions(state, stateStack)
-        );
-      }
-      return doneAction;
-    }
-
-    function addCalledFunctions(state) {
-      if (interpreterTools.isFunctionCall(state, prevState)) {
-        let calleeName = prevState.node.callee.name || prevState.node.callee.id.name;
-
-        // add extra info describing recursion
-        if (nodes.length > 0) {
-          let callerInfo = last(nodes).displayInfo;
-          if (calleeName === callerInfo.calleeName) {
-            calleeName = `${calleeName} (recursion ${++callerInfo.recursionCount})`;
-          }
-        }
-
-        /* In JS, the parent scope for constructed functions is the global scope,
-         even if they were constructed in some other scope. So I have to track
-         my own 'parent' (callee) scope.*/
-        let d3EnterNode = {
-          displayInfo: {
-            calleeName: calleeName,
-            recursionCount: 0,
-          },
-        };
-        addCallLink(d3EnterNode, last(nodes));
-        nodes.push(d3EnterNode);
-        /* Tracking by scope reference allows for recursion:
-           since the interpreter generates new scopes for each function,
-           (and is synchronous). 
-           Doing via a scope -> d3Node map rather than pushing the scope directly
-           in order to leave the original scopes untouched,
-           as the JS-interpreter interferes with d3-added tick values. */
-        return true;
-      }
-      return false;
-    }
-
-    function removeExitingFunctions(state, stateStack) {
-      if (interpreterTools.isReturnToCaller(state, prevState)) {
-        links.pop();
-        nodes.pop();
-        return true;
-      }
-      return false;
-    }
-
-    function addCallLink(callee, caller) {
-      if (caller && callee) {
-        links.push({
-          source: caller,
-          target: callee,
-        });
-      }
-    }
-
-    function getCodeSelectionNode() {
-      let codeSelectionNode = prevState.node;
-      return codeSelectionNode;
-    }
-
-    function setPrevState() {
-      if (state) {
-        prevState = state;
-      }
-    }
-
-    return {
-      getCodeSelectionNode,
-      setPrevState,
-      action,
-    };
   }
 
   return {

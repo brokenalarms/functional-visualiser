@@ -39,12 +39,12 @@ class Editor {
   }
 
   componentDidMount = () => {
-    SequencerStore.subscribeListener(this.onSequencerActionUpdate);
+    SequencerStore.subscribeEditor(this.onSequencerActionUpdate);
     LiveOptionStore.subscribeListener(this.onPlayPauseUpdate);
   }
 
   componentWillUnmount = () => {
-    SequencerStore.unsubscribeListener(this.onSequencerActionUpdate);
+    SequencerStore.unsubscribeEditor(this.onSequencerActionUpdate);
     LiveOptionStore.unsubscribeListener(this.onPlayPauseUpdate);
   }
 
@@ -75,12 +75,15 @@ class Editor {
   }
 
   onPlayPauseUpdate = () => {
+    // don't wait for the sequencer, it doesn't update
+    // needlessly if only advancing a single step.
+    // and even if it did, if the delay is set to high
+    // we would still want to
+    // give the user control again immediately.
     let editor = this.refs.aceEditor.editor;
     if (!LiveOptionStore.isCodeRunning()) {
       // we have finished, need to allow editing again
       editor.setReadOnly(false);
-      // editor.selection.clearSelection();
-      // editor.moveCursorTo(0, 0);
     }
   }
 
