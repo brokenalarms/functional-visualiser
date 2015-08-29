@@ -6,7 +6,7 @@
 
 import React from 'react';
 import Editor from './Editor/Editor.jsx';
-import DynamicControlBar from './ControlBar/DynamicControlBar/DynamicControlBar.jsx';
+import ControlBar from './ControlBar/ControlBar.jsx';
 
 class CodePane {
 
@@ -15,19 +15,10 @@ class CodePane {
     showDynamic: React.PropTypes.bool,
   }
 
-/*  shouldComponentUpdate = (nextProps) => {
-    return (this.props.staticCodeExample !== nextProps.staticCodeExample ||
-      this.props.showDynamic !== nextProps.showDynamic);
-  }
-*/
   render = () => {
-    let controlBar = (this.props.showDynamic) ?
-      <DynamicControlBar /> :
-      null;
-
     return (
       <div className="flex-code-pane">
-        {controlBar}
+        <ControlBar showDynamic={this.props.showDynamic}/>
         <Editor staticCodeExample={this.props.staticCodeExample} />
       </div>
     );

@@ -34,6 +34,7 @@ function astTools() {
   }
 
   function createsNewFunctionScope(node) {
+    // Expression statement?
     return (node.type === 'Program' ||
       node.type === 'FunctionDeclaration' ||
       node.type === 'FunctionExpression');
@@ -76,6 +77,24 @@ function astTools() {
     return functionNodes;
   }
 
+  function typeIsSupported(type) {
+    if (!(type === 'Identifier' ||
+        type === 'FunctionExpression')) {
+      throw new Error('Only Identifier variable types currently supported.');
+    }
+    return true;
+  }
+
+  function getCalleeName(node) {
+    if (node.callee.type === 'FunctionExpression') {
+      return node.callee.id.name;
+    }
+    if (node.callee.type === 'Identifier') {
+      return node.callee.name;
+    }
+    throw new Error('couldn\'t get callee name');
+  }
+
   function getRunCodeString(codeString) {
     let runFuncString = codeString;
     // check whether function is an immediately invokable function expression (IIFE)
@@ -95,7 +114,7 @@ function astTools() {
 
   return {
     astTools, createAst, createCode, createsNewFunctionScope,
-    addScopeInfo, getFirstActionSteps, getCodeRange, getRunCodeString,
+    addScopeInfo, getFirstActionSteps, typeIsSupported, getCodeRange, getCalleeName, getRunCodeString,
   };
 }
 

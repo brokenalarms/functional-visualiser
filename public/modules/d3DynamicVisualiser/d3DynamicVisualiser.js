@@ -128,6 +128,7 @@ function update() {
 function destroy() {
   forceLayout.stop();
   svg.selectAll('*').remove();
+  svg = forceLayout = node = link = null;
 }
 
 export default {

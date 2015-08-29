@@ -13,13 +13,14 @@ class VisPane extends React.Component {
 
   render = () => {
     let d3Component = (this.props.showDynamic) ?
-      <D3DynamicInterface dimensions={this.props.dimensions} /> :
-      <D3StaticInterface dimensions={this.props.dimensions} />;
-      return (
-        <div className="flex-vis-pane">
+      <D3DynamicInterface dimensions={this.props.dimensions} showDynamic={this.props.showDynamic} /> :
+      <D3StaticInterface dimensions={this.props.dimensions} showDynamic={this.props.showDynamic} />;
+    return (
+      <div className="flex-vis-pane"
+      style={{width: this.props.dimensions.width + 'px', height: this.props.dimensions.height + 'px'}}>
         {d3Component}
         </div>
-      );
+    );
   }
 }
 export default VisPane;

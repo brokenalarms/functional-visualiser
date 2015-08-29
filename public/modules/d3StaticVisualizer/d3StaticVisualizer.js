@@ -4,12 +4,9 @@
 // uses the standard D3 initialize / update pattern
 // except update occurs through SequencerStore emit event
 // ======================================================
-import d3 from 'd3';
-import SequencerStore from '../stores/SequencerStore.js';
-import Sequencer from '../Sequencer/Sequencer.js';
+let d3 = require('d3');
 let cola = require('webcola');
 
-// TODO - extract options into d3OptionsStore
 let options = {
   graphType: 'd3',
   dimensions: {
@@ -22,79 +19,46 @@ let options = {
     gravity: 0.01,
   },
   layout: {
-    globalScopeFixed: false,
+    globalScopeFixed: true,
   },
   funcBlock: {
-    height: 20,
-    width: 19,
+    height: 200,
+    width: 190,
     text: {
       lineHeight: 20,
     },
   },
   links: {
     display: 'call', // call, hierarchy, or both
-    showBuiltinCalls: false,
     strength: function(d) {
       return 0.01;
     },
-    distance: function(nodeCount) {
-      return options.dimensions.width / Math.min(4, nodeCount - 1);
+    distance: function(nodes) {
+      return options.dimensions.width /
+        Math.min(Math.max(nodes.length, 1), 15);
     },
   },
 };
 
+let svg, node, link, forceLayout;
+
 function initialize(element, nodes, links, dimensions) {
   options.dimensions = dimensions;
 
-
-  // TODO extract into codeOptionsStore =============
-  nodes.forEach((node) => {
-    Object.assign(node, {
-      width: options.funcBlock.width,
-      height: options.funcBlock.height,
-    });
-  });
-
   // take the global scope out and fix it in the top right to start
   if (options.layout.globalScopeFixed) {
-    let builtins = nodes[0];
-    Object.assign(builtins, {
-      x: 0,
-      y: 0,
-      fixed: true,
-    });
-    let globalScope = nodes[1];
+    let globalScope = nodes[0];
     Object.assign(globalScope, {
       x: options.dimensions.width,
       y: 0,
       fixed: true,
     });
   }
-  // TODO - extract this to codeOptionsStore to control from there
-  /*  let links = (() => {
-      switch (options.links.display) {
-        case 'call':
-          return linksObj.d3CallLinks;
-        case 'hierarchy':
-          return linksObj.d3HierarchyLinks;
-        case 'both':
-          return linksObj.d3HierarchyLinks.concat(linksObj.d3CallLinks);
-      }
-    })();*/
-
-  if (options.links.display === 'call' && !options.links.showBuiltinCalls) {
-    links = links.filter((link) => {
-      return link.target !== nodes[0];
-    });
-  }
-  // links = [];
-
-  // end TODO =========================================
 
   // cleanup if React udpates and doesn't re-mount DOM element
   d3.select(element).selectAll('*').remove();
 
-  let svg = d3.select(element).append('svg')
+  svg = d3.select(element).append('svg')
     .attr('class', 'd3-root')
     .attr('width', options.dimensions.width)
     .attr('height', options.dimensions.height);
@@ -112,26 +76,17 @@ function initialize(element, nodes, links, dimensions) {
     .append('svg:path')
     .attr('d', 'M2,2 L2,11 L10,6 L2,2');
 
-  let forceLayout = createNewForceLayout(options.graphType, nodes, links);
+  let tooltip = d3.select('body').append('div')
+    .attr('class', 'tooltip')
+    .style('opacity', 0);
+
+  forceLayout = createNewForceLayout(options.graphType, nodes, links);
   // allow for dragging of nodes to reposition functions
   let drag = forceLayout.drag()
     .on('dragstart', onDragStart);
-    
-  let link = svg.selectAll('.function-link');
-  let node = svg.selectAll('.function-node');
 
-  function update(nodes, links) {
-    node = node.data(nodes || []);
-    link = link.data(links || []);
-    link.enter().append('polyline');
-    drawFunctionLink(link);
-    node.enter().append('g')
-      .on('click', onClickNode)
-      .on('dblclick', onDoubleclickNode)
-    drawFunctionBlock(node);
-    node.exit().remove();
-    node.call(drag);
-  }
+  link = svg.selectAll('.function-link');
+  node = svg.selectAll('.function-node');
 
   // for the bounding window when dragging functionBlocks
   const inlay = 0;
@@ -140,32 +95,40 @@ function initialize(element, nodes, links, dimensions) {
   const maxAllowedX = options.dimensions.width - options.funcBlock.width;
   const maxAllowedY = options.dimensions.height - options.funcBlock.height;
   forceLayout.on('tick', function() {
-    /*    link.attr('points', (d) => {
-          console.log(d);
-          let x1 = Math.max(xBuffer, Math.min(options.dimensions.width - xBuffer, d.source.x + xBuffer));
-          let y1 = Math.max(yBuffer, Math.min(options.dimensions.height - yBuffer, d.source.y + yBuffer))
-          let x2 = Math.max(xBuffer, Math.min(options.dimensions.width - xBuffer, d.target.x + xBuffer));
-          let y2 = Math.max(yBuffer, Math.min(options.dimensions.height - yBuffer, d.target.y + yBuffer));
-          let midX = (x1 + x2) / 2;
-          let midY = (y1 + y2) / 2;
-
-          return `${x1},${y1} ${midX},${midY} ${x2},${y2}`;
-        });*/
+    link.attr('points', (d) => {
+      let x1 = Math.max(xBuffer, Math.min(options.dimensions.width - xBuffer, d.source.x + xBuffer));
+      let y1 = Math.max(yBuffer, Math.min(options.dimensions.height - yBuffer, d.source.y + yBuffer));
+      let x2 = Math.max(xBuffer, Math.min(options.dimensions.width - xBuffer, d.target.x + xBuffer));
+      let y2 = Math.max(yBuffer, Math.min(options.dimensions.height - yBuffer, d.target.y + yBuffer));
+      let midX = (x1 + x2) / 2;
+      let midY = (y1 + y2) / 2;
+      return `${x1},${y1} ${midX},${midY} ${x2},${y2}`;
+    });
 
     node.attr('transform', (d) => {
-      d.x = Math.max(inlay, Math.min(maxAllowedX, d.x || 0));
-      d.y = Math.max(inlay, Math.min(maxAllowedY, d.y || 0));
+      d.x = Math.max(inlay, Math.min(maxAllowedX, d.x));
+      d.y = Math.max(inlay, Math.min(maxAllowedY, d.y));
       return `translate(${d.x}, ${d.y})`;
     });
   });
 
-  /* start sequencer to drive CodePane and VisPane, and
-     listen for updates
-     the event listener will be destroyed when React updates. */
-  SequencerStore.subscribeListener(function(newState) {
-    update(newState);
-  });
-  let sequencer = new Sequencer().start();
+}
+  function update() {
+    node = node.data(forceLayout.nodes());
+    link = link.data(forceLayout.links());
+    link.enter().append('polyline');
+    drawFunctionLink(link);
+    node.enter().append('g')
+      .on('dblclick', onDoubleclickNode);
+    drawFunctionBlock(node, tooltip);
+    node.exit().remove();
+    node.call(drag);
+  }
+
+function destroy() {
+  forceLayout.stop();
+  svg.selectAll('*').remove();
+  svg = forceLayout = node = link = null;
 }
 
 // ===================
@@ -173,32 +136,31 @@ function initialize(element, nodes, links, dimensions) {
 // ===================
 
 function createNewForceLayout(graphType, nodes, links) {
-  let forceLayout;
+  let force;
   if (graphType === 'd3') {
-    forceLayout = d3.layout.force();
+    force = d3.layout.force();
   } else if (graphType === 'cola') {
     // colaJS improves and stabilises the d3 force layout graph
-    forceLayout = cola.d3adaptor();
+    force = cola.d3adaptor();
   }
-  forceLayout.size([options.dimensions.width, options.dimensions.height])
+  force.size([options.dimensions.width, options.dimensions.height])
     .nodes(nodes)
     .links(links)
-    .linkDistance(options.links.distance.bind(this, nodes.length));
+    .linkDistance(options.links.distance.bind(this, nodes));
 
   if (graphType === 'd3') {
-    forceLayout
+    force
       .charge(options.d3Force.charge)
       .gravity(options.d3Force.gravity)
       .linkStrength(options.links.strength)
       .chargeDistance(options.d3Force.chargeDistance)
       .start();
   } else if (graphType === 'cola') {
-    forceLayout
+    force
       .avoidOverlaps(true)
-      // .symmetricDiffLinkLengths(300)
       .start([10, 15, 20]);
   }
-  return forceLayout;
+  return force;
 }
 
 function drawFunctionLink(link) {
@@ -207,29 +169,31 @@ function drawFunctionLink(link) {
     .attr('marker-mid', 'url(#arrow)');
 }
 
-function drawFunctionBlock(funcBlock) {
+function drawFunctionBlock(funcBlock, tooltip) {
   funcBlock.append('rect')
     .attr('class', 'function-node')
     .attr('width', (d) => {
-      return d.width;
+      return d.width || options.funcBlock.width;
     })
     .attr('height', (d) => {
-      return d.height;
+      return d.height || options.funcBlock.height;
     })
     .attr('rx', 10)
     .attr('ry', 10);
 
-  /*  let addText = appendText(funcBlock, 10, 25);
-    addText('function-name', 'id');
-    let addHoverText = appendText(funcBlock, 160, 10, 170, 'rect');
-    addHoverText('function-hover');
-    addText('function-text', 'params');
-    addText('function-heading', 'Variables declared:');
-    addText('function-text', 'declarationsMade');
-    addText('function-heading', 'Variables mutated:');
-    addText('function-text', 'variablesMutated');
-    addText('function-heading', 'Functions called:');
-    addText('function-text', 'functionsCalled');*/
+  let addText = appendText(funcBlock, 10, 25);
+  addText('function-name', 'id');
+  let addHoverText = appendText(funcBlock, 160, 10, 170, 'rect');
+  let toolTipArea = addHoverText('function-hover');
+  addToolTip(toolTipArea, tooltip);
+  addText('function-text', 'scope');
+  addText('function-text', 'params');
+  addText('function-heading', 'Variables declared:');
+  addText('function-text', 'declarationsMade');
+  addText('function-heading', 'Variables mutated:');
+  addText('function-text', 'variablesMutated');
+  addText('function-heading', 'Functions called:');
+  addText('function-text', 'functionsCalled');
 
   function appendText(block, ...other) {
     let textBlock = block;
@@ -255,11 +219,26 @@ function drawFunctionBlock(funcBlock) {
       }
 
       y += options.funcBlock.text.lineHeight;
+      return textBlock;
     };
   }
 }
 
-function onClickNode(d) {}
+function addToolTip(area, tooltip) {
+  area.on('mouseover', function(d) {
+      tooltip.transition()
+        .duration(200)
+        .style('opacity', 0.9);
+      tooltip.text(d.scopeInfo.codeString)
+        .style('left', d3.event.pageX + 'px')
+        .style('top', d3.event.pageY - 28 + 'px');
+    })
+    .on('mouseout', function(d) {
+      tooltip.transition()
+        .duration(500)
+        .style('opacity', 0);
+    });
+}
 
 function onDragStart(d) {
   d3.select(this).select('rect').classed('fixed', d.fixed = true);
@@ -267,11 +246,9 @@ function onDragStart(d) {
   d3.event.sourceEvent.preventDefault();
 }
 
-function onDragEnd(d) {
-  return;
-}
-
 function onDoubleclickNode(d) {
   d3.select(this).select('rect').classed('fixed', d.fixed = false);
 }
-export default initialize;
+export default {
+  initialize, update, destroy,
+};

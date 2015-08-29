@@ -12,7 +12,7 @@ function OptionStore() {
   const options = {};
 
   Object.assign(options, {
-      showDynamic: true,
+      showDynamic: false,
       dimensions: {
         width: 1200,
         height: 800,

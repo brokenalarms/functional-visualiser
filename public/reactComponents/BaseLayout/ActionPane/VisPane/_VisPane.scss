@@ -1,5 +1,5 @@
 .d3-root {
-   // border: 5px solid darkblue;
+    // border: 5px solid darkblue;
 }
 
 .function-node {
@@ -47,4 +47,20 @@
     cursor: default;
     font-size: 0.8em;
     fill: black;
+}
+
+.tooltip {
+    position: absolute;
+    text-align: center;
+    width: 200px;
+    height: 190px;
+    word-wrap: break-word;
+    z-index: 10;
+    overflow: hidden;
+    padding: 2px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
 }

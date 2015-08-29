@@ -13,31 +13,22 @@ function StaticCallGraph() {
   let decTracker = new DeclarationTracker();
 
   function get(codeToParse) {
-    let ast = astTools.createAst(codeToParse);
+    let ast = astTools.createAst(codeToParse, false);
     let [nodes, links] = getCallGraph(ast);
     return [nodes, links];
-  }
-
-  function addLinks(currentScope, callLinks) {
-    currentScope.scopeInfo.functionsCalled.forEach((funcCall) => {
-      /* now we're exiting the scope, we can add the target
-         and thus account for hoisted functions declared after call */
-      funcCall.target = decTracker.get(funcCall.calleeName);
-      callLinks.push(funcCall);
-    });
   }
 
   function getCallGraph(ast) {
     let scopeChain = [];
     let currentScope = null;
-    let functionNodes = [];
-    let callLinks = [];
+    let nodes = [];
+    let links = [];
 
     estraverse.traverse(ast, {
       enter: function(node, parent) {
         if (astTools.createsNewFunctionScope(node)) {
-          currentScope = createNewNode(node, functionNodes);
-          functionNodes.push(currentScope);
+          currentScope = createNewNode(node, nodes);
+          nodes.push(currentScope);
           scopeChain.push(currentScope);
 
           let params = node.params;
@@ -51,6 +42,7 @@ function StaticCallGraph() {
             addVariableInfo(currentScope, node.id);
             break;
           case 'FunctionDeclaration':
+          case 'FunctionExpression':
             addFunctionInfo(currentScope, node);
             break;
           case 'CallExpression':
@@ -60,30 +52,33 @@ function StaticCallGraph() {
       },
       leave: function(node, parent) {
         if (astTools.createsNewFunctionScope(node)) {
-          addLinks(currentScope, callLinks);
+          addLinks(currentScope, links);
           decTracker.exitNode(node);
           scopeChain.pop();
           currentScope = last(scopeChain);
         }
       },
     });
-    return [functionNodes, callLinks];
+    return [nodes, links];
   }
 
-  function createNewNode(node, functionNodes) {
+  function createNewNode(node, nodes) {
     let parent;
     let functionName;
     if (node.type === 'Program') {
       parent = null;
       functionName = 'Program';
     } else {
-      parent = last(functionNodes);
-      functionName = node.id.name;
+      parent = last(nodes);
+      functionName = (node.id) ? node.id.name : 'anonymous';
     }
 
     let newNode = Object.assign(node, {
       scopeInfo: {
-        id: 'scope' + (functionNodes.length) + functionName,
+        id: functionName,
+        scope: 'scope ' + nodes.length,
+        codeString: astTools.createCode(node),
+        params: node.params,
         parent,
         declarationsMade: [],
         functionsCalled: [],
@@ -92,17 +87,10 @@ function StaticCallGraph() {
     return newNode;
   }
 
-  function typeIsIdentifier(type) {
-    if (!(type === 'Identifier' || type === 'FunctionExpression')) {
-      throw new Error('Only Identifier variable types currently supported.');
-    }
-    return true;
-  }
-
   function addVariableInfo(currentScope, variables, isParam) {
     let varArray = (Array.isArray(variables)) ? variables : [variables];
     varArray.forEach((variable) => {
-      if (typeIsIdentifier(variable.type)) {
+      if (astTools.typeIsSupported(variable.type)) {
         if (isParam) {
           variable.isParam = true;
         }
@@ -113,21 +101,34 @@ function StaticCallGraph() {
   }
 
   function addFunctionInfo(currentScope, node) {
-    // TODO: maybe need to add declaredInfo to parent
-    decTracker.set(node.id.name, node.type, currentScope);
+    // if there's no id, it's an anonymous function
+    // so can't be referred to elsewhere and therefore
+    // doesn't need to be tracked
+    if (node.id) {
+      decTracker.set(node.id.name, node.type, currentScope);
+    }
   }
 
 
   function addFunctionCallRef(currentScope, node) {
     // TODO: add support for members and builtins
-    if (typeIsIdentifier(node.callee.type)) {
+    if (astTools.typeIsSupported(node.callee.type)) {
       currentScope.scopeInfo.functionsCalled.push({
-        calleeName: node.callee.name,
+        calleeName: astTools.getCalleeName(node),
         source: currentScope,
         target: null,
         arguments: node.arguments,
       });
     }
+  }
+
+  function addLinks(currentScope, links) {
+    currentScope.scopeInfo.functionsCalled.forEach((funcCall) => {
+      /* now we're exiting the scope, we can add the target
+         and thus account for hoisted functions declared after call */
+      funcCall.target = decTracker.get(funcCall.calleeName);
+      links.push(funcCall);
+    });
   }
 
   return {

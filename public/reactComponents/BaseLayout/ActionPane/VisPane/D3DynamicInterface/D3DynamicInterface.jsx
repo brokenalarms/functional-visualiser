@@ -44,15 +44,18 @@ class D3DynamicInterface extends React.Component {
   }
 
   handleSequencerUpdate = (shouldResetD3) => {
-    if (shouldResetD3) {
-      // SequencerStore has new array ref,
-      // re-link to Store and re-initialize force layout
-      this.setState({
-        nodes: SequencerStore.linkState().nodes,
-        links: SequencerStore.linkState().links,
-      });
-    } else {
-      d3Dynamic.update();
+    //noop if component has already unmounted.
+    if (React.findDOMNode(this)) {
+      if (shouldResetD3) {
+        // SequencerStore has new array ref,
+        // re-link to Store and re-initialize force layout
+        this.setState({
+          nodes: SequencerStore.linkState().nodes,
+          links: SequencerStore.linkState().links,
+        });
+      } else {
+        d3Dynamic.update();
+      }
     }
   }
 
@@ -66,7 +69,7 @@ class D3DynamicInterface extends React.Component {
 
   render() {
     return (
-      <div className='d3-root'></div>
+      <div className="d3-root"></div>
     );
   }
 }
