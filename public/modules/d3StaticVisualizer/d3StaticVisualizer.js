@@ -40,7 +40,7 @@ let options = {
   },
 };
 
-let svg, node, link, forceLayout;
+let svg, node, link, forceLayout, tooltip, drag;
 
 function initialize(element, nodes, links, dimensions) {
   options.dimensions = dimensions;
@@ -76,13 +76,13 @@ function initialize(element, nodes, links, dimensions) {
     .append('svg:path')
     .attr('d', 'M2,2 L2,11 L10,6 L2,2');
 
-  let tooltip = d3.select('body').append('div')
+  tooltip = d3.select('body').append('div')
     .attr('class', 'tooltip')
     .style('opacity', 0);
 
   forceLayout = createNewForceLayout(options.graphType, nodes, links);
   // allow for dragging of nodes to reposition functions
-  let drag = forceLayout.drag()
+  drag = forceLayout.drag()
     .on('dragstart', onDragStart);
 
   link = svg.selectAll('.function-link');
@@ -111,23 +111,25 @@ function initialize(element, nodes, links, dimensions) {
       return `translate(${d.x}, ${d.y})`;
     });
   });
-
 }
-  function update() {
-    node = node.data(forceLayout.nodes());
-    link = link.data(forceLayout.links());
-    link.enter().append('polyline');
-    drawFunctionLink(link);
-    node.enter().append('g')
-      .on('dblclick', onDoubleclickNode);
-    drawFunctionBlock(node, tooltip);
-    node.exit().remove();
-    node.call(drag);
-  }
 
-function destroy() {
-  forceLayout.stop();
-  svg.selectAll('*').remove();
+function update() {
+  node = node.data(forceLayout.nodes());
+  link = link.data(forceLayout.links());
+  link.enter().append('polyline');
+  drawFunctionLink(link);
+  node.enter().append('g')
+    .on('dblclick', onDoubleclickNode);
+  drawFunctionBlock(node, tooltip);
+  node.exit().remove();
+  node.call(drag);
+}
+
+function destroy(element) {
+  if (forceLayout) {
+    forceLayout.stop();
+  }
+  d3.select(element).selectAll('*').remove();
   svg = forceLayout = node = link = null;
 }
 
@@ -229,7 +231,7 @@ function addToolTip(area, tooltip) {
       tooltip.transition()
         .duration(200)
         .style('opacity', 0.9);
-      tooltip.text(d.scopeInfo.codeString)
+      tooltip.text(d.scopeInfo.codeString.split('\n'))
         .style('left', d3.event.pageX + 'px')
         .style('top', d3.event.pageY - 28 + 'px');
     })

@@ -22,9 +22,8 @@ function SequencerStore() {
     delayFactor: 3000,
   };
 
-  let editorOutput = {
+  let editorStep = {
     range: null,
-    execCodeString: null,
     execCodeBlock: null,
   };
 
@@ -48,12 +47,16 @@ function SequencerStore() {
     return d3LinkedState;
   }
 
-  function getEditorOutput() {
-    return editorOutput;
+  function getCurrentRange() {
+    return editorStep.range;
+  }
+
+  function getCurrentCodeBlock() {
+    return editorStep.execCodeBlock;
   }
 
   function setEditorOutput(output) {
-    Object.assign(editorOutput, output);
+    Object.assign(editorStep, output);
   }
 
   function setDelayOptions(delayOpts) {
@@ -119,7 +122,8 @@ function SequencerStore() {
     unsubscribeListener, unsubscribeEditor,
     sendUpdate,
     linkState: linkSequencerToD3Data,
-      getEditorOutput,
+      getCurrentRange,
+      getCurrentCodeBlock,
       setEditorOutput,
       setDelayOptions,
       getDelayOptions,

@@ -7,69 +7,47 @@ import SequencerStore from '../../../../../modules/stores/SequencerStore.js';
 // updates are pushed directly from SequencerStore without React knowing.
 // (manipulating state directly in d3DynamicVisualizer via d3Update function)
 
-class D3DynamicInterface extends React.Component {
+class D3DynamicInterface {
 
   static propTypes = {
     dimensions: React.PropTypes.object,
   }
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      nodes: SequencerStore.linkState().nodes,
-      links: SequencerStore.linkState().links,
-    };
-  }
-
-
   componentDidMount = () => {
-    /* this module is stateless; the parent decides
-       whether to update with new props,
-       at which point D3 is refreshed. */
-    /* subscribe listener to start redrawing
-     when the dynamic simulation is started.*/
-    this.d3Restart();
-    SequencerStore.subscribeListener(this.handleSequencerUpdate);
+    SequencerStore.subscribeListener(this.onSequencerUpdate);
   }
 
-  componentDidUpdate = () => {
-    this.d3Restart();
+  shouldComponentUpdate() {
+    return false;
   }
 
   componentWillUnmount() {
-    SequencerStore.unsubscribeListener(this.handleSequencerUpdate);
-    let element = React.findDOMNode(this);
-    d3Dynamic.destroy(element);
-    React.unmountComponentAtNode(element);
+    SequencerStore.unsubscribeListener(this.onSequencerUpdate);
+   // d3Dynamic.destroy(React.findDOMNode(this));
   }
 
-  handleSequencerUpdate = (shouldResetD3) => {
-    //noop if component has already unmounted.
-    if (React.findDOMNode(this)) {
-      if (shouldResetD3) {
-        // SequencerStore has new array ref,
-        // re-link to Store and re-initialize force layout
-        this.setState({
-          nodes: SequencerStore.linkState().nodes,
-          links: SequencerStore.linkState().links,
-        });
-      } else {
-        d3Dynamic.update();
-      }
+  onSequencerUpdate = (shouldResetD3) => {
+    // noop if component has already unmounted.
+    if (shouldResetD3) {
+      // SequencerStore has new array ref,
+      // re-link to Store and re-initialize force layout
+      this.d3Restart();
+    } else {
+      d3Dynamic.update();
     }
   }
 
   d3Restart = () => {
     let element = React.findDOMNode(this);
     d3Dynamic.initialize(element,
-      this.state.nodes,
-      this.state.links,
+      SequencerStore.linkState().nodes,
+      SequencerStore.linkState().links,
       this.props.dimensions);
   }
 
   render() {
     return (
-      <div className="d3-root"></div>
+      <div className="d3-dynamic-root"></div>
     );
   }
 }

@@ -77,7 +77,7 @@ function StaticCallGraph() {
       scopeInfo: {
         id: functionName,
         scope: 'scope ' + nodes.length,
-        codeString: astTools.createCode(node),
+        codeString: astTools.createCode(node, {}),
         params: node.params,
         parent,
         declarationsMade: [],

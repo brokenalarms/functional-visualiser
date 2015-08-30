@@ -1,16 +1,16 @@
 import React from 'react';
 
 import {IconButton, IconMenu, MenuItem, Checkbox, List, Toggle, Slider} from 'material-ui';
-import SequencerStore from '../../../modules/stores/SequencerStore.js';
-import Sequencer from '../../../modules/Sequencer/Sequencer.js';
-import OptionStore from '../../../modules/stores/OptionStore.js';
+import SequencerStore from '../../../../modules/stores/SequencerStore.js';
+import Sequencer from '../../../../modules/Sequencer/Sequencer.js';
+import RefreshStore from '../../../../modules/stores/RefreshStore.js';
 
 class OptionMenu extends React.Component {
 
   constructor(props) {
     super(props);
     this.state = {
-      showDynamic: OptionStore.getOptions().showDynamic,
+      showDynamic: RefreshStore.getOptions().showDynamic,
       staggerEditorAndVisualizer: SequencerStore.getDelayOptions().staggerEditorAndVisualizer,
       sequencerDelay: SequencerStore.getDelayOptions().sequencerDelay,
       delayFactor: SequencerStore.getDelayOptions().delayFactor,
@@ -36,7 +36,7 @@ class OptionMenu extends React.Component {
   }
 
   setVisualizationType = (event, checked) => {
-    OptionStore.setOptions({
+    RefreshStore.setOptions({
       showDynamic: !checked,
     });
     Sequencer.restart();

@@ -1,32 +1,45 @@
 import React from 'react';
 import CodePane from './CodePane/CodePane.jsx';
 import VisPane from './VisPane/Vispane.jsx';
-import OptionStore from '../../../modules/stores/OptionStore.js';
+
+import RefreshStore from '../../../modules/stores/RefreshStore.js';
+import CodeStore from '../../../modules/stores/CodeStore.js';
+
 
 class ActionPane extends React.Component {
 
   constructor(props) {
     super(props);
     this.state = {
-      staticCodeExample: OptionStore.getOptions().staticCodeExample,
-      showDynamic: OptionStore.getOptions().showDynamic,
-      visualizationDimensions: OptionStore.getOptions().dimensions,
+      showDynamic: RefreshStore.getOptions().showDynamic,
+      visualizationDimensions: RefreshStore.getOptions().dimensions,
+      codeString: CodeStore.get(),
     };
   }
 
   componentDidMount() {
-    OptionStore.subscribeListener(this.onOptionsChanged);
+    RefreshStore.subscribeListener(this.onRefreshOptionsChanged);
+    CodeStore.subscribeListener(this.onNewCodeString);
   }
 
   componentWillUnmount = () => {
-    OptionStore.unsubscribeListener(this.onOptionsChanged);
+    RefreshStore.unsubscribeListener(this.onRefreshOptionsChanged);
+    CodeStore.unsubscribeListener(this.onNewCodeString);
   }
 
-  onOptionsChanged = () => {
+
+  // those changes requiring a component refresh.
+  // Below here, the components subscribe to code changes directly.
+  onRefreshOptionsChanged = () => {
     this.setState({
-      staticCodeExample: OptionStore.getOptions().staticCodeExample,
-      showDynamic: OptionStore.getOptions().showDynamic,
-      visualizationDimensions: OptionStore.getOptions().dimensions,
+      showDynamic: RefreshStore.getOptions().showDynamic,
+      visualizationDimensions: RefreshStore.getOptions().dimensions,
+    });
+  }
+
+  onNewCodeString = () => {
+    this.setState({
+      codeString: CodeStore.get(),
     });
   }
 
@@ -34,10 +47,11 @@ class ActionPane extends React.Component {
     return (
       <div className="flex-action-pane">
         <VisPane
+          codeString={this.state.codeString}
           showDynamic={this.state.showDynamic}
           dimensions={this.state.visualizationDimensions}/>
         <CodePane
-          staticCodeExample={this.state.staticCodeExample}
+          codeString={this.state.codeString}
           showDynamic={this.state.showDynamic} />
       </div>
     );

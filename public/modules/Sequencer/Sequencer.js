@@ -1,6 +1,5 @@
-import OptionStore from '../stores/OptionStore.js';
 import CodeStore from '../stores/CodeStore.js';
-import LiveOptionStore from '../stores/LiveOptionStore.js';
+import CodeStatusStore from '../stores/CodeStatusStore.js';
 import SequencerStore from '../stores/SequencerStore.js';
 import Interpreter from '../vendor_mod/JS-Interpreter/interpreter.js';
 import initFunc from '../jsInterpreterInit/jsInterpreterInit.js';
@@ -8,7 +7,8 @@ import astTools from '../astTools/astTools.js';
 import VisibleFunctionsUpdater from './VisibleFunctionsUpdater.js';
 import {cloneDeep} from 'lodash';
 
-/* Sequencer, controlled by React ControlBar via SequencerStore store.
+/* Sequencer for d3DynamicVisualizer/Editor.
+   controlled by React ControlBar via SequencerStore store.
    Inteprets next state, updates SequencerStore and drives synchronized
    events to the Editor and visualizer underneath React. 
 
@@ -28,9 +28,7 @@ function Sequencer() {
      they have worked on/changed a preset example. */
   function parseCodeAsIIFE() {
 
-    let codeString = (CodeStore.get()) ?
-      CodeStore.get().toString().trim() :
-      OptionStore.getOptions().staticCodeExample.toString().trim();
+    let codeString = (CodeStore.get());
     let runCodeString = astTools.getRunCodeString(codeString);
 
     astWithLocations = astTools.createAst(runCodeString, true);
@@ -38,17 +36,16 @@ function Sequencer() {
        so the dynamic selection of running code is still correct,
        as there are trivial but syntactically differences between 
        the user's code and AST-generated code before roundtrip. */
-    SequencerStore.setEditorOutput({
-      execCodeString: astTools.createCode(astWithLocations),
-    });
+    let regeneratedCode = astTools.createCode(astWithLocations);
+    if (regeneratedCode && regeneratedCode !== codeString) {
+      CodeStore.set(regeneratedCode);
+    }
     resetInterpreterAndSequencerStore();
   }
 
   /* resets interpreter and SequencerStore state to begin the program again,
      without re-parsing code. */
   function resetInterpreterAndSequencerStore() {
-    // this enables the editor again after resetState event
-    LiveOptionStore.setCodeRunning(false);
     SequencerStore.resetState();
     /* SequencerStore now has new node/link refs,
        update via function closure */
@@ -65,7 +62,7 @@ function Sequencer() {
 
   function nextStep(singleStep) {
 
-    if (LiveOptionStore.isCodeRunning()) {
+    if (CodeStatusStore.isCodeRunning()) {
       if (interpreter.step()) {
         let delay = SequencerStore.getDelayOptions().sequencerDelay * 3000;
 
@@ -81,7 +78,7 @@ function Sequencer() {
           // output before recursing
           SequencerStore.sendUpdate().then(() => {
             if (singleStep) {
-              LiveOptionStore.setCodeRunning(false);
+              CodeStatusStore.setCodeRunning(false);
             } else {
               setTimeout(nextStep, (doneAction) ? delay : 0);
             }

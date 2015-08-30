@@ -1,51 +1,51 @@
 import React from 'react';
-import CodeStore from '../../../../../modules/stores/CodeStore.js';
-import OptionStore from '../../../../../modules/stores/OptionStore.js';
 import astTools from '../../../../../modules/astTools/astTools.js';
 import buildGraph from '../../../../../modules/d3StaticVisualizer/BuildStaticCallGraph.js';
 import d3Static from '../../../../../modules/d3StaticVisualizer/d3StaticVisualizer.js';
+import CodeStatusStore from '../../../../../modules/stores/CodeStatusStore.js';
+
 
 class D3StaticInterface {
 
   static propTypes = {
     dimensions: React.PropTypes.object,
-    showDynamic: React.PropTypes.bool,
+    codeString: React.PropTypes.string.isRequired,
   }
 
   componentDidMount = () => {
-    // React still appears to render component
-    // by virtue of writing it outside of render
-    // in ActionPane even if conditional 'showDynamic' fails
-    if (!this.props.showDynamic) {
-      this.d3Restart();
-    }
+    CodeStatusStore.subscribeListener(this.onCodeStatusStoreUpdate);
   }
 
-  componentDidUpdate = () => {
-    if (!this.props.showDynamic) {
-      this.d3Restart();
-    }
+  shouldComponentUpdate() {
+    return false;
   }
 
   componentWillUnmount() {
-    d3Static.destroy();
+    CodeStatusStore.unsubscribeListener(this.onCodeStatusStoreUpdate);
   }
 
+  onCodeStatusStoreUpdate = (codeOptions) => {
+    // the ControlBar just sets 'codeParsed' to true here
+    // which is sufficient for redrawing the static analyzer.
+    if (codeOptions.codeParsed) {
+      this.d3Restart();
+    } else {
+      d3Static.destroy(React.findDOMNode(this));
+    }
+  }
 
   d3Restart = () => {
-    let codeString = (CodeStore.get()) ?
-      CodeStore.get().toString().trim() :
-      OptionStore.getOptions().staticCodeExample.toString().trim();
-    let runCodeString = astTools.getRunCodeString(codeString);
+    let runCodeString = astTools.getRunCodeString(this.props.codeString);
     let [nodes, links] = buildGraph.get(runCodeString);
     let element = React.findDOMNode(this);
     d3Static.initialize(element, nodes, links,
       this.props.dimensions);
+    d3Static.update();
   }
 
   render() {
     return (
-      <div className="d3-root"></div>
+      <div className="d3-static-root"></div>
     );
   }
 }

@@ -19,8 +19,8 @@ function astTools() {
     });
   }
 
-  function createCode(ast) {
-    return escodegen.generate(ast);
+  function createCode(ast, options) {
+    return escodegen.generate(ast, options);
   }
 
   function getCodeRange(node) {

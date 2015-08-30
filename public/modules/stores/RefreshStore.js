@@ -1,0 +1,44 @@
+/* Stores those options relating
+   to both the Editor and D3Visualizer
+   that require a React component
+   refresh to put into effect.*/
+
+const event = require('events');
+
+function RefreshStore() {
+  const refreshStore = Object.create(event.EventEmitter.prototype);
+  const options = {};
+
+  Object.assign(options, {
+    showDynamic: false,
+    dimensions: {
+      width: 1200,
+      height: 800,
+    },
+  });
+
+  function subscribeListener(callback) {
+    refreshStore.on('change', callback);
+  }
+
+  function unsubscribeListener(callback) {
+    refreshStore.removeListener('change', callback);
+  }
+
+  function setOptions(newOpts) {
+    Object.assign(options, newOpts);
+    refreshStore.emit('change');
+  }
+
+  function getOptions() {
+    return options;
+  }
+
+  return {
+    subscribeListener,
+    unsubscribeListener,
+    setOptions,
+    getOptions,
+  };
+}
+export default new RefreshStore;

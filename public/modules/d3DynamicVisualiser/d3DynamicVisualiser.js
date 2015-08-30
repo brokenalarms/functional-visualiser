@@ -126,6 +126,7 @@ function update() {
 }
 
 function destroy() {
+  //probably not necessary if React resets components
   forceLayout.stop();
   svg.selectAll('*').remove();
   svg = forceLayout = node = link = null;

@@ -4,16 +4,70 @@ const description = '';
 
 function demo() {
 
+  // TODO - check why this isn't working unless hoisted
+  function map(callback, thisArg) {
+
+    var T, A, k;
+    // 1. Let O be the result of calling ToObject passing the |this| 
+    //    value as the argument.
+    var O = this;
+
+    // 2. Let lenValue be the result of calling the Get internal 
+    //    method of O with the argument 'length'.
+    // 3. Let len be ToUint32(lenValue).
+    var len = O.length >>> 0;
+    if (typeof callback !== 'function') {
+      throw new TypeError(callback + ' is not a function');
+    }
+    if (arguments.length > 1) {
+      T = thisArg;
+    }
+    A = new Array(len);
+    k = 0;
+    while (k < len) {
+
+      var kValue, mappedValue;
+      if (k in O) {
+        kValue = O[k];
+        mappedValue = callback(T, kValue, k, O);
+        A[k] = mappedValue;
+      }
+      k++;
+    }
+    return A;
+  }
+
+  function reduce(array, callback, initialValue) {
+    var t = array,
+      len = t.length >>> 0,
+      k = 0,
+      value;
+    if (arguments.length == 2) {
+      value = arguments[1];
+    } else {
+      while (k < len && !(k in t)) {
+        k++;
+      }
+      value = t[k++];
+    }
+    for (; k < len; k++) {
+      if (k in t) {
+        value = callback(value, t[k], k, t);
+      }
+    }
+    return value;
+  }
+
   var data = [{
-    name: "Jamestown",
+    name: 'Jamestown',
     population: 2047,
     temperatures: [-34, 67, 101, 87]
   }, {
-    name: "Awesome Town",
+    name: 'Awesome Town',
     population: 3568,
     temperatures: [-3, 4, 9, 12]
   }, {
-    name: "Funky Town",
+    name: 'Funky Town',
     population: 1000000,
     temperatures: [75, 75, 75, 75, 75]
   }];
@@ -54,7 +108,7 @@ function demo() {
     finalArr = finalArr || [];
 
     // Push the current element in each array into what we'll eventually return
-    finalArr.push([arr1[0], arr2[0]]);
+    finalArr[finalArr.length] = [arr1[0], arr2[0]];
 
     var remainingArr1 = arr1.slice(1),
       remainingArr2 = arr2.slice(1);
@@ -68,66 +122,12 @@ function demo() {
     }
   }
 
-  //var processed = combineArrays(pluck(data, 'temperatures').map(averageForArray), pluck(data, 'population'));
+  var processed = combineArrays(map(averageForArray, pluck(data, 'temperatures')), pluck(data, 'population'));
 
-  var populations = pluck(data, 'population');
-  var allTemperatures = pluck(data, 'temperatures');
-  var averageTemps = map(averageForArray, allTemperatures);
-  var processed = combineArrays(averageTemps, populations);
-
-
-  function map(callback, thisArg) {
-
-    var T, A, k;
-    // 1. Let O be the result of calling ToObject passing the |this| 
-    //    value as the argument.
-    var O = Object(this);
-
-    // 2. Let lenValue be the result of calling the Get internal 
-    //    method of O with the argument "length".
-    // 3. Let len be ToUint32(lenValue).
-    var len = O.length >>> 0;
-    if (typeof callback !== 'function') {
-      throw new TypeError(callback + ' is not a function');
-    }
-    if (arguments.length > 1) {
-      T = thisArg;
-    }
-    A = new Array(len);
-    k = 0;
-    while (k < len) {
-
-      var kValue, mappedValue;
-      if (k in O) {
-        kValue = O[k];
-        mappedValue = callback.call(T, kValue, k, O);
-        A[k] = mappedValue;
-      }
-      k++;
-    }
-    return A;
-  }
-
-  function reduce(array, callback, initialValue) {
-    var t = array,
-      len = t.length >>> 0,
-      k = 0,
-      value;
-    if (arguments.length == 2) {
-      value = arguments[1];
-    } else {
-      while (k < len && !(k in t)) {
-        k++;
-      }
-      value = t[k++];
-    }
-    for (; k < len; k++) {
-      if (k in t) {
-        value = callback(value, t[k], k, t);
-      }
-    }
-    return value;
-  }
+  /* var populations = pluck(data, 'population');
+   var allTemperatures = pluck(data, 'temperatures');
+   var averageTemps = map(averageForArray, allTemperatures);
+   var processed = combineArrays(averageTemps, populations);*/
 }
 
 

@@ -1,16 +1,18 @@
 /*
-All setting of the OptionStore is done directly through here.
+All setting of the RefreshStore is done directly through here.
 */
 
 import React from 'react';
 import mui from 'material-ui';
-import OptionStore from '../../../modules/stores/OptionStore.js';
-import CodeStore from '../../../modules/stores/CodeStore.js';
+import NavigationStore from '../../../../modules/stores/NavigationStore.js';
+import ConstantStore from '../../../../modules/stores/ConstantStore.js';
+import CodeStore from '../../../../modules/stores/CodeStore.js';
+import CodeStatusStore from '../../../../modules/stores/CodeStatusStore.js';
+
 const LeftNav = mui.LeftNav;
 const MenuItem = mui.MenuItem;
 
 class NavBar extends React.Component {
-  static displayName = 'NavBar';
 
   static propTypes = {
     menuItems: React.PropTypes.array.isRequired,
@@ -78,11 +80,34 @@ class NavBar extends React.Component {
     }
   }
 
+  shouldComponentUpdate(nextProps) {
+    return nextProps.showNavBar;
+  }
+
   componentDidUpdate() {
-    if (this.props.showNavBar) {
-      this.refs.leftNav.toggle();
+    this.refs.leftNav.toggle();
+  }
+
+  handleClick = (e, selectedIndex, menuItem) => {
+    let constants = ConstantStore.getConstants();
+    switch (menuItem.optionGroup) {
+      case 'codeExamples':
+        // user has selected pre-written example; this resets the user-typed code.
+        let staticCodeExample =
+          constants[menuItem.optionGroup][menuItem.moduleId][menuItem.functionId];
+        CodeStore.set(staticCodeExample);
+        CodeStatusStore.setCodeParsed(false);
+        break;
+
+      case 'markdown':
+        let selectedMarkdown = constants[menuItem.optionGroup][menuItem.id];
+        NavigationStore.setOptions({
+          selectedMarkdown,
+        });
+        break;
     }
   }
+
   render() {
     return (
       <div>
@@ -96,28 +121,6 @@ class NavBar extends React.Component {
     );
   }
 
-  handleClick = (e, selectedIndex, menuItem) => {
-    switch (menuItem.optionGroup) {
-      case 'codeExamples':
-        // user has selected pre-written example; this resets the user-typed code.
-        let staticCodeExample =
-          OptionStore.getOptions()[menuItem.optionGroup][menuItem.moduleId][menuItem.functionId];
-        OptionStore.setOptions({
-          staticCodeExample,
-          clickedItem: menuItem,
-        });
-        CodeStore.set(null);
-
-        break;
-      case 'markdown':
-        let selectedMarkdown = OptionStore.getOptions()[menuItem.optionGroup][menuItem.id];
-        OptionStore.setOptions({
-          selectedMarkdown,
-          clickedItem: menuItem,
-        });
-        break;
-    }
-  };
 }
 
 export default NavBar;
