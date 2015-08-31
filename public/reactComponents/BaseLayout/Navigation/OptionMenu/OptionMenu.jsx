@@ -66,7 +66,7 @@ class OptionMenu extends React.Component {
           className="unselectable"
           onChange={this.setDelayValue}
           name="sequencerDelay"
-          min={0.003}
+          min={0.00333}
           defaultValue={this.state.sequencerDelay}
           value={this.state.sequencerDelay}
           max={1}/>
