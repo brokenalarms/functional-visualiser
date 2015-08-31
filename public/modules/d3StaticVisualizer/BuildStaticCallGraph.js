@@ -10,7 +10,7 @@ import astTools from '../astTools/astTools.js';
 
 function StaticCallGraph() {
 
-  let decTracker = new DeclarationTracker();
+  let decTracker = new DeclarationTracker('array');
 
   function get(codeToParse) {
     let ast = astTools.createAst(codeToParse, false);
@@ -94,7 +94,7 @@ function StaticCallGraph() {
         if (isParam) {
           variable.isParam = true;
         }
-        decTracker.set(variable.name, variable.type, currentScope);
+        decTracker.set(variable.name, currentScope);
         currentScope.scopeInfo.declarationsMade.push(variable);
       }
     });
@@ -105,7 +105,7 @@ function StaticCallGraph() {
     // so can't be referred to elsewhere and therefore
     // doesn't need to be tracked
     if (node.id) {
-      decTracker.set(node.id.name, node.type, currentScope);
+      decTracker.set(node.id.name, currentScope);
     }
   }
 
@@ -126,7 +126,7 @@ function StaticCallGraph() {
     currentScope.scopeInfo.functionsCalled.forEach((funcCall) => {
       /* now we're exiting the scope, we can add the target
          and thus account for hoisted functions declared after call */
-      funcCall.target = decTracker.get(funcCall.calleeName);
+      funcCall.target = decTracker.getLast(funcCall.calleeName);
       links.push(funcCall);
     });
   }

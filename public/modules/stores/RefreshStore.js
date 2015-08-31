@@ -10,9 +10,9 @@ function RefreshStore() {
   const options = {};
 
   Object.assign(options, {
-    showDynamic: false,
+    showDynamic: true,
     dimensions: {
-      width: 1200,
+      width: 1000,
       height: 800,
     },
   });

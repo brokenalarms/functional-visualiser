@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {IconButton, IconMenu, MenuItem, Checkbox, List, ListItem, Toggle, Slider} from 'material-ui';
+import {IconButton, IconMenu, MenuItem, Checkbox, List, Toggle, Slider} from 'material-ui';
 import SequencerStore from '../../../../modules/stores/SequencerStore.js';
 import Sequencer from '../../../../modules/Sequencer/Sequencer.js';
 import RefreshStore from '../../../../modules/stores/RefreshStore.js';
@@ -70,7 +70,7 @@ class OptionMenu extends React.Component {
           defaultValue={this.state.sequencerDelay}
           value={this.state.sequencerDelay}
           max={1}/>
-          </MenuItem>
+        </MenuItem>
         <Checkbox style={{padding: '0 24px 0 24px'}}
         name="delayVisualizer"
         label="Stagger code and visualizer steps"

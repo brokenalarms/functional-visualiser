@@ -40,7 +40,7 @@ class Editor {
     CodeStore.subscribeListener(this.onCodeStoreChange);
   }
 
-  shouldComponentUpdate = (nextProps) => {
+  shouldComponentUpdate = () => {
     return false;
   }
 

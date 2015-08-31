@@ -5,13 +5,18 @@
 // Used by the Sequencer.
 // =============================================
 
-import {last} from 'lodash';
+import {last, pluck, cloneDeep, includes} from 'lodash';
+import astTools from '../astTools/astTools.js';
+import DeclarationTracker from '../astTools/DeclarationTracker.js';
 
-function isFunctionCall(state, prevState) {
+
+function isSupportedFunctionCall(state, prevState) {
   /* if the current state has scope, 
      the previous will have a function with args passed in*/
-  return (state.scope && prevState.node &&
-    prevState.node.type === 'CallExpression');
+  return (
+    state.components && state.node.type !== 'MemberExpression' &&
+    (prevState.node.type === 'CallExpression')
+  );
 }
 
 function isReturnToCaller(state, prevState) {
@@ -27,30 +32,33 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
 
   let nodes = resetNodes;
   let links = resetLinks;
-  let state, prevState;
+  let state, prevState, declaringScope;
+  let callsByScopeTracker = new DeclarationTracker('map');
 
-  function action(stateStack) {
+  function action(interpreter) {
     let doneAction = false;
-    state = stateStack[0];
+    state = interpreter.stateStack[0];
+
+    if (!declaringScope && state.scope) {
+      declaringScope = interpreter.getScope();
+    }
+
     if (state && prevState) {
-      doneAction = (addCalledFunctions(state) ||
-        removeExitingFunctions(state, stateStack)
+      doneAction = (addCalledFunctions(state, interpreter) ||
+        removeExitingFunctions(state)
       );
     }
     return doneAction;
   }
 
-  function addCalledFunctions(state) {
-    if (isFunctionCall(state, prevState)) {
-      let calleeName = prevState.node.callee.name || prevState.node.callee.id.name;
 
-      // add extra info describing recursion
-      if (nodes.length > 0) {
-        let callerInfo = last(nodes).displayInfo;
-        if (calleeName === callerInfo.calleeName) {
-          calleeName = `${calleeName} (recursion ${++callerInfo.recursionCount})`;
-        }
-      }
+  function addCalledFunctions(state, interpreter) {
+
+    if (isSupportedFunctionCall(state, prevState)) {
+      //let calleeName = prevState.node.callee.name || prevState.node.callee.id.name;
+      let calleeName = state.node.name || state.node.id.name;
+      //console.log(cloneDeep(state));
+
 
       /* In JS, the parent scope for constructed functions is the global scope,
        even if they were constructed in some other scope. So I have to track
@@ -58,10 +66,29 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       let d3EnterNode = {
         displayInfo: {
           calleeName: calleeName,
-          recursionCount: 0,
         },
       };
-      addCallLink(d3EnterNode, last(nodes));
+      let caller;
+
+      if (!callsByScopeTracker.has(calleeName)) {
+        callsByScopeTracker.set(calleeName, [
+          declaringScope, d3EnterNode,
+        ]);
+        // just link to the previous node
+        caller = last(nodes);
+      } else {
+        // link to the node in the scope in which function was declared
+        if (callsByScopeTracker.get(calleeName).has(declaringScope)) {
+          caller = callsByScopeTracker.get(calleeName).get(declaringScope);
+        } else {
+          callsByScopeTracker.get(calleeName).set([
+            declaringScope, d3EnterNode,
+          ]);
+          caller = last(nodes);
+        }
+      }
+
+      addCallLink(d3EnterNode, caller);
       nodes.push(d3EnterNode);
       /* Tracking by scope reference allows for recursion:
          since the interpreter generates new scopes for each function,
@@ -69,13 +96,18 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
          Doing via a scope -> d3Node map rather than pushing the scope directly
          in order to leave the original scopes untouched,
          as the JS-interpreter interferes with d3-added tick values. */
+      /*      setDeclaringScope(interpreter);*/
+      let declaringScope = interpreter.getScope();
       return true;
     }
     return false;
   }
 
-  function removeExitingFunctions(state, stateStack) {
+  function removeExitingFunctions(state) {
+
     if (isReturnToCaller(state, prevState)) {
+      /*      let calleeName = state.node.name || state.node.id.name;
+            recursionTracker.remove(calleeName);*/
       links.pop();
       nodes.pop();
       return true;

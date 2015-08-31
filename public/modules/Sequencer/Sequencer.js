@@ -38,7 +38,7 @@ function Sequencer() {
        the user's code and AST-generated code before roundtrip. */
     let regeneratedCode = astTools.createCode(astWithLocations);
     if (regeneratedCode && regeneratedCode !== codeString) {
-      CodeStore.set(regeneratedCode);
+      CodeStore.set(regeneratedCode, false);
     }
     resetInterpreterAndSequencerStore();
   }
@@ -66,8 +66,8 @@ function Sequencer() {
       if (interpreter.step()) {
         let delay = SequencerStore.getDelayOptions().sequencerDelay * 3000;
 
-        // console.log(cloneDeep(interpreter.stateStack[0]));
-        let doneAction = updateNodes.action(interpreter.stateStack);
+       // console.log(cloneDeep(interpreter.stateStack));
+        let doneAction = updateNodes.action(interpreter);
 
         if (doneAction) {
           let representedNode = updateNodes.getCodeSelectionNode();
@@ -95,7 +95,7 @@ function Sequencer() {
           setTimeout(nextStep.bind(null, singleStep), 0);
         }
       } else {
-        resetInterpreterAndSequencerStore();
+        //resetInterpreterAndSequencerStore();
       }
     }
   }

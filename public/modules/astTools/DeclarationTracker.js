@@ -1,66 +1,93 @@
 import {last} from 'lodash';
 
-function DeclarationTracker() {
+function DeclarationTracker(objType) {
   /* keep track of variable/function declaration set via:
    {variable string: [array containing each d3 scope node the variable is declared in]}
   (so this allows for same name being shadowed at deeper scope)
    extended normal Map functions to manage array access and confine
    the different management of choosing node.parent for function declarations */
-  let variablesDeclared = new Map();
+  let declarationTracker = new Map();
 
-  function set(variable, type, node) {
-    if (variablesDeclared.has(variable)) {
-      variablesDeclared.get(variable).push({type, node});
+  function set(key, node) {
+    if (declarationTracker.has(key)) {
+      declarationTracker.get(key).push(node);
     } else {
-      variablesDeclared.set(variable, [{
-        type, node,
-      }]);
+      declarationTracker.set(key, [node]);
     }
   }
 
-  function get(variable) {
-    return last(variablesDeclared.get(variable)).node;
+  function setMap(key, value) {
+    if (declarationTracker.has(key)) {
+      declarationTracker.get(key).set([value]);
+    } else {
+      declarationTracker.set(key, (value) ? new Map([value]) : new Map());
+    }
   }
 
-  function has(variable) {
-    return variablesDeclared.has(variable);
+  function remove(key) {
+    if (declarationTracker.get(key).length > 0) {
+      declarationTracker.pop(node);
+    } else {
+      declarationTracker.delete(key);
+    }
+  }
+
+  function removeMap(key, name) {
+    if (declarationTracker.get(key).size > 0) {
+      declarationTracker.get(key).delete(name);
+    } else {
+      declarationTracker.delete(key);
+    }
+  }
+
+  function get(key) {
+    return declarationTracker.get(key);
+  }
+
+  function getLast(key) {
+    return last(declarationTracker.get(key));
+  }
+
+  function has(key) {
+    return declarationTracker.has(key);
   }
 
 
-  function getDeclaredScope(variable) {
-    let node = last(variablesDeclared.get(variable));
+  function getDeclaredScope(key) {
+    let node = last(declarationTracker.get(key));
     if (node.type === 'FunctionDeclaration') {
       return node.parent;
     }
     return node;
   }
 
-  function isDeclaredInCurrentScope(variable, node) {
-    return getDeclaredScope(variable) === node;
+  function isDeclaredInCurrentScope(key, node) {
+    return getDeclaredScope(key) === node;
   }
 
   function exitNode(node) {
     /* clean up - remove any nested function scopes.
        This process allows for same-named variables
        on different scopes to be matched. */
-    variablesDeclared.forEach((scopeChain, key) => {
-      let exitingDeclarationScope = last(scopeChain).node;
-      let varType = last(scopeChain).type;
+    declarationTracker.forEach((scopeChain, key) => {
+      let exitingDeclarationScope = last(scopeChain);
       if (exitingDeclarationScope === node &&
-        varType === 'Identifier') {
+        node.type === 'Identifier') {
         scopeChain.pop();
       } else if (exitingDeclarationScope.parent === node &&
-        varType === 'FunctionDeclaration') {
+        node.type === 'FunctionDeclaration') {
         scopeChain.pop();
       }
       if (scopeChain.length === 0) {
-        variablesDeclared.delete(key);
+        declarationTracker.delete(key);
       }
     });
   }
 
-  return {
-    get, set, has, exitNode,
+  return (objType === 'array') ? {
+    get, getLast, set, has, exitNode, remove,
+  } : {
+    get, set: setMap, has, remove: removeMap,
   };
 }
 

@@ -216,7 +216,7 @@ function drawFunctionBlock(funcBlock, tooltip) {
       if (element === 'text') {
         textBlock.text((d) => {
           let keyLookupText = d.scopeInfo[textOrKey];
-          return (keyLookupText !== undefined) ? keyLookupText : textOrKey;
+          return (keyLookupText !== undefined) ? keyLookupText.toString() : textOrKey;
         });
       }
 

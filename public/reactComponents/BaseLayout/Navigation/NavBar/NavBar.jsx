@@ -12,7 +12,7 @@ import CodeStatusStore from '../../../../modules/stores/CodeStatusStore.js';
 const LeftNav = mui.LeftNav;
 const MenuItem = mui.MenuItem;
 
-class NavBar extends React.Component {
+class NavBar {
 
   static propTypes = {
     menuItems: React.PropTypes.array.isRequired,
@@ -39,11 +39,6 @@ class NavBar extends React.Component {
       text: 'Nested return',
       moduleId: 'assorted',
       functionId: 'nestedReturn',
-    }, {
-      optionGroup: 'codeExamples',
-      text: 'Fibonacci: loop',
-      moduleId: 'assorted',
-      functionId: 'fibonacciLoop',
     }, {
       optionGroup: 'codeExamples',
       text: 'Fibonacci: recursion',
