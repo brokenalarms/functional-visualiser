@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {IconButton, IconMenu, MenuItem, Checkbox, List, Toggle, Slider} from 'material-ui';
+import {IconButton, IconMenu, MenuItem, Checkbox, List, ListItem, Toggle, Slider} from 'material-ui';
 import SequencerStore from '../../../../modules/stores/SequencerStore.js';
 import Sequencer from '../../../../modules/Sequencer/Sequencer.js';
 import RefreshStore from '../../../../modules/stores/RefreshStore.js';
@@ -61,15 +61,16 @@ class OptionMenu extends React.Component {
       </MenuItem>
       </List>
         <List subheader="Dynamic visualization options" subheaderStyle={{color: 'darkgray'}}>
-        <MenuItem index={1}>Step delay: {Math.round(this.state.sequencerDelay * this.state.delayFactor) + ' ms'}</MenuItem>
-        <Slider style={{margin: '0 24px 24px 24px', touchAction: 'none'}}
-          className="unselectable"
+        <MenuItem index={1}>
+          <div>Step delay: {Math.round(this.state.sequencerDelay * this.state.delayFactor) + ' ms'}</div>
+        <Slider style={{margin: '0 24px 24px 24px', touchAction: 'none', cursor: 'pointer'}}
           onChange={this.setDelayValue}
           name="sequencerDelay"
           min={0.00333}
           defaultValue={this.state.sequencerDelay}
           value={this.state.sequencerDelay}
           max={1}/>
+          </MenuItem>
         <Checkbox style={{padding: '0 24px 0 24px'}}
         name="delayVisualizer"
         label="Stagger code and visualizer steps"

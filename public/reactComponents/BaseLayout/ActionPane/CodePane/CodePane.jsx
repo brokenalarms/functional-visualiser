@@ -23,7 +23,6 @@ class CodePane extends React.Component {
   }
 
   static propTypes = {
-    codeString: React.PropTypes.string.isRequired,
     showDynamic: React.PropTypes.bool.isRequired,
   }
 
@@ -54,15 +53,12 @@ class CodePane extends React.Component {
   }
 
   render = () => {
-    let isCodePresent = Boolean(this.props.codeString);
     return (
       <div className="flex-code-pane">
         <ControlBar showDynamic={this.props.showDynamic}
           codeRunning={this.state.codeRunning}
-          codeParsed={this.state.codeParsed}
-          isCodePresent={isCodePresent}/>
+          codeParsed={this.state.codeParsed}/>
         <Editor codeRunning={this.state.codeRunning}
-        codeString={this.props.codeString}
         onUserChangeCode={CodeStatusStore.setCodeParsed.bind(this, false)}/>
       </div>
     );

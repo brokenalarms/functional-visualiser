@@ -16,9 +16,9 @@ function CodeStore() {
     codeStore.removeListener('change', callback);
   }
 
-  function set(newCode) {
+  function set(newCode, userUpdate) {
     codeString = newCode.toString().trim();
-    codeStore.emit('change', codeString);
+    codeStore.emit('change', userUpdate);
   }
 
   function get() {

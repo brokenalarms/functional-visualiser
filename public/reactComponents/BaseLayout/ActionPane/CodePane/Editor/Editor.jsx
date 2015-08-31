@@ -13,7 +13,7 @@ require('brace/theme/solarized_dark');
 import SequencerStore from '../../../../../modules/stores/SequencerStore.js';
 import CodeStore from '../../../../../modules/stores/CodeStore.js';
 
-class Editor extends React.Component {
+class Editor {
 
   static propTypes = {
     options: React.PropTypes.object,
@@ -35,29 +35,32 @@ class Editor extends React.Component {
     },
   }
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      range: SequencerStore.getCurrentRange(),
-    };
-  }
-
   componentDidMount = () => {
     SequencerStore.subscribeEditor(this.onSequencerAction);
+    CodeStore.subscribeListener(this.onCodeStoreChange);
   }
 
-  componentDidUpdate = () => {
-    let editor = this.refs.aceEditor.editor;
-    if (this.state.range) {
-      editor.selection.setSelectionRange(this.state.range);
+  shouldComponentUpdate = (nextProps) => {
+    return false;
+  }
+
+  componentWillReceiveProps = (nextProps) => {
+    this.refs.aceEditor.editor.setReadOnly(nextProps.codeRunning);
+  }
+
+  componentDidUpdate = () => {}
+
+  setRange = (editor, range) => {
+    if (range) {
+      editor.selection.setSelectionRange(range);
     } else {
       editor.selection.clearSelection();
     }
-    editor.setReadOnly(this.props.codeRunning);
   }
 
   componentWillUnmount = () => {
     SequencerStore.unsubscribeEditor(this.onSequencerAction);
+    CodeStore.unsubscribeListener(this.onCodeStoreChange);
   }
 
   onSequencerAction = () => {
@@ -76,13 +79,11 @@ class Editor extends React.Component {
            from a single node versus the whole progam */
         range = SequencerStore.getCurrentRange().collapseRows();
       }
-      this.setState({
-        range,
-      });
+      this.setRange(editor, range);
     }
   }
 
-  onChangeCodeInEditor = () => {
+  onChangeCodeInEditor = (newValue) => {
     /* The Sequencer always checks the CodeStore preferentially to 
        the RefreshStore for user-modified code that has overwritten
        the selectedExample.*/
@@ -90,9 +91,14 @@ class Editor extends React.Component {
     // don't trigger change for programmatic events (adding IIFE info)
     // as this will clear the state of the DynamicControlBar
     if (editor.curOp && editor.curOp.command.name) {
-      CodeStore.set(editor.getValue());
-      // calls back to CodePane to set parsed to false in the CodeStatusStore
+      CodeStore.set(newValue, true);
       this.props.onUserChangeCode();
+    }
+  }
+
+  onCodeStoreChange = (userUpdate) => {
+    if (!userUpdate) {
+      this.refs.aceEditor.editor.setValue(CodeStore.get());
     }
   }
 

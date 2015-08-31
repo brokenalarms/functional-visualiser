@@ -48,7 +48,7 @@
     "browser-refresh": "^1.4.6",
     "browser-sync": "^2.7.13",
     "browserify": "^11.0.1",
-    "del": "^1.2.0",
+    "del": "^2.0.0",
     "esgraph": "^0.2.2",
     "eslint": "^1.0.0",
     "eslint-config-airbnb": "0.0.8",
@@ -81,13 +81,13 @@
     "express": "^4.13.0",
     "jade": "^1.11.0",
     "lodash": "^3.10.0",
-    "material-ui": "^0.11.0",
+    "material-design-icons": "^2.0.0",
+    "material-ui": "*",
     "morgan": "~1.6.1",
     "react": "^0.13.3",
     "react-ace": "^2.1.1",
-    "react-draggable2": "^0.6.0",
     "react-remarkable": "^1.1.1",
-    "react-tap-event-plugin": "^0.1.7",
+    "react-tap-event-plugin": "*",
     "serve-favicon": "~2.3.0"
   }
 }

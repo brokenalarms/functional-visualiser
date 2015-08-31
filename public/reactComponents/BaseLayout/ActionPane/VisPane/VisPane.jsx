@@ -6,23 +6,19 @@ class VisPane extends React.Component {
 
   static propTypes = {
     dimensions: React.PropTypes.object,
-    showDynamic: React.PropTypes.bool,
-    codeString: React.PropTypes.string,
+    showDynamic: React.PropTypes.bool.isRequired,
   }
 
   render = () => {
     let d3Component = null;
-    if (this.props.codeString) {
-      if (this.props.showDynamic) {
-        d3Component = (
-          <D3DynamicInterface 
+    if (this.props.showDynamic) {
+      d3Component = (
+        <D3DynamicInterface 
             dimensions={this.props.dimensions} />);
-      } else {
-        d3Component = (
-          <D3StaticInterface 
-            codeString={this.props.codeString}
+    } else {
+      d3Component = (
+        <D3StaticInterface 
             dimensions={this.props.dimensions}/>);
-      }
     }
 
     return (

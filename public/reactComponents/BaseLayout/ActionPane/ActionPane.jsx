@@ -3,7 +3,6 @@ import CodePane from './CodePane/CodePane.jsx';
 import VisPane from './VisPane/Vispane.jsx';
 
 import RefreshStore from '../../../modules/stores/RefreshStore.js';
-import CodeStore from '../../../modules/stores/CodeStore.js';
 
 
 class ActionPane extends React.Component {
@@ -13,18 +12,15 @@ class ActionPane extends React.Component {
     this.state = {
       showDynamic: RefreshStore.getOptions().showDynamic,
       visualizationDimensions: RefreshStore.getOptions().dimensions,
-      codeString: CodeStore.get(),
     };
   }
 
   componentDidMount() {
     RefreshStore.subscribeListener(this.onRefreshOptionsChanged);
-    CodeStore.subscribeListener(this.onNewCodeString);
   }
 
   componentWillUnmount = () => {
     RefreshStore.unsubscribeListener(this.onRefreshOptionsChanged);
-    CodeStore.unsubscribeListener(this.onNewCodeString);
   }
 
 
@@ -37,21 +33,13 @@ class ActionPane extends React.Component {
     });
   }
 
-  onNewCodeString = () => {
-    this.setState({
-      codeString: CodeStore.get(),
-    });
-  }
-
   render = () => {
     return (
       <div className="flex-action-pane">
         <VisPane
-          codeString={this.state.codeString}
           showDynamic={this.state.showDynamic}
           dimensions={this.state.visualizationDimensions}/>
         <CodePane
-          codeString={this.state.codeString}
           showDynamic={this.state.showDynamic} />
       </div>
     );

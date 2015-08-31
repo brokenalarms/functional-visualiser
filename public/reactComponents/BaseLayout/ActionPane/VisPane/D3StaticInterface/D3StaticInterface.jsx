@@ -3,25 +3,27 @@ import astTools from '../../../../../modules/astTools/astTools.js';
 import buildGraph from '../../../../../modules/d3StaticVisualizer/BuildStaticCallGraph.js';
 import d3Static from '../../../../../modules/d3StaticVisualizer/d3StaticVisualizer.js';
 import CodeStatusStore from '../../../../../modules/stores/CodeStatusStore.js';
+import CodeStore from '../../../../../modules/stores/CodeStore.js';
 
 
 class D3StaticInterface {
 
   static propTypes = {
-    dimensions: React.PropTypes.object,
-    codeString: React.PropTypes.string.isRequired,
+    dimensions: React.PropTypes.object.isRequired,
   }
 
   componentDidMount = () => {
     CodeStatusStore.subscribeListener(this.onCodeStatusStoreUpdate);
+    CodeStore.subscribeListener(this.onNewCodeString);
   }
 
   shouldComponentUpdate() {
     return false;
   }
 
-  componentWillUnmount() {
+  componentWillUnmount = () => {
     CodeStatusStore.unsubscribeListener(this.onCodeStatusStoreUpdate);
+    CodeStore.unsubscribeListener(this.onNewCodeString);
   }
 
   onCodeStatusStoreUpdate = (codeOptions) => {
@@ -34,8 +36,12 @@ class D3StaticInterface {
     }
   }
 
+  onNewCodeString = () => {
+    d3Static.destroy(React.findDOMNode(this));
+  }
+
   d3Restart = () => {
-    let runCodeString = astTools.getRunCodeString(this.props.codeString);
+    let runCodeString = astTools.getRunCodeString(CodeStore.get());
     let [nodes, links] = buildGraph.get(runCodeString);
     let element = React.findDOMNode(this);
     d3Static.initialize(element, nodes, links,

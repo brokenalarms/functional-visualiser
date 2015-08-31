@@ -66,7 +66,7 @@ function Sequencer() {
       if (interpreter.step()) {
         let delay = SequencerStore.getDelayOptions().sequencerDelay * 3000;
 
-        //console.log(cloneDeep(interpreter.stateStack[0]));
+        // console.log(cloneDeep(interpreter.stateStack[0]));
         let doneAction = updateNodes.action(interpreter.stateStack);
 
         if (doneAction) {
@@ -89,6 +89,8 @@ function Sequencer() {
           // keep skipping forward until we see something
           // representing one of the actions that has
           // a visualization component built for it
+          // add timeout to relieve UI thread and allow
+          // delay slider bar to operate
           updateNodes.nextStep();
           setTimeout(nextStep.bind(null, singleStep), 0);
         }

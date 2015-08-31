@@ -18,7 +18,7 @@ function isReturnToCaller(state, prevState) {
   return (state.node.type === 'CallExpression' &&
     // functions with returns, omitting those that call further functions
     ((prevState.node.type === 'ReturnStatement' &&
-        !(prevState.node.argument.callee)) ||
+        !(prevState.node.argument.callee && !state.done)) ||
       // end of unassigned (non-return) FunctionExpression
       prevState.scope));
 }

@@ -24,7 +24,6 @@ class ControlBar extends React.Component {
     showDynamic: React.PropTypes.bool,
     codeParsed: React.PropTypes.bool,
     codeRunning: React.PropTypes.bool,
-    isCodePresent: React.PropTypes.bool,
   }
 
   onPlay = () => {
@@ -66,14 +65,14 @@ class ControlBar extends React.Component {
     return (
       <Toolbar style={{display: 'flex', 'alignItems': 'center', justifyContent: 'space-around'}}>
         <ToolbarGroup>
-          <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || this.props.codeRunning} onClick={this.onPlay} style={{'zIndex': 3}} tooltip="Play or resume dynamic execution"><i className="material-icons">play_arrow</i></IconButton>
-          <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || !this.props.codeRunning} onClick={this.onPause} style={{'zIndex': 3}} tooltip="Pause dynamic execution"><i className="material-icons">pause</i></IconButton>
-          <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || this.props.codeRunning} onClick={this.onAdvance} style={{'zIndex': 3}} tooltip="Advance one step"><i className="material-icons">skip_next</i></IconButton>
+          <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || this.props.codeRunning} onClick={this.onPlay} style={{'zIndex': 5}} tooltip="Play or resume dynamic execution"><i className="material-icons">play_arrow</i></IconButton>
+          <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || !this.props.codeRunning} onClick={this.onPause} style={{'zIndex': 5}} tooltip="Pause dynamic execution"><i className="material-icons">pause</i></IconButton>
+          <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || this.props.codeRunning} onClick={this.onAdvance} style={{'zIndex': 5}} tooltip="Advance one step"><i className="material-icons">skip_next</i></IconButton>
           <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || !this.state.allowResetButton} onClick={this.onReset} style={{'zIndex': 10}} tooltip="Stop and reset execution to start"><i className="material-icons">replay</i></IconButton>
         </ToolbarGroup>
         <ToolbarSeparator style={{'top': 0, 'margin': '0 12px 0 12px'}}/>
         <ToolbarGroup>
-          <FlatButton disabled={this.props.codeParsed || !this.props.isCodePresent} onClick={this.onParse} label="Parse editor code" primary={true} />
+          <FlatButton disabled={this.props.codeParsed} onClick={this.onParse} label="Parse editor code" primary={true} />
         </ToolbarGroup>
       </Toolbar>
     );
