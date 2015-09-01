@@ -16,9 +16,10 @@ function SequencerStore() {
     links: [],
   };
 
-  let delay = {
+  let options = {
     staggerEditorAndVisualizer: true,
-    sequencerDelay: 0.1, // * 1000 = ms, this is sliderValue
+    persistReturnedFunctions: true,
+    sequencerDelay: 0.01, // * 1000 = ms, this is sliderValue
     delayFactor: 3000,
   };
 
@@ -59,12 +60,12 @@ function SequencerStore() {
     Object.assign(editorStep, output);
   }
 
-  function setDelayOptions(delayOpts) {
-    Object.assign(delay, delayOpts);
+  function setOptions(newOpts) {
+    Object.assign(options, newOpts);
   }
 
-  function getDelayOptions() {
-    return delay;
+  function getOptions() {
+    return options;
   }
 
   function resetState() {
@@ -80,28 +81,26 @@ function SequencerStore() {
       sequencerStore.emit('update', shouldResetD3);
       return;
     }
-    let stepDelay = delay.sequencerDelay * delay.delayFactor;
+    let stepDelay = options.sequencerDelay * options.delayFactor;
     return new Promise((resolveAll) => {
 
 
-      if (delay.staggerEditorAndVisualizer) {
+      if (options.staggerEditorAndVisualizer) {
         // stagger code/visualizer steps evenly
         // to see cause/effect relationship.
-        stepDelay = stepDelay / 2;
-
         let editorComplete = new Promise((resolveEditorStep) => {
           setTimeout(() => {
               sequencerStore.emit('updateEditor');
               resolveEditorStep(true);
             },
-            stepDelay);
+            stepDelay * 1 / 3); 
         });
 
         editorComplete.then(() => {
           setTimeout(() => {
             sequencerStore.emit('update');
             resolveAll(true);
-          }, stepDelay);
+          }, stepDelay * 2 / 3);
         });
 
       } else {
@@ -125,8 +124,8 @@ function SequencerStore() {
       getCurrentRange,
       getCurrentCodeBlock,
       setEditorOutput,
-      setDelayOptions,
-      getDelayOptions,
+      setOptions,
+      getOptions,
       resetState,
   };
 }

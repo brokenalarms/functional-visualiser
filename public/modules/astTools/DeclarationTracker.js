@@ -1,6 +1,6 @@
 import {last} from 'lodash';
 
-function DeclarationTracker(objType) {
+function DeclarationTracker(valueRefType) {
   /* keep track of variable/function declaration set via:
    {variable string: [array containing each d3 scope node the variable is declared in]}
   (so this allows for same name being shadowed at deeper scope)
@@ -12,25 +12,40 @@ function DeclarationTracker(objType) {
     if (declarationTracker.has(key)) {
       declarationTracker.get(key).push(node);
     } else {
-      declarationTracker.set(key, [node]);
+      declarationTracker.set(key, node ? [node] : []);
     }
   }
 
-  function setMap(key, value) {
+  function keys() {
+    return declarationTracker.keys;
+  }
+
+  // 2d Map for tracking scope -> declaration -> array of recurring expressions from that declaration
+  function setMap(key, valueKey, value) {
     if (declarationTracker.has(key)) {
-      declarationTracker.get(key).set([value]);
+      // it has the scope
+      let foundPrimaryKey = declarationTracker.get(key);
+      if (foundPrimaryKey.has(valueKey)) {
+        foundPrimaryKey.get(valueKey).push(value);
+      } else {
+        foundPrimaryKey.set(valueKey, [value]);
+      }
     } else {
-      declarationTracker.set(key, (value) ? new Map([value]) : new Map());
+      declarationTracker.set(key, new Map([
+        [valueKey, [value]]
+      ]));
     }
   }
 
   function remove(key) {
     if (declarationTracker.get(key).length > 0) {
-      declarationTracker.pop(node);
-    } else {
+      declarationTracker.get(key).pop();
+    }
+    if (declarationTracker.get(key).length === 0) {
       declarationTracker.delete(key);
     }
   }
+
 
   function removeMap(key, name) {
     if (declarationTracker.get(key).size > 0) {
@@ -44,8 +59,16 @@ function DeclarationTracker(objType) {
     return declarationTracker.get(key);
   }
 
+  function getMap(key, valueKey) {
+    return declarationTracker.get(key);
+  }
+
   function getLast(key) {
     return last(declarationTracker.get(key));
+  }
+
+  function getFirst(key) {
+    return declarationTracker.get(key)[0];
   }
 
   function has(key) {
@@ -84,8 +107,8 @@ function DeclarationTracker(objType) {
     });
   }
 
-  return (objType === 'array') ? {
-    get, getLast, set, has, exitNode, remove,
+  return (valueRefType === 'array') ? {
+    get, getLast, getFirst, set, has, exitNode, remove,
   } : {
     get, set: setMap, has, remove: removeMap,
   };

@@ -27,7 +27,7 @@ function RefreshStore() {
 
   function setOptions(newOpts) {
     Object.assign(options, newOpts);
-    refreshStore.emit('change');
+    refreshStore.emit('change', options);
   }
 
   function getOptions() {

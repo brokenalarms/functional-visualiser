@@ -1,8 +1,9 @@
 // TODO - extract options into d3OptionsStore
 let options = {
+  rootPositionFixed: true,
   d3Force: {
-    charge: -500,
-    chargeDistance: 500,
+    charge: -250,
+    chargeDistance: 1000,
     gravity: 0.05,
   },
   dimensions: {
@@ -15,8 +16,7 @@ let options = {
       return 0.8;
     },
     distance: function(nodes) {
-      return options.dimensions.width /
-        Math.min(Math.max(nodes.length, 1), 15);
+      return (Math.max(options.dimensions.width / nodes.length + 3, 100));
     },
   },
 };
@@ -29,11 +29,12 @@ let options = {
 // ======================================================
 import d3 from 'd3';
 // shared by externally available update function
-let svg, node, link, forceLayout;
+let svg, node, nodeText, link, forceLayout;
 
 function initialize(element, nodes, links, dimensions) {
   options.dimensions.width = dimensions.width;
   options.dimensions.height = dimensions.height;
+
 
   // cleanup if React udpates and doesn't re-mount DOM element
   d3.select(element).selectAll('*').remove();
@@ -42,14 +43,14 @@ function initialize(element, nodes, links, dimensions) {
     .attr('class', 'd3-root')
     .attr('width', options.dimensions.width)
     .attr('height', options.dimensions.height);
-  appendArrow(svg);
+  appendArrow();
 
-  link = svg.selectAll('.link');
-  node = svg.selectAll('.node');
+  link = svg.append('g').selectAll('link');
+  node = svg.append('g').selectAll('node');
   forceLayout = createNewForceLayout(options.graphType, nodes, links);
 }
 
-function appendArrow(svg) {
+function appendArrow() {
   // add arrow reference for link paths
   svg.append('svg:defs')
     .append('svg:marker')
@@ -66,8 +67,8 @@ function appendArrow(svg) {
 
 function createNewForceLayout(graphType, nodes, links) {
   let force = d3.layout.force()
-    .nodes(nodes)
     .links(links)
+    .nodes(nodes)
     .size([options.dimensions.width, options.dimensions.height])
     .linkDistance(options.links.distance.bind(this, nodes))
     .charge(options.d3Force.charge)
@@ -85,15 +86,18 @@ function createNewForceLayout(graphType, nodes, links) {
 
   function tick() {
     link.attr('points', (d) => {
-      let midX = (d.source.x + d.target.x) / 2;
-      let midY = (d.source.y + d.target.y) / 2;
-      return `${d.source.x},${d.source.y} ${midX},${midY} ${d.target.x},${d.target.y}`;
+      let arrowX = (d.source.x + d.target.x) / 2;
+      let arrowY = (d.source.y + d.target.y) / 2;
+      return `${d.source.x},${d.source.y} ${arrowX},${arrowY} ${d.target.x},${d.target.y}`;
     });
 
     node.attr('transform', (d) => {
       d.x = Math.max(inlay, Math.min(maxAllowedX, d.x));
       d.y = Math.max(inlay, Math.min(maxAllowedY, d.y));
       return `translate(${d.x},${d.y})`;
+    });
+    nodeText.attr('transform', (d) => {
+      return `translate(${10},${-5})`;
     });
   }
 }
@@ -102,7 +106,10 @@ function createNewForceLayout(graphType, nodes, links) {
    that React can handle unsubscription of 
    event listeners calling it*/
 function update() {
-  link = link.data(forceLayout.links());
+
+  link = link.data(forceLayout.links(), (d) => {
+    return d.index;
+  });
   node = node.data(forceLayout.nodes(), (d) => {
     // re-matches data to work with shifting rather than popping
     // to follow stack behaviour 
@@ -111,22 +118,29 @@ function update() {
 
   link.enter()
     .append('polyline')
-    .attr('class', 'function-link')
+    .attr('class', (d) => {
+      return d.className;
+    })
     .attr('marker-mid', 'url(#arrow)');
+  link.exit().remove();
 
   let nodeGroup = node.enter().append('g');
-  nodeGroup.append('circle').attr('class', 'function-node').attr('r', options.dimensions.nodeRadius);
-  nodeGroup.append('text').text((d) => {
-    return d.displayInfo.calleeName;
+  nodeGroup.append('circle')
+    .attr('r', options.dimensions.nodeRadius);
+  nodeText = nodeGroup.append('text').text((d) => {
+    return d.info.displayName;
   });
 
+  node.selectAll('circle')
+    .attr('class', (d) => {
+      return d.info.className;
+    });
   node.exit().remove();
-  link.exit().remove();
   forceLayout.start();
 }
 
 function destroy() {
-  //probably not necessary if React resets components
+  // probably not necessary if React resets components
   forceLayout.stop();
   svg.selectAll('*').remove();
   svg = forceLayout = node = link = null;

@@ -10,123 +10,113 @@ import astTools from '../astTools/astTools.js';
 import DeclarationTracker from '../astTools/DeclarationTracker.js';
 
 
-function isSupportedFunctionCall(state, prevState) {
-  /* if the current state has scope, 
-     the previous will have a function with args passed in*/
+function isSupportedFunctionCall(state) {
   return (
-    state.components && state.node.type !== 'MemberExpression' &&
-    (prevState.node.type === 'CallExpression')
+    (state.node.type === 'CallExpression' && !state.doneCallee_) &&
+    !(state.node.callee && state.node.callee.type === 'MemberExpression')
   );
 }
 
-function isReturnToCaller(state, prevState) {
-  return (state.node.type === 'CallExpression' &&
-    // functions with returns, omitting those that call further functions
-    ((prevState.node.type === 'ReturnStatement' &&
-        !(prevState.node.argument.callee && !state.done)) ||
-      // end of unassigned (non-return) FunctionExpression
-      prevState.scope));
+function isSupportedReturnToCaller(state) {
+  return (
+    (state.node.type === 'CallExpression' && state.doneExec) &&
+    !(state.node.callee && state.node.callee.type === 'MemberExpression')
+  );
 }
 
 function VisibleFunctionUpdater(resetNodes, resetLinks) {
 
   let nodes = resetNodes;
   let links = resetLinks;
-  let state, prevState, declaringScope;
-  let callsByScopeTracker = new DeclarationTracker('map');
+  let state, prevState;
+  let scopeChain = [];
 
-  function action(interpreter) {
+  function action(interpreter, persistReturnedFunctions) {
     let doneAction = false;
     state = interpreter.stateStack[0];
-
-    if (!declaringScope && state.scope) {
-      declaringScope = interpreter.getScope();
-    }
-
     if (state && prevState) {
-      doneAction = (addCalledFunctions(state, interpreter) ||
-        removeExitingFunctions(state)
-      );
+      doneAction = (addCalledFunctions(state, interpreter, persistReturnedFunctions) ||
+        removeExitingFunctions(state, persistReturnedFunctions));
     }
     return doneAction;
   }
 
 
-  function addCalledFunctions(state, interpreter) {
+  function addCalledFunctions(state, interpreter, persistReturnedFunctions) {
 
-    if (isSupportedFunctionCall(state, prevState)) {
-      //let calleeName = prevState.node.callee.name || prevState.node.callee.id.name;
-      let calleeName = state.node.name || state.node.id.name;
-      //console.log(cloneDeep(state));
-
-
-      /* In JS, the parent scope for constructed functions is the global scope,
-       even if they were constructed in some other scope. So I have to track
-       my own 'parent' (callee) scope.*/
-      let d3EnterNode = {
-        displayInfo: {
-          calleeName: calleeName,
+    if (isSupportedFunctionCall(state)) {
+      let callerNode = last(scopeChain) || null;
+      let calleeName = state.node.callee.name || state.node.callee.id.name;
+      let calleeNode = {
+        // d3 fills up the rest of the object,
+        // hence nesting for readability
+        info: {
+          name: calleeName,
+          displayName: calleeName,
+          callerNode: null,
+          caller: callerNode,
+          className: persistReturnedFunctions ? 'function-calling' : 'function-node',
         },
       };
-      let caller;
 
-      if (!callsByScopeTracker.has(calleeName)) {
-        callsByScopeTracker.set(calleeName, [
-          declaringScope, d3EnterNode,
-        ]);
-        // just link to the previous node
-        caller = last(nodes);
-      } else {
-        // link to the node in the scope in which function was declared
-        if (callsByScopeTracker.get(calleeName).has(declaringScope)) {
-          caller = callsByScopeTracker.get(calleeName).get(declaringScope);
-        } else {
-          callsByScopeTracker.get(calleeName).set([
-            declaringScope, d3EnterNode,
-          ]);
-          caller = last(nodes);
-        }
+      if (callerNode && calleeNode.info.name === callerNode.info.name) {
+        // function has already been executed in higher scope - recursion
+        calleeNode.info.displayName = calleeName + ' (r)';
       }
 
-      addCallLink(d3EnterNode, caller);
-      nodes.push(d3EnterNode);
-      /* Tracking by scope reference allows for recursion:
-         since the interpreter generates new scopes for each function,
-         (and is synchronous). 
-         Doing via a scope -> d3Node map rather than pushing the scope directly
-         in order to leave the original scopes untouched,
-         as the JS-interpreter interferes with d3-added tick values. */
-      /*      setDeclaringScope(interpreter);*/
-      let declaringScope = interpreter.getScope();
+      nodes.push(calleeNode);
+      let callLink = getCallLink(callerNode, calleeNode, 'link-calling');
+      if (callLink) {
+        links.push(callLink);
+      }
+
+      /* Tracking by scope reference allows for
+      displaying nested functions and recursion */
+      scopeChain.push(calleeNode);
       return true;
     }
     return false;
   }
 
-  function removeExitingFunctions(state) {
 
-    if (isReturnToCaller(state, prevState)) {
-      /*      let calleeName = state.node.name || state.node.id.name;
-            recursionTracker.remove(calleeName);*/
-      links.pop();
-      nodes.pop();
+  function removeExitingFunctions(state, persistReturnedFunctions) {
+
+    if (isSupportedReturnToCaller(state)) {
+
+      if (persistReturnedFunctions) {
+        // change directions and class on returning functions
+        let exitLink = last(links);
+        exitLink.target.info.className = 'function-returning';
+        let returnLink = getCallLink(
+          exitLink.target, exitLink.source, 'link-returning');
+        links.pop();
+        links.unshift(returnLink);
+      } else {
+        links.splice(scopeChain.length - 1, Number.MAX_VALUE);
+        nodes.splice(scopeChain.length, Number.MAX_VALUE);
+      }
+      scopeChain.pop();
       return true;
     }
     return false;
   }
 
-  function addCallLink(callee, caller) {
-    if (caller && callee) {
-      links.push({
-        source: caller,
-        target: callee,
-      });
+  let linkIndex = 0;
+
+  function getCallLink(source, target, className) {
+    if (source && target) {
+      let callLink = {
+        source: source,
+        target: target,
+        className,
+        index: linkIndex++,
+      };
+      return callLink;
     }
   }
 
   function getCodeSelectionNode() {
-    let codeSelectionNode = prevState.node;
-    return codeSelectionNode;
+    return state.node;
   }
 
   function setPrevState() {

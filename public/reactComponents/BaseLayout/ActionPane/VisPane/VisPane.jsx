@@ -14,7 +14,8 @@ class VisPane extends React.Component {
     if (this.props.showDynamic) {
       d3Component = (
         <D3DynamicInterface 
-            dimensions={this.props.dimensions} />);
+            dimensions={this.props.dimensions}
+        / >);
     } else {
       d3Component = (
         <D3StaticInterface 

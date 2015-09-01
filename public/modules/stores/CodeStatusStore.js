@@ -9,6 +9,7 @@ function CodeStatusStore() {
 
   let codeRunning = false;
   let codeParsed = false;
+  let codeFinished = false;
 
   function subscribeListener(callback) {
     codeStatusStore.on('change', callback);
@@ -29,16 +30,31 @@ function CodeStatusStore() {
     return codeRunning;
   }
 
+  function emitChange() {
+    codeStatusStore.emit('change', {
+      codeRunning, codeParsed, codeFinished,
+    });
+  }
+
   function setCodeParsed(flag) {
     codeParsed = flag;
     codeRunning = false;
-    codeStatusStore.emit('change', {
-      codeRunning, codeParsed,
-    });
+    codeFinished = false;
+    emitChange();
   }
 
   function isCodeParsed() {
     return codeParsed;
+  }
+
+  function setCodeFinished(flag) {
+    codeFinished = flag;
+    codeRunning = false;
+    emitChange();
+  }
+
+  function isCodeFinished() {
+    return codeFinished;
   }
 
   return {
@@ -48,6 +64,8 @@ function CodeStatusStore() {
     isCodeRunning,
     setCodeParsed,
     isCodeParsed,
+    setCodeFinished,
+    isCodeFinished,
   };
 }
 export default new CodeStatusStore;

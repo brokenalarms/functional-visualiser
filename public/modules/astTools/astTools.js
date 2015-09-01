@@ -4,7 +4,7 @@
 
 import {parse} from 'acorn';
 import estraverse from 'estraverse';
-import escodegen from 'escodegen';
+let escodegen = require('escodegen');
 import {includes, pluck, uniq as unique, last, chain} from 'lodash';
 let ace = require('brace');
 let Range = ace.acequire('ace/range').Range;

@@ -1,3 +1,4 @@
+'use strict';
 import CodeStore from '../stores/CodeStore.js';
 import CodeStatusStore from '../stores/CodeStatusStore.js';
 import SequencerStore from '../stores/SequencerStore.js';
@@ -62,40 +63,45 @@ function Sequencer() {
 
   function nextStep(singleStep) {
 
+    let delay = SequencerStore.getOptions().sequencerDelay * 3000;
+    let persistReturnedFunctions = SequencerStore.getOptions().persistReturnedFunctions;
+    let doneAction = false;
     if (CodeStatusStore.isCodeRunning()) {
+
+      // console.log(cloneDeep(interpreter.stateStack[0]));
+      doneAction = updateNodes.action(interpreter, persistReturnedFunctions);
+
+      if (doneAction) {
+        let representedNode = updateNodes.getCodeSelectionNode();
+        SequencerStore.setEditorOutput({
+          execCodeBlock: astTools.createCode(representedNode),
+          range: astTools.getCodeRange(representedNode),
+        });
+        // wait until sequencer has completed timedout editor/d3
+        // output before recursing
+        SequencerStore.sendUpdate().then(() => {
+          gotoNextStep();
+        });
+      } else {
+        // keep skipping forward until we see something
+        // representing one of the actions that has
+        // a visualization component built for it.
+        // add timeout to relieve UI thread and allow
+        // delay slider bar to operate
+        gotoNextStep();
+      }
+    }
+
+    function gotoNextStep() {
       if (interpreter.step()) {
-        let delay = SequencerStore.getDelayOptions().sequencerDelay * 3000;
-
-       // console.log(cloneDeep(interpreter.stateStack));
-        let doneAction = updateNodes.action(interpreter);
-
-        if (doneAction) {
-          let representedNode = updateNodes.getCodeSelectionNode();
-          SequencerStore.setEditorOutput({
-            execCodeBlock: astTools.createCode(representedNode),
-            range: astTools.getCodeRange(representedNode),
-          });
-          // wait until sequencer has completed timedout editor/d3
-          // output before recursing
-          updateNodes.nextStep();
-          SequencerStore.sendUpdate().then(() => {
-            if (singleStep) {
-              CodeStatusStore.setCodeRunning(false);
-            } else {
-              setTimeout(nextStep, (doneAction) ? delay : 0);
-            }
-          });
+        updateNodes.nextStep();
+        if (doneAction && singleStep) {
+          CodeStatusStore.setCodeRunning(false);
         } else {
-          // keep skipping forward until we see something
-          // representing one of the actions that has
-          // a visualization component built for it
-          // add timeout to relieve UI thread and allow
-          // delay slider bar to operate
-          updateNodes.nextStep();
-          setTimeout(nextStep.bind(null, singleStep), 0);
+          setTimeout(nextStep.bind(null, singleStep), (doneAction) ? delay : 0);
         }
       } else {
-        //resetInterpreterAndSequencerStore();
+        CodeStatusStore.setCodeFinished(true);
       }
     }
   }

@@ -4,8 +4,28 @@ const description = '';
 
 function demo() {
 
-  // TODO - check why this isn't working unless hoisted
-  function map(callback, thisArg) {
+
+  /**
+   * A specialized version of `_.map` for arrays without support for callback
+   * shorthands and `this` binding.
+   *
+   * @private
+   * @param {Array} array The array to iterate over.
+   * @param {Function} iteratee The function invoked per iteration.
+   * @returns {Array} Returns the new mapped array.
+   */
+  function map(iteratee, array) {
+    var index = -1,
+      length = array.length,
+      result = Array(length);
+
+    while (++index < length) {
+      result[index] = iteratee(array[index], index, array);
+    }
+    return result;
+  }
+
+/*  function map(callback, thisArg) {
 
     var T, A, k;
     // 1. Let O be the result of calling ToObject passing the |this| 
@@ -35,7 +55,7 @@ function demo() {
       k++;
     }
     return A;
-  }
+  }*/
 
   function reduce(array, callback, initialValue) {
     var t = array,

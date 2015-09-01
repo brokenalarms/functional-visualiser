@@ -19,6 +19,7 @@ class CodePane extends React.Component {
     this.state = {
       codeRunning: CodeStatusStore.isCodeRunning(),
       codeParsed: CodeStatusStore.isCodeParsed(),
+      codeFinished: CodeStatusStore.isCodeFinished(),
     };
   }
 
@@ -49,6 +50,7 @@ class CodePane extends React.Component {
     this.setState({
       codeRunning: newStatus.codeRunning,
       codeParsed: newStatus.codeParsed,
+      codeFinished: newStatus.codeFinished,
     });
   }
 
@@ -57,7 +59,8 @@ class CodePane extends React.Component {
       <div className="flex-code-pane">
         <ControlBar showDynamic={this.props.showDynamic}
           codeRunning={this.state.codeRunning}
-          codeParsed={this.state.codeParsed}/>
+          codeParsed={this.state.codeParsed}
+          codeFinished={this.state.codeFinished}/>
         <Editor codeRunning={this.state.codeRunning}
         onUserChangeCode={CodeStatusStore.setCodeParsed.bind(this, false)}/>
       </div>

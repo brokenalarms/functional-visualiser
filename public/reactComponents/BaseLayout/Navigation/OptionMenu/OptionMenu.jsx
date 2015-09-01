@@ -10,15 +10,16 @@ class OptionMenu extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      persistReturnedFunctions: SequencerStore.getOptions().persistReturnedFunctions,
       showDynamic: RefreshStore.getOptions().showDynamic,
-      staggerEditorAndVisualizer: SequencerStore.getDelayOptions().staggerEditorAndVisualizer,
-      sequencerDelay: SequencerStore.getDelayOptions().sequencerDelay,
-      delayFactor: SequencerStore.getDelayOptions().delayFactor,
+      staggerEditorAndVisualizer: SequencerStore.getOptions().staggerEditorAndVisualizer,
+      sequencerDelay: SequencerStore.getOptions().sequencerDelay,
+      delayFactor: SequencerStore.getOptions().delayFactor,
     };
   }
 
   setStaggerEditorAndVisualizer = (event, checked) => {
-    SequencerStore.setDelayOptions({
+    SequencerStore.setOptions({
       staggerEditorAndVisualizer: !checked,
     });
     this.setState({
@@ -26,8 +27,17 @@ class OptionMenu extends React.Component {
     });
   }
 
+  setPersistReturnedFunctions = (event, checked) => {
+    SequencerStore.setOptions({
+      persistReturnedFunctions: !checked,
+    });
+    this.setState({
+      persistReturnedFunctions: !checked,
+    });
+  }
+
   setDelayValue = (e, sliderValue) => {
-    SequencerStore.setDelayOptions({
+    SequencerStore.setOptions({
       sequencerDelay: sliderValue,
     });
     this.setState({
@@ -63,7 +73,7 @@ class OptionMenu extends React.Component {
         <List subheader="Dynamic visualization options" subheaderStyle={{color: 'darkgray'}}>
         <MenuItem index={1}>
           <div>Step delay: {Math.round(this.state.sequencerDelay * this.state.delayFactor) + ' ms'}</div>
-        <Slider style={{margin: '0 24px 24px 24px', touchAction: 'none', cursor: 'pointer'}}
+        <Slider style={{margin: '0 12px 24px 12px', touchAction: 'none', cursor: 'pointer'}}
           onChange={this.setDelayValue}
           name="sequencerDelay"
           min={0.00333}
@@ -79,6 +89,17 @@ class OptionMenu extends React.Component {
         defaultChecked={this.state.staggerEditorAndVisualizer}
         checked={this.state.staggerEditorAndVisualizer}
         onCheck={this.setStaggerEditorAndVisualizer}/>
+        <Checkbox style={{padding: '0 24px 0 24px', marginTop: '12px'}}
+        name="persistReturnedFunctions"
+        label="Persist returned functions"
+        labelPosition="left"
+        labelStyle={{width: 'calc(100% - 100px)'}}
+        defaultChecked={this.state.persistReturnedFunctions}
+        checked={this.state.persistReturnedFunctions}
+        onCheck={this.setPersistReturnedFunctions} />
+        <div style={{color: 'lightgrey', fontSize: '12px', margin: '12px 24px'}}>
+          If checked whilst running, will not restore those functions already returned.
+        </div>
       </List>
       </IconMenu>
     );
