@@ -2,7 +2,7 @@
 let options = {
   rootPositionFixed: true,
   d3Force: {
-    charge: -250,
+    charge: -300,
     chargeDistance: 1000,
     gravity: 0.05,
   },
@@ -16,7 +16,7 @@ let options = {
       return 0.8;
     },
     distance: function(nodes) {
-      return (Math.max(options.dimensions.width / nodes.length + 3, 100));
+      return (Math.max(options.dimensions.width / nodes.length + 3, 90));
     },
   },
 };
@@ -29,7 +29,7 @@ let options = {
 // ======================================================
 import d3 from 'd3';
 // shared by externally available update function
-let svg, node, nodeText, link, forceLayout;
+let svg, node, nodeText, link, forceLayout, drag;
 
 function initialize(element, nodes, links, dimensions) {
   options.dimensions.width = dimensions.width;
@@ -48,6 +48,8 @@ function initialize(element, nodes, links, dimensions) {
   link = svg.append('g').selectAll('link');
   node = svg.append('g').selectAll('node');
   forceLayout = createNewForceLayout(options.graphType, nodes, links);
+  drag = forceLayout.drag()
+    .on('dragstart', onDragStart);
 }
 
 function appendArrow() {
@@ -97,7 +99,7 @@ function createNewForceLayout(graphType, nodes, links) {
       return `translate(${d.x},${d.y})`;
     });
     nodeText.attr('transform', (d) => {
-      return `translate(${10},${-5})`;
+      return `translate(${15},${-18})`;
     });
   }
 }
@@ -126,17 +128,35 @@ function update() {
 
   let nodeGroup = node.enter().append('g');
   nodeGroup.append('circle')
-    .attr('r', options.dimensions.nodeRadius);
-  nodeText = nodeGroup.append('text').text((d) => {
-    return d.info.displayName;
+    .attr('r', options.dimensions.nodeRadius)
+    .on('dblclick', onDoubleclickNode)
+
+
+  nodeText = nodeGroup.append('foreignObject');
+
+  node.selectAll('foreignObject').html((d) => {
+    return '<div style="white-space: nowrap"}>' +
+      d.info.displayName + '</div>';
   });
 
   node.selectAll('circle')
     .attr('class', (d) => {
       return d.info.className;
     });
+  
   node.exit().remove();
+  node.call(drag);
   forceLayout.start();
+}
+
+function onDragStart(d) {
+  d3.select(this).select('circle').classed('function-fixed', d.fixed = true);
+  // prevents browser scrolling whilst dragging about node
+  d3.event.sourceEvent.preventDefault();
+}
+
+function onDoubleclickNode(d) {
+  d3.select(this).select('circle').classed('function-fixed', d.fixed = false);
 }
 
 function destroy() {

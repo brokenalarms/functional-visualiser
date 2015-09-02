@@ -1,21 +1,27 @@
 .link-calling {
-    stroke: blue;
+    stroke: $color-primary;
     stroke-width: 1px;
 }
 
 .link-returning {
-    stroke: green;
+    stroke: $color-secondary;
     stroke-width: 1px;
 }
 
 .function-calling {
-    fill: blue;
+    fill: $color-primary;
     stroke: white;
     stroke-width: 2px;
 }
 
+.function-fixed {
+    stroke: $color-secondary;
+    fill: white;
+    stroke-width: 2px;
+}
+
 .function-returning {
-    fill: green;
+    fill: $color-secondary;
     stroke: white;
     stroke-width: 2px;
 }

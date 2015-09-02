@@ -4,16 +4,6 @@ const description = '';
 
 function demo() {
 
-
-  /**
-   * A specialized version of `_.map` for arrays without support for callback
-   * shorthands and `this` binding.
-   *
-   * @private
-   * @param {Array} array The array to iterate over.
-   * @param {Function} iteratee The function invoked per iteration.
-   * @returns {Array} Returns the new mapped array.
-   */
   function map(iteratee, array) {
     var index = -1,
       length = array.length,
@@ -24,38 +14,6 @@ function demo() {
     }
     return result;
   }
-
-/*  function map(callback, thisArg) {
-
-    var T, A, k;
-    // 1. Let O be the result of calling ToObject passing the |this| 
-    //    value as the argument.
-    var O = this;
-
-    // 2. Let lenValue be the result of calling the Get internal 
-    //    method of O with the argument 'length'.
-    // 3. Let len be ToUint32(lenValue).
-    var len = O.length >>> 0;
-    if (typeof callback !== 'function') {
-      throw new TypeError(callback + ' is not a function');
-    }
-    if (arguments.length > 1) {
-      T = thisArg;
-    }
-    A = new Array(len);
-    k = 0;
-    while (k < len) {
-
-      var kValue, mappedValue;
-      if (k in O) {
-        kValue = O[k];
-        mappedValue = callback(T, kValue, k, O);
-        A[k] = mappedValue;
-      }
-      k++;
-    }
-    return A;
-  }*/
 
   function reduce(array, callback, initialValue) {
     var t = array,

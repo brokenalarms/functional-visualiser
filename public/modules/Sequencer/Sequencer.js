@@ -68,11 +68,11 @@ function Sequencer() {
     let doneAction = false;
     if (CodeStatusStore.isCodeRunning()) {
 
-      // console.log(cloneDeep(interpreter.stateStack[0]));
+      //console.log(cloneDeep(interpreter.stateStack[0]));
       doneAction = updateNodes.action(interpreter, persistReturnedFunctions);
 
       if (doneAction) {
-        let representedNode = updateNodes.getCodeSelectionNode();
+        let representedNode = updateNodes.getRepresentedNode();
         SequencerStore.setEditorOutput({
           execCodeBlock: astTools.createCode(representedNode),
           range: astTools.getCodeRange(representedNode),
