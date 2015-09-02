@@ -107,7 +107,10 @@ function createNewForceLayout(graphType, nodes, links) {
 /* update function is externally available so
    that React can handle unsubscription of 
    event listeners calling it*/
+let firstRun = true;
+
 function update() {
+
 
   link = link.data(forceLayout.links(), (d) => {
     return d.index;
@@ -129,7 +132,7 @@ function update() {
   let nodeGroup = node.enter().append('g');
   nodeGroup.append('circle')
     .attr('r', options.dimensions.nodeRadius)
-    .on('dblclick', onDoubleclickNode)
+    .on('dblclick', onDoubleclickNode);
 
 
   nodeText = nodeGroup.append('foreignObject');
@@ -143,10 +146,10 @@ function update() {
     .attr('class', (d) => {
       return d.info.className;
     });
-  
-  node.exit().remove();
-  node.call(drag);
-  forceLayout.start();
+
+node.exit().remove();
+node.call(drag);
+forceLayout.start();
 }
 
 function onDragStart(d) {

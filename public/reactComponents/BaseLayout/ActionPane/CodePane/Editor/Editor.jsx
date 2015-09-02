@@ -38,6 +38,7 @@ class Editor {
   componentDidMount = () => {
     SequencerStore.subscribeEditor(this.onSequencerAction);
     CodeStore.subscribeListener(this.onCodeStoreChange);
+    this.refs.aceEditor.editor.session.setUseWrapMode(true);
   }
 
   shouldComponentUpdate = () => {

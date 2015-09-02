@@ -13,7 +13,7 @@ function RefreshStore() {
     showDynamic: true,
     dimensions: {
       width: 1000,
-      height: 800,
+      height: 56+ 800,
     },
   });
 

@@ -8,6 +8,38 @@
     stroke-width: 1px;
 }
 
+.opaque {
+    opacity: 0.6;
+}
+
+.root-function {
+    fill: grey !important;
+}
+
+.root-finished {
+    -webkit-transform: scale(4);
+    -moz-transform: scale(4);
+    -ms-transform: scale(4);
+    -o-transform: scale(4);
+    transform: scale(4);
+    -ms-transition-duration: 3s;
+    -o-transition-duration: 3s;
+    transition-duration: 3s;
+    opacity: 0.6;
+}
+
+.success {
+    fill: $color-success;
+}
+
+.warning {
+    fill: $color-warning;
+}
+
+.warning {
+    fill: $color-failure;
+}
+
 .function-calling {
     fill: $color-primary;
     stroke: white;

@@ -1,16 +1,10 @@
-
 $color-primary: #2196F3;
 $color-secondary: #4CAF50;
+$color-success: $color-secondary;
 $color-warning: #FF9800;
 $color-failure: #F44336;
-
-
 //set up to work with gulp-css-globbing to import all the partials
 @import '../reactComponents/**/*.scss';
-
-
-
-
 html,
 body {
     font-family: 'Roboto', sans-serif;
@@ -29,4 +23,25 @@ body {
 
 .react-draggable {
     touch-action: none;
+}
+
+::-webkit-scrollbar {
+    width: 0.5em;
+}
+
+::-webkit-scrollbar-track {
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(100, 100, 100, 0.8);
+}
+
+::-webkit-scrollbar-corner,
+::-webkit-scrollbar-thumb:window-inactive {
+    background: rgba(100, 100, 100, 0.4);
+}
+
+.ace_scrollbar-h {
+    overflow-x: hidden !important;
 }

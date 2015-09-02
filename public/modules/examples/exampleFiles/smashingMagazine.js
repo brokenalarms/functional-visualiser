@@ -100,7 +100,9 @@ function demo() {
     }
   }
 
-  var processed = combineArrays(map(averageForArray, pluck(data, 'temperatures')), pluck(data, 'population'));
+  var processed = combineArrays(
+    map(averageForArray, pluck(data, 'temperatures')),
+    pluck(data, 'population'));
 
   /* var populations = pluck(data, 'population');
    var allTemperatures = pluck(data, 'temperatures');
