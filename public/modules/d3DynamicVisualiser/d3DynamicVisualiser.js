@@ -16,7 +16,7 @@ let options = {
       return 0.8;
     },
     distance: function(nodes) {
-      return (Math.max(options.dimensions.width / nodes.length + 3, 90));
+      return (Math.max(options.dimensions.width / ((nodes.length +1) / 1.5), 90));
     },
   },
 };
@@ -124,9 +124,14 @@ function update() {
   link.enter()
     .append('polyline')
     .attr('class', (d) => {
-      return d.className;
+      return 'link-' + d.linkState;
     })
-    .attr('marker-mid', 'url(#arrow)');
+    .attr('marker-mid', (d) => {
+      if (d.linkState === 'broken') {
+        return null;
+      }
+      return 'url(#arrow)';
+    });
   link.exit().remove();
 
   let nodeGroup = node.enter().append('g');
@@ -147,9 +152,9 @@ function update() {
       return d.info.className;
     });
 
-node.exit().remove();
-node.call(drag);
-forceLayout.start();
+  node.exit().remove();
+  node.call(drag);
+  forceLayout.start();
 }
 
 function onDragStart(d) {

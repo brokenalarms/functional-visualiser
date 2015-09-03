@@ -68,9 +68,11 @@ function Sequencer() {
     let doneAction = false;
     if (CodeStatusStore.isCodeRunning()) {
 
-     // console.log(cloneDeep(interpreter.stateStack[0]));
       doneAction = updateNodes.action(interpreter, persistReturnedFunctions);
-
+      if (doneAction) {
+        console.log('this step actioned:')
+      }
+      console.log(cloneDeep(interpreter.stateStack[0]));
       if (doneAction) {
         let representedNode = updateNodes.getRepresentedNode();
         SequencerStore.setEditorOutput({

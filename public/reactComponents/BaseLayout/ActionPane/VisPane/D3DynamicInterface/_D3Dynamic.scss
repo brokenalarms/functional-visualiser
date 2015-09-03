@@ -1,11 +1,17 @@
+.link {
+    stroke-width: 1px;
+}
+
 .link-calling {
     stroke: $color-primary;
-    stroke-width: 1px;
 }
 
 .link-returning {
     stroke: $color-secondary;
-    stroke-width: 1px;
+}
+
+.link-broken {
+    stroke: $color-failure;
 }
 
 .opaque {
@@ -14,6 +20,11 @@
 
 .root-function {
     fill: grey !important;
+    -webkit-transform: scale(1.5);
+    -moz-transform: scale(1.5);
+    -ms-transform: scale(1.5);
+    -o-transform: scale(1.5);
+    transform: scale(1.5);
 }
 
 .root-finished {
@@ -36,14 +47,21 @@
     fill: $color-warning;
 }
 
+.neutral {
+    fill: $color-neutral;
+}
+
 .warning {
     fill: $color-failure;
 }
 
-.function-calling {
-    fill: $color-primary;
+.function {
     stroke: white;
     stroke-width: 2px;
+}
+
+.function-calling {
+    fill: $color-primary;
 }
 
 .function-fixed {
@@ -54,6 +72,4 @@
 
 .function-returning {
     fill: $color-secondary;
-    stroke: white;
-    stroke-width: 2px;
 }
