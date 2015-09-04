@@ -15,25 +15,17 @@ function demo() {
     return result;
   }
 
-  function reduce(array, callback, initialValue) {
-    var t = array,
-      len = t.length >>> 0,
-      k = 0,
-      value;
-    if (arguments.length == 2) {
-      value = arguments[1];
-    } else {
-      while (k < len && !(k in t)) {
-        k++;
-      }
-      value = t[k++];
+  function reduce(array, iteratee, accumulator, initFromArray) {
+    var index = -1,
+      length = array.length;
+
+    if (initFromArray && length) {
+      accumulator = array[++index];
     }
-    for (; k < len; k++) {
-      if (k in t) {
-        value = callback(value, t[k], k, t);
-      }
+    while (++index < length) {
+      accumulator = iteratee(accumulator, array[index], index, array);
     }
-    return value;
+    return accumulator;
   }
 
   var data = [{
@@ -100,14 +92,14 @@ function demo() {
     }
   }
 
-  var processed = combineArrays(
+/*  var processed = combineArrays(
     map(averageForArray, pluck(data, 'temperatures')),
-    pluck(data, 'population'));
+    pluck(data, 'population'));*/
 
-  /* var populations = pluck(data, 'population');
+   var populations = pluck(data, 'population');
    var allTemperatures = pluck(data, 'temperatures');
    var averageTemps = map(averageForArray, allTemperatures);
-   var processed = combineArrays(averageTemps, populations);*/
+   var processed = combineArrays(averageTemps, populations);
 }
 
 

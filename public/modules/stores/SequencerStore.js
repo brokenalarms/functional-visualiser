@@ -19,7 +19,8 @@ function SequencerStore() {
   let options = {
     staggerEditorAndVisualizer: true,
     persistReturnedFunctions: true,
-    sequencerDelay: 0.01, // * 1000 = ms, this is sliderValue
+    sequencerDelay: 0.2, // * 1000 = ms, this is sliderValue
+    minSequencerDelay: 0.05,
     delayFactor: 3000,
   };
 

@@ -4,7 +4,7 @@
 
 import astTools from '../astTools/astTools.js';
 import buildGraph from '../d3StaticVisualizer/BuildStaticCallGraph.js';
-import d3Dynamic from '../d3DynamicVisualiser/d3DynamicVisualiser.js';
+import d3Dynamic from '../d3DynamicVisualizer/d3DynamicVisualizer.js';
 import d3Static from '../d3StaticVisualizer/d3StaticVisualizer.js';
 import SequencerStore from '../stores/SequencerStore.js';
 

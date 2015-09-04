@@ -1,5 +1,5 @@
 import React from 'react';
-import d3Dynamic from '../../../../../modules/d3DynamicVisualiser/d3DynamicVisualiser.js';
+import d3Dynamic from '../../../../../modules/d3DynamicVisualizer/d3DynamicVisualizer.js';
 import SequencerStore from '../../../../../modules/stores/SequencerStore.js';
 
 // Interface between React and D3.

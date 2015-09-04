@@ -1,12 +1,48 @@
+@mixin scale($factor) {
+    -webkit-transform: scale($factor);
+    -moz-transform: scale($factor);
+    -ms-transform: scale($factor);
+    -o-transform: scale($factor);
+    transform: scale($factor);
+}
+
+@mixin transition($seconds) {
+    -ms-transition-duration: $seconds;
+    -o-transition-duration: $seconds;
+    transition-duration: $seconds;
+}
+
+@mixin crossfade($seconds) {
+    -moz-transition: color $seconds ease-in;
+    -o-transition: color $seconds ease-in;
+    -webkit-transition: color $seconds ease-in;
+}
+
+@mixin draw-forwards($seconds) {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: dash $seconds linear forwards;
+}
+
+@keyframes dash {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
 .link {
     stroke-width: 1px;
+    opacity: 0.7;
 }
 
 .link-calling {
+    /@include transition(1s);
     stroke: $color-primary;
 }
 
 .link-returning {
+    //@include crossfade(1s);
+    //  @include draw-forwards(1s);
     stroke: $color-secondary;
 }
 
@@ -14,21 +50,54 @@
     stroke: $color-failure;
 }
 
-.transparent {
-    opacity: 0.6;
+.function {
+    stroke-width: 2px;
+    cursor: pointer;
 }
 
+.function-calling {
+    fill: $color-primary;
+    stroke: $color-primary;
+}
+
+.function-fixed {
+    fill: white !important;
+    stroke-width: 2px;
+}
+
+.function-returning {
+    @include crossfade(0.2s);
+    fill: $color-secondary;
+    stroke: $color-secondary;
+}
+
+.function-failure {
+    fill: $color-failure;
+    stroke: $color-failure;
+    @include scale(1.3);
+    @include transition(1s);
+}
+
+.function-warning {
+    fill: $color-warning;
+    stroke: $color-warning;
+    @include crossfade(1s);
+}
+
+.function-text {
+    white-space: nowrap;
+}
+
+.function-root {
+    fill: $color-neutral;
+    stroke: $color-neutral;
+    @include scale(1.5);
+    @include transition(0.5s);
+}
 
 .function-root-finished {
-    -webkit-transform: scale(4);
-    -moz-transform: scale(4);
-    -ms-transform: scale(4);
-    -o-transform: scale(4);
-    transform: scale(4);
-    -ms-transition-duration: 3s;
-    -o-transition-duration: 3s;
-    transition-duration: 3s;
-    opacity: 0.6;
+    @include scale(4);
+    @include transition(3s)
 }
 
 .success {
@@ -43,44 +112,14 @@
     fill: $color-neutral;
 }
 
-.warning {
+.failure {
     fill: $color-failure;
-}
-
-.function {
-    stroke-width: 2px;
-}
-
-.function-text {
-    white-space: nowrap;
 }
 
 .text-indent {
     text-indent: 1.5rem;
 }
 
-.pointer {
-    cursor: pointer;
-}
-.function-root {
-    fill: grey;
-    -webkit-transform: scale(1.5);
-    -moz-transform: scale(1.5);
-    -ms-transform: scale(1.5);
-    -o-transform: scale(1.5);
-    transform: scale(1.5);
-}
-
-.function-calling {
-    fill: $color-primary;
-}
-
-.function-fixed {
-    stroke: $color-neutral;
-    fill: white;
-    stroke-width: 2px;
-}
-
-.function-returning {
-    fill: $color-secondary;
+.transparent {
+    opacity: 0.6;
 }

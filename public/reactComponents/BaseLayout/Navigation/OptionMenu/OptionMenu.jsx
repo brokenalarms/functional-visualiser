@@ -14,6 +14,7 @@ class OptionMenu extends React.Component {
       showDynamic: RefreshStore.getOptions().showDynamic,
       staggerEditorAndVisualizer: SequencerStore.getOptions().staggerEditorAndVisualizer,
       sequencerDelay: SequencerStore.getOptions().sequencerDelay,
+      minSequencerDelay: SequencerStore.getOptions().minSequencerDelay,
       delayFactor: SequencerStore.getOptions().delayFactor,
     };
   }
@@ -76,7 +77,7 @@ class OptionMenu extends React.Component {
         <Slider style={{margin: '0 12px 24px 12px', touchAction: 'none', cursor: 'pointer'}}
           onChange={this.setDelayValue}
           name="sequencerDelay"
-          min={0.00333}
+          min={this.state.minSequencerDelay}
           defaultValue={this.state.sequencerDelay}
           value={this.state.sequencerDelay}
           max={1}/>

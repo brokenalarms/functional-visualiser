@@ -9,7 +9,8 @@ function imperativeSum() {
   let sum = 0;
   var length = 2;
   //var result = Array(length);
-  var index = -1, result = Array(length);
+  var index = -1,
+    result = Array(length);
 
   function sumFunction(length) {
     result = Array(length)
@@ -22,26 +23,19 @@ function imperativeSum() {
 }
 
 function functionalSum() {
-  function reduce(array, callback, initialValue) {
-    var t = array,
-      len = t.length >>> 0,
-      k = 0,
-      value;
-    if (arguments.length == 2) {
-      value = arguments[1];
-    } else {
-      while (k < len && !(k in t)) {
-        k++;
-      }
-      value = t[k++];
+
+  function reduce(array, iteratee, accumulator, initFromArray) {
+    var index = -1,
+      length = array.length;
+
+    if (initFromArray && length) {
+      accumulator = array[++index];
     }
-    for (; k < len; k++) {
-      if (k in t) {
-        value = callback(value, t[k], k, t);
-      }
+    while (++index < length) {
+      accumulator = iteratee(accumulator, array[index], index, array);
     }
-    return value;
-  };
+    return accumulator;
+  }
 
   function sumFunction(arrayToSum) {
     return reduce(arrayToSum, function(a, b) {

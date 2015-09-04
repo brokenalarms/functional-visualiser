@@ -2,12 +2,12 @@
 // Helper function for interpreting
 // js-interpreter results and
 // adding and removing nodes for D3.
-// Used by the Sequencer.
+// Controlled by the Sequencer.
 // =============================================
 
-import {last, isEqual} from 'lodash';
-import astTools from '../astTools/astTools.js';
+import {last} from 'lodash';
 import DeclarationTracker from '../astTools/DeclarationTracker.js';
+import formatOutput from '../d3DynamicVisualizer/formatOutput.js';
 
 // won't show stepping into and out of member methods (e.g array.slice)
 // because these are builtins with blackboxed code.
@@ -36,90 +36,10 @@ function getInitialArgsArrays(state) {
       // displayArgs.push(astTools.createCode(argument));
       // provide my own custom (shortened) names of arguments for d3
       // (ones generated from AST code are too verbose for the graph)
-      displayArgs.push(formatAstIdentifier(argument));
+      displayArgs.push(formatOutput.astIdentifier(argument));
     });
   }
   return displayArgs;
-}
-
-function formatAstIdentifier(argument) {
-
-  function formatFunctionName(nameLoc, paramsLoc) {
-    // don't show the body of the function, for brevity
-    let funcString = (nameLoc) ?
-      `<i>${nameLoc}</i> ` :
-      `<i>anonymous</i> `;
-    if (paramsLoc.length > 0) {
-      let paramArray = [];
-      paramsLoc.forEach((param) => {
-        paramArray.push(formatAstIdentifier(param));
-      });
-      funcString = funcString.concat('(' + paramArray.join(', ') + ')');
-    }
-    return funcString;
-  }
-
-  switch (argument.type) {
-    case 'Literal':
-      return isNaN(argument.value) ?
-        `"${argument.value}"` : argument.value.toString();
-    case 'Identifier':
-      // question mark because identifier hasn't
-      // been matched with object/function yet
-      return `${argument.name}?`;
-    case 'CallExpression':
-      // put passed functions in italics
-      return formatFunctionName(argument.callee.name, argument.arguments);
-    case 'FunctionDeclaration':
-      return formatFunctionName(argument.id.name, argument.params);
-    case 'FunctionExpression':
-      return formatFunctionName(argument.id, argument.params);
-    case 'MemberExpression':
-    case 'BinaryExpression':
-      // re-creating the code from the AST allows for display of nested objects
-      // passed as references.
-      return astTools.createCode(argument);
-    default:
-      console.error('unrecognised astType for formatting');
-  }
-}
-
-function formatInterpreterIdentifier(value) {
-  switch (value.type) {
-    case 'undefined':
-      return value.type;
-    case 'number':
-      return value.data.toString();
-    case 'string':
-      return `'${value.data}'`;
-    case 'object':
-      return '{object}';
-    case 'function':
-      return formatAstIdentifier(value.node);
-    default:
-      console.error('unknown parameter value type encountered: ' + value.type);
-  }
-}
-
-function formatDisplayName(name, args) {
-  let displayArgs = args;
-  if (args.length > 1) {
-    displayArgs = args.map((arg, i) => {
-      let firstChar = arg.substring(1);
-      if (isNaN(firstChar) && firstChar !== `'` && firstChar !== `{`) {
-        if (i === 0) {
-          return `<div>${name} (${arg}</div>`;
-        }
-        if (i < args.length - 1) {
-          return `<div class="text-indent">${arg}</div>`;
-        }
-        return `<div class="text-indent">${arg} )</div>`;
-      }
-      return arg;
-    });
-    return `<div class="function-text"> ${displayArgs.join('')} </div>`;
-  }
-  return name + ' (' + displayArgs.join(', ') + ' )';
 }
 
 // ===============================================
@@ -134,6 +54,12 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   let prevState;
   let scopeChain = [];
   let enteringFunctionArgs = [];
+  let end = {
+    success: true,
+    warning: false,
+    failure: false,
+  };
+  let endStatus = 'success';
 
   function action(interpreter, persistReturnedFunctions) {
     let doneAction = false;
@@ -154,29 +80,29 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       enteringFunctionArgs = [];
     }
 
-    if (state.doneCallee_ && !state.doneExec && state.n_ /*&& prevState.node.type !== 'ReturnStatement'*/ ) {
+    if (state.doneCallee_ && !state.doneExec && state.n_) {
       // an argument has been calculated and fetched
       // for the outgoing function - add to the retrieveFunctionArgs
       // where it will later replace the displayed identifier and update.
       let argIndex = state.n_ - 1;
-      enteringFunctionArgs[argIndex] = formatInterpreterIdentifier(state.value);
+      enteringFunctionArgs[argIndex] = formatOutput.interpreterIdentifier(state.value);
     }
 
     if (isSupportedFunctionCall(state)) {
       let callerNode = last(scopeChain) || null;
       let calleeName = state.node.callee.name || state.node.callee.id.name;
       let displayArgs = getInitialArgsArrays(state);
-      let className = (nodes.length === 0) ? 'function function-root' : 'function function-calling';
+      let status = (nodes.length === 0) ? 'root' : 'calling';
       let calleeNode = {
         // d3 fills up the rest of the object,
         // hence nesting for readability
         info: {
           name: calleeName,
           displayArgs,
-          displayName: formatDisplayName(calleeName, displayArgs),
+          displayName: formatOutput.displayName(calleeName, displayArgs),
           callerNode: last(scopeChain) || null,
           caller: callerNode,
-          className: persistReturnedFunctions ? className : 'function-node',
+          status,
         },
       };
 
@@ -204,8 +130,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     // check whether enteringFunctionArgs has been updated with fetched values for identifiers:
     // where an enteringFunctionArg exists, tell the Sequencer to treat this as a display step.
 
-    if ( /*prevState.node.type !== 'ReturnStatement' &&*/
-      state.doneCallee_ && !state.doneExec &&
+    if (state.doneCallee_ && !state.doneExec &&
       state.node.arguments.length > 0) {
       let callerInfo = last(scopeChain).info;
       let paramUpdated = false;
@@ -219,7 +144,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         }
       });
 
-      callerInfo.displayName = formatDisplayName(callerInfo.name, callerInfo.displayArgs);
+      callerInfo.displayName = formatOutput.displayName(callerInfo.name, callerInfo.displayArgs);
 
       return (paramUpdated && enteringFunctionArgs.length === callerInfo.displayArgs.length);
     }
@@ -227,15 +152,19 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
 
   function removeExitingFunctions(state, interpreter, persistReturnedFunctions) {
 
+    function isNotExitingRootNode(state, rootNode) {
+      return !(state.node.type === 'FunctionExpression' &&
+          state.node.callee.id.name === rootNode.info.name) &&
+        !(state.node.type === 'CallExpression' &&
+          state.node.callee.type === 'FunctionExpression' &&
+          state.node.callee.id.name === rootNode.info.name);
+    }
+
     if (isSupportedReturnToCaller(state) &&
-      // don't want to exit the last node (FunctionExpression to run program)
-      // as the links have now come full circle and this would incorrectly
-      //  flip the direction of the next associated link
-      !(state.node.type === 'FunctionExpression' &&
-        state.node.callee.id.name === scopeChain[0].info.name) &&
-      !(state.node.type === 'CallExpression' &&
-        state.node.callee.type === 'FunctionExpression' &&
-        state.node.callee.id.name === scopeChain[0].info.name)) {
+      // don't want to exit the last node
+      // (FunctionExpression used to run program in interpreter):
+      // leave it on last success/failure animation
+      isNotExitingRootNode(state, scopeChain[0])) {
 
       if (persistReturnedFunctions) {
         exitLink(last(links), interpreter.stateStack);
@@ -255,39 +184,44 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     // don't want to change links outgoing from the root node:
     // this prevents the last link incorrectly reversing again
     if (exitingLink.target.callerNode !== null) {
-      let linkState;
-      if (prevState.node.type === 'ReturnStatement') {
-        // explicit return of function
-        exitingLink.target.info.className = 'function function-returning';
-        linkState = 'returning';
-      } else if (prevState.node.type === 'AssignmentExpression') {
-        // implicit return, probably from built-in (eg result = Array(4))
-        linkState = 'assignment';
+      let linkStatus;
+      // explicit return of function
+      if ((state.doneCallee_) &&
+        (state.value.isPrimitive && state.value.data) || !state.value.isPrimitive) {
+        linkStatus = 'returning';
+        exitingLink.target.info.status = 'returning';
       } else {
-        exitingLink.target.info.className = 'function function-returning';
-        linkState = 'broken';
+        endStatus = 'failure';
+        linkStatus = 'broken';
+        exitingLink.target.info.status = 'failure';
+        exitingLink.source.info.status = 'warning';
       }
-      let returnLink = getCallLink(
-        exitingLink.target, exitingLink.source, linkState);
+
+      if (linkStatus !== 'broken') {
+        // reverse source and target to flip arrows
+        let returnLink = getCallLink(
+          exitingLink.target, exitingLink.source, linkStatus);
+        links.unshift(returnLink);
+      }
+      // break the chain for non-returned functions!
       links.pop();
-      links.unshift(returnLink);
     }
   }
 
   function exitNode(exitingNode) {
     // update parameters with data as it returns from callees
-    let returnValue = formatInterpreterIdentifier(state.value);
+    let returnValue = formatOutput.interpreterIdentifier(state.value);
     exitingNode.info.displayName = `return (${returnValue})`;
   }
 
   let linkIndex = 0;
 
-  function getCallLink(source, target, linkState) {
+  function getCallLink(source, target, status) {
     if (source && target) {
       let callLink = {
         source: source,
         target: target,
-        linkState,
+        status,
         index: linkIndex++,
       };
       return callLink;
@@ -309,7 +243,8 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
 
   function finish() {
     // no more actions, prep before final update
-    nodes[0].info.className = 'function-root function-root-finished success transparent';
+    let rootNode = nodes[0];
+    rootNode.info.status = 'root-finished '.concat(endStatus);
   }
 
   return {
