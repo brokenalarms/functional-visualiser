@@ -22,6 +22,10 @@ body {
     user-select: none;
 }
 
+.pointer {
+    cursor: pointer;
+}
+
 .react-draggable {
     touch-action: none;
 }

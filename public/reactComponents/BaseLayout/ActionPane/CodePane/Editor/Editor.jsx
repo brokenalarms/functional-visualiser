@@ -72,8 +72,9 @@ class Editor {
       let execCodeBlock = SequencerStore.getCurrentCodeBlock();
       /* try to find via find (regex) first, since the way AceEditor displays
          tabs means that range selections include the preceding tab so don't 
-         look as exact. */
-      let range = editor.find(execCodeBlock);
+         look as exact. Still starts looking from the actual character the 
+         range is on anyway, so should find immediately. */
+      let range = editor.find(execCodeBlock, {start: SequencerStore.getCurrentRange()});
       if (!range) {
         /* backup selection by node LOC, due to escodegen
            ocassionally not rebuilding the exact same code string 

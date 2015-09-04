@@ -16,7 +16,7 @@ let options = {
       return 0.8;
     },
     distance: function(nodes) {
-      return (Math.max(options.dimensions.width / ((nodes.length +1) / 1.5), 90));
+      return (Math.max(options.dimensions.width / ((nodes.length + 1) / 1.5), 90));
     },
   },
 };
@@ -134,26 +134,29 @@ function update() {
     });
   link.exit().remove();
 
-  let nodeGroup = node.enter().append('g');
+  let nodeGroup = node.enter().append('g')
+    .on('dblclick', onDoubleclickNode)
+    .call(drag);
+
   nodeGroup.append('circle')
-    .attr('r', options.dimensions.nodeRadius)
-    .on('dblclick', onDoubleclickNode);
+    .attr('r', options.dimensions.nodeRadius);
 
 
-  nodeText = nodeGroup.append('foreignObject');
+
+  nodeText = nodeGroup.append('foreignObject')
+    .attr('class', 'unselectable function-text');
 
   node.selectAll('foreignObject').html((d) => {
-    return '<div style="white-space: nowrap"}>' +
+    return '<div class="pointer unselectable"}>' +
       d.info.displayName + '</div>';
   });
 
   node.selectAll('circle')
     .attr('class', (d) => {
-      return d.info.className;
+      return d.info.className + ' pointer';
     });
 
   node.exit().remove();
-  node.call(drag);
   forceLayout.start();
 }
 

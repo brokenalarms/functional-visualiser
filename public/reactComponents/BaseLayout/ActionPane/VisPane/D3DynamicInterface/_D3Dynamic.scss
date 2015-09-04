@@ -14,20 +14,12 @@
     stroke: $color-failure;
 }
 
-.opaque {
+.transparent {
     opacity: 0.6;
 }
 
-.root-function {
-    fill: grey !important;
-    -webkit-transform: scale(1.5);
-    -moz-transform: scale(1.5);
-    -ms-transform: scale(1.5);
-    -o-transform: scale(1.5);
-    transform: scale(1.5);
-}
 
-.root-finished {
+.function-root-finished {
     -webkit-transform: scale(4);
     -moz-transform: scale(4);
     -ms-transform: scale(4);
@@ -56,8 +48,27 @@
 }
 
 .function {
-    stroke: white;
     stroke-width: 2px;
+}
+
+.function-text {
+    white-space: nowrap;
+}
+
+.text-indent {
+    text-indent: 1.5rem;
+}
+
+.pointer {
+    cursor: pointer;
+}
+.function-root {
+    fill: grey;
+    -webkit-transform: scale(1.5);
+    -moz-transform: scale(1.5);
+    -ms-transform: scale(1.5);
+    -o-transform: scale(1.5);
+    transform: scale(1.5);
 }
 
 .function-calling {
@@ -65,7 +76,7 @@
 }
 
 .function-fixed {
-    stroke: $color-secondary;
+    stroke: $color-neutral;
     fill: white;
     stroke-width: 2px;
 }

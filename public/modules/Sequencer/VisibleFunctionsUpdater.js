@@ -59,57 +59,67 @@ function formatAstIdentifier(argument) {
     return funcString;
   }
 
-  let argResultString = '';
-  let nameLoc;
   switch (argument.type) {
     case 'Literal':
-      argResultString = isNaN(argument.value) ?
-        `'${argument.value}'` : argument.value.toString();
-      break;
+      return isNaN(argument.value) ?
+        `"${argument.value}"` : argument.value.toString();
     case 'Identifier':
       // question mark because identifier hasn't
       // been matched with object/function yet
-      argResultString = `${argument.name}?`;
-      break;
+      return `${argument.name}?`;
     case 'CallExpression':
       // put passed functions in italics
-      argResultString = formatFunctionName(argument.callee.name, argument.arguments); //`<i>${argument.callee.name}</i>`;
-      break;
+      return formatFunctionName(argument.callee.name, argument.arguments);
     case 'FunctionDeclaration':
-      argResultString = formatFunctionName(argument.id.name, argument.params);
-      break;
+      return formatFunctionName(argument.id.name, argument.params);
     case 'FunctionExpression':
-      argResultString = formatFunctionName(argument.id, argument.params);
-      break;
+      return formatFunctionName(argument.id, argument.params);
     case 'MemberExpression':
     case 'BinaryExpression':
       // re-creating the code from the AST allows for display of nested objects
       // passed as references.
-      argResultString = astTools.createCode(argument);
-      break;
+      return astTools.createCode(argument);
+    default:
+      console.error('unrecognised astType for formatting');
   }
-  return argResultString;
 }
 
 function formatInterpreterIdentifier(value) {
-  let resultStr = '';
   switch (value.type) {
+    case 'undefined':
+      return value.type;
     case 'number':
-      resultStr = value.data.toString();
-      break;
+      return value.data.toString();
     case 'string':
-      resultStr = `'${value.data}'`;
-      break;
+      return `'${value.data}'`;
     case 'object':
-      resultStr = '{object}';
-      break;
+      return '{object}';
     case 'function':
-      resultStr = formatAstIdentifier(value.node);
-      break;
+      return formatAstIdentifier(value.node);
     default:
       console.error('unknown parameter value type encountered: ' + value.type);
   }
-  return resultStr;
+}
+
+function formatDisplayName(name, args) {
+  let displayArgs = args;
+  if (args.length > 1) {
+    displayArgs = args.map((arg, i) => {
+      let firstChar = arg.substring(1);
+      if (isNaN(firstChar) && firstChar !== `'` && firstChar !== `{`) {
+        if (i === 0) {
+          return `<div>${name} (${arg}</div>`;
+        }
+        if (i < args.length - 1) {
+          return `<div class="text-indent">${arg}</div>`;
+        }
+        return `<div class="text-indent">${arg} )</div>`;
+      }
+      return arg;
+    });
+    return `<div class="function-text"> ${displayArgs.join('')} </div>`;
+  }
+  return name + ' (' + displayArgs.join(', ') + ' )';
 }
 
 // ===============================================
@@ -131,7 +141,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     if (state && prevState) {
       doneAction = (addCalledFunctions(state, interpreter, persistReturnedFunctions) ||
         updateEnteringFunctionArgs() ||
-        removeExitingFunctions(state, persistReturnedFunctions));
+        removeExitingFunctions(state, interpreter, persistReturnedFunctions));
     }
     return doneAction;
   }
@@ -144,8 +154,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       enteringFunctionArgs = [];
     }
 
-    if (prevState.node.type !== 'ReturnStatement' &&
-      state.doneCallee_ && state.n_) {
+    if (state.doneCallee_ && !state.doneExec && state.n_ /*&& prevState.node.type !== 'ReturnStatement'*/ ) {
       // an argument has been calculated and fetched
       // for the outgoing function - add to the retrieveFunctionArgs
       // where it will later replace the displayed identifier and update.
@@ -157,14 +166,14 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       let callerNode = last(scopeChain) || null;
       let calleeName = state.node.callee.name || state.node.callee.id.name;
       let displayArgs = getInitialArgsArrays(state);
-      let className = (nodes.length === 0) ? 'root-function' : 'function-calling';
+      let className = (nodes.length === 0) ? 'function function-root' : 'function function-calling';
       let calleeNode = {
         // d3 fills up the rest of the object,
         // hence nesting for readability
         info: {
           name: calleeName,
           displayArgs,
-          displayName: calleeName + '(' + displayArgs.join(', ') + ')',
+          displayName: formatDisplayName(calleeName, displayArgs),
           callerNode: last(scopeChain) || null,
           caller: callerNode,
           className: persistReturnedFunctions ? className : 'function-node',
@@ -194,8 +203,10 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
 
     // check whether enteringFunctionArgs has been updated with fetched values for identifiers:
     // where an enteringFunctionArg exists, tell the Sequencer to treat this as a display step.
-    if (prevState.node.type !== 'ReturnStatement' &&
-      state.doneCallee_ && state.node.arguments.length > 0) {
+
+    if ( /*prevState.node.type !== 'ReturnStatement' &&*/
+      state.doneCallee_ && !state.doneExec &&
+      state.node.arguments.length > 0) {
       let callerInfo = last(scopeChain).info;
       let paramUpdated = false;
 
@@ -208,56 +219,13 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         }
       });
 
-      callerInfo.displayName = callerInfo.name + '(' + callerInfo.displayArgs.join(', ') + ')';
+      callerInfo.displayName = formatDisplayName(callerInfo.name, callerInfo.displayArgs);
 
       return (paramUpdated && enteringFunctionArgs.length === callerInfo.displayArgs.length);
     }
   }
 
-  function removeExitingFunctions(state, persistReturnedFunctions) {
-
-    function exitLink() {
-      // change directions and class on returning functions
-      let exitingLink = last(links);
-      // don't want to change links outgoing from the root node:
-      // this prevents the last link incorrectly reversing again
-      if (exitingLink.target.callerNode !== null) {
-        let linkState;
-        if (prevState.node.type === 'ReturnStatement') {
-          exitingLink.target.info.className = 'function-returning';
-          linkState = 'returning';
-        } else {
-          exitingLink.target.info.className = 'function-returning';
-          linkState = 'broken';
-        }
-        let returnLink = getCallLink(
-          exitingLink.target, exitingLink.source, linkState);
-        links.pop();
-        links.unshift(returnLink);
-      }
-    }
-
-    function exitNode() {
-      let exitingNode = last(scopeChain);
-      // update parameters with data as it returns from callees
-      if (state.value.isPrimitive) {
-        if (state.value.data !== undefined) {
-          let returnValue = isNaN(state.value.data) ? `'${state.value.data}'` : state.value.data;
-          exitingNode.info.displayName = `return (${returnValue})`;
-        }
-      } else if (state.value.node && state.value.node.type === 'FunctionExpression') {
-        // function still returning objects,
-        // give an update with information available
-        let returnString = (state.value.node.id) ?
-          state.value.node.id + ' (' : 'function (';
-        if (state.value.node.params) {
-          state.value.node.params.forEach((param) => {
-            returnString = returnString.concat(astTools.createCode(param));
-          });
-        }
-        exitingNode.info.displayName = returnString + ')';
-      }
-    }
+  function removeExitingFunctions(state, interpreter, persistReturnedFunctions) {
 
     if (isSupportedReturnToCaller(state) &&
       // don't want to exit the last node (FunctionExpression to run program)
@@ -270,8 +238,8 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         state.node.callee.id.name === scopeChain[0].info.name)) {
 
       if (persistReturnedFunctions) {
-        exitLink();
-        exitNode();
+        exitLink(last(links), interpreter.stateStack);
+        exitNode(last(scopeChain));
       } else {
         links.splice(scopeChain.length - 1, Number.MAX_VALUE);
         nodes.splice(scopeChain.length, Number.MAX_VALUE);
@@ -280,6 +248,36 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       return true;
     }
     return false;
+  }
+
+  function exitLink(exitingLink, stateStack) {
+    // change directions and class on returning functions
+    // don't want to change links outgoing from the root node:
+    // this prevents the last link incorrectly reversing again
+    if (exitingLink.target.callerNode !== null) {
+      let linkState;
+      if (prevState.node.type === 'ReturnStatement') {
+        // explicit return of function
+        exitingLink.target.info.className = 'function function-returning';
+        linkState = 'returning';
+      } else if (prevState.node.type === 'AssignmentExpression') {
+        // implicit return, probably from built-in (eg result = Array(4))
+        linkState = 'assignment';
+      } else {
+        exitingLink.target.info.className = 'function function-returning';
+        linkState = 'broken';
+      }
+      let returnLink = getCallLink(
+        exitingLink.target, exitingLink.source, linkState);
+      links.pop();
+      links.unshift(returnLink);
+    }
+  }
+
+  function exitNode(exitingNode) {
+    // update parameters with data as it returns from callees
+    let returnValue = formatInterpreterIdentifier(state.value);
+    exitingNode.info.displayName = `return (${returnValue})`;
   }
 
   let linkIndex = 0;
@@ -311,7 +309,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
 
   function finish() {
     // no more actions, prep before final update
-    nodes[0].info.className = 'root-finished success opaque';
+    nodes[0].info.className = 'function-root function-root-finished success transparent';
   }
 
   return {

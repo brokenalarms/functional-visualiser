@@ -7,14 +7,18 @@ const desc = 'Add an array of numbers';
 function imperativeSum() {
   const arrayToSum = [3, 5, 5, 10];
   let sum = 0;
+  var length = 2;
+  //var result = Array(length);
+  var index = -1, result = Array(length);
 
-  function sumFunction() {
+  function sumFunction(length) {
+    result = Array(length)
     for (let i = 0; i < arrayToSum.length; i++) {
       sum += arrayToSum[i];
     }
   }
 
-  sumFunction();
+  sumFunction(4);
 }
 
 function functionalSum() {
@@ -80,5 +84,5 @@ function fibonacciRecursive() {
 
 export default {
   imperativeSum, functionalSum, nestedReturn,
-   fibonacciRecursive,
+  fibonacciRecursive,
 };

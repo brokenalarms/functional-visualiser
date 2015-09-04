@@ -70,7 +70,7 @@ function Sequencer() {
 
       doneAction = updateNodes.action(interpreter, persistReturnedFunctions);
       if (doneAction) {
-        console.log('this step actioned:')
+        console.log('this step actioned:');
       }
       console.log(cloneDeep(interpreter.stateStack[0]));
       if (doneAction) {
