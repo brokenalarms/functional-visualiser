@@ -54,12 +54,11 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   let prevState;
   let scopeChain = [];
   let enteringFunctionArgs = [];
-  let end = {
-    success: true,
-    warning: false,
-    failure: false,
-  };
-  let endStatus = 'success';
+  // index of errorCount is equivalent to the endStatusArr diplayed
+  let errorCount = 0;
+  let endStatusArr = ['success', 'warning', 'failure'];
+  // own index applied when creating links to track them
+  let linkIndex = 0;
 
   function action(interpreter, persistReturnedFunctions) {
     let doneAction = false;
@@ -178,7 +177,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     return false;
   }
 
-  function exitLink(exitingLink, stateStack) {
+  function exitLink(exitingLink) {
     // change directions and class on returning functions
     // don't want to change links outgoing from the root node:
     // this prevents the last link incorrectly reversing again
@@ -190,7 +189,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       linkStatus = 'returning';
       exitingLink.target.info.status = 'returning';
     } else {
-      endStatus = 'failure';
+      errorCount++;
       linkStatus = 'broken';
       exitingLink.target.info.status = 'failure';
       exitingLink.source.info.status = 'warning';
@@ -212,7 +211,6 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     exitingNode.info.displayName = `return (${returnValue})`;
   }
 
-  let linkIndex = 0;
 
   function getCallLink(source, target, status) {
     if (source && target) {
@@ -242,6 +240,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   function finish() {
     // no more actions, prep before final update
     let rootNode = nodes[0];
+    let endStatus = endStatusArr[Math.min(errorCount, 2)];
     rootNode.info.status = 'root-finished '.concat(endStatus);
   }
 

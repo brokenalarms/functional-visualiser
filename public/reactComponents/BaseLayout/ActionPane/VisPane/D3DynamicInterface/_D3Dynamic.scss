@@ -30,6 +30,15 @@
     }
 }
 
+.no-transition {
+    -webkit-transition: none !important;
+    -moz-transition: none !important;
+    -o-transition: none !important;
+    -ms-transition: none !important;
+    transition: none !important;
+}
+
+
 .link {
     stroke-width: 1px;
     opacity: 0.8;

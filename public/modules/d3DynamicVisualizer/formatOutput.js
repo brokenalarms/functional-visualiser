@@ -3,7 +3,7 @@ import astTools from '../astTools/astTools.js';
 function formatOutput() {
 
   function formatFunctionName(nameLoc, paramsLoc) {
-    // don't show the body of the function, for brevity
+    // don't show thie body of the function, for brevity
     let funcString = (nameLoc) ?
       `<i>${nameLoc}</i> ` :
       `<i>anonymous</i> `;

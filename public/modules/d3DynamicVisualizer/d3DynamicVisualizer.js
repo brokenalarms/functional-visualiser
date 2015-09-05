@@ -170,7 +170,9 @@ function getCirclePerimiterIntersection(start, target, coord) {
 function update() {
 
   link = link.data(forceLayout.links(), (d) => {
-    // not the d3 generated node index; this is my own
+    // not the d3 generated node index; this is my own:
+    // link needs to be re-indexed on return in order
+    // to show different green arrowhead
     return d.linkIndex;
   });
   node = node.data(forceLayout.nodes(), (d) => {
@@ -245,13 +247,13 @@ function update() {
 }
 
 function onDragStart(d) {
-  d3.select(this).select('circle').classed('function-fixed', d.fixed = true);
+  d3.select(this).select('circle').classed('function-fixed no-transition', d.fixed = true);
   // prevents browser scrolling whilst dragging about node
   d3.event.sourceEvent.preventDefault();
 }
 
 function onDoubleclickNode(d) {
-  d3.select(this).select('circle').classed('function-fixed', d.fixed = false);
+  d3.select(this).select('circle').classed('function-fixed no-transition', d.fixed = false);
 }
 
 function destroy() {
