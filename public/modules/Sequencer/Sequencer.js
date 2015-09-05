@@ -100,7 +100,7 @@ function Sequencer() {
         if (doneAction && singleStep) {
           CodeStatusStore.setCodeRunning(false);
         } else {
-          setTimeout(nextStep.bind(null, singleStep), (doneAction) ? delay : 0);
+          setTimeout(nextStep.bind(null, singleStep), (doneAction) ? delay : 5);
         }
       } else {
         updateNodes.finish();

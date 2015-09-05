@@ -73,7 +73,7 @@ function fibonacciRecursive() {
     return fibonacci(n - 1) + fibonacci(n - 2);
   }
 
-  var result = fibonacci(3);
+  var result = fibonacci(10);
 }
 
 export default {

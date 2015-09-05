@@ -49,6 +49,7 @@ class Navigation extends React.Component {
         selectedMarkdown={this.state.selectedMarkdown}
         zDepth={5}/>
           <AppBar
+            style={{backgroundColor: '#2aa198'}}
             title="Functional Visualiser"
             iconElementRight={<OptionMenu />}
             onLeftIconButtonTouchTap={this.setIsNavBarShowing.bind(this, true)} />

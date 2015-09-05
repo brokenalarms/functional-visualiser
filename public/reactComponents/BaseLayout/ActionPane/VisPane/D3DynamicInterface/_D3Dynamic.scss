@@ -32,11 +32,11 @@
 
 .link {
     stroke-width: 1px;
-    opacity: 0.7;
+    opacity: 0.8;
 }
 
 .link-calling {
-    /@include transition(1s);
+    @include transition(1s);
     stroke: $color-primary;
 }
 
@@ -58,6 +58,7 @@
 .function-calling {
     fill: $color-primary;
     stroke: $color-primary;
+    opacity: 0.8;
 }
 
 .function-fixed {
@@ -69,6 +70,7 @@
     @include crossfade(0.2s);
     fill: $color-secondary;
     stroke: $color-secondary;
+    opacity: 0.8;
 }
 
 .function-failure {

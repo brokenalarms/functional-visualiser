@@ -74,7 +74,9 @@ class Editor {
          tabs means that range selections include the preceding tab so don't 
          look as exact. Still starts looking from the actual character the 
          range is on anyway, so should find immediately. */
-      let range = editor.find(execCodeBlock, {start: SequencerStore.getCurrentRange()});
+      let range = editor.find(execCodeBlock, {
+        start: SequencerStore.getCurrentRange()
+      });
       if (!range) {
         /* backup selection by node LOC, due to escodegen
            ocassionally not rebuilding the exact same code string 
@@ -100,7 +102,9 @@ class Editor {
 
   onCodeStoreChange = (userUpdate) => {
     if (!userUpdate) {
-      this.refs.aceEditor.editor.setValue(CodeStore.get());
+      let editor = this.refs.aceEditor.editor;
+      editor.setValue(CodeStore.get());
+      editor.selection.clearSelection();
     }
   }
 

@@ -187,7 +187,8 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       let linkStatus;
       // explicit return of function
       if ((state.doneCallee_) &&
-        (state.value.isPrimitive && state.value.data) || !state.value.isPrimitive) {
+        (state.value.isPrimitive && state.value.data !== undefined) ||
+        !state.value.isPrimitive) {
         linkStatus = 'returning';
         exitingLink.target.info.status = 'returning';
       } else {

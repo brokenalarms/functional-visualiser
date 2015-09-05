@@ -18,9 +18,10 @@ function SequencerStore() {
 
   let options = {
     staggerEditorAndVisualizer: true,
+    visualizerPercentageOfDelay: 2 / 3,
     persistReturnedFunctions: true,
-    sequencerDelay: 0.2, // * 1000 = ms, this is sliderValue
-    minSequencerDelay: 0.05,
+    sequencerDelay: 0.1, // * 1000 = ms, this is sliderValue
+    minSequencerDelay: 0.01,
     delayFactor: 3000,
   };
 
@@ -94,14 +95,14 @@ function SequencerStore() {
               sequencerStore.emit('updateEditor');
               resolveEditorStep(true);
             },
-            stepDelay * 1 / 3); 
+            stepDelay * (1 - options.visualizerPercentageOfDelay)); 
         });
 
         editorComplete.then(() => {
           setTimeout(() => {
             sequencerStore.emit('update');
             resolveAll(true);
-          }, stepDelay * 2 / 3);
+          }, stepDelay * options.visualizerPercentageOfDelay);
         });
 
       } else {

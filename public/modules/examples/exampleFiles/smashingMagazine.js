@@ -15,15 +15,22 @@ function demo() {
     return result;
   }
 
-  function reduce(array, iteratee, accumulator, initFromArray) {
-    var index = -1,
-      length = array.length;
-
-    if (initFromArray && length) {
-      accumulator = array[++index];
+  function reduce(array, callback, initialValue) {
+    var len = array.length >>> 0,
+      index = 0,
+      accumulator;
+    if (arguments.length == 2) {
+      accumulator = arguments[1];
+    } else {
+      while (index < len && !(index in array)) {
+        index++;
+      }
+      accumulator = array[index++];
     }
-    while (++index < length) {
-      accumulator = iteratee(accumulator, array[index], index, array);
+    for (; index < len; index++) {
+      if (index in array) {
+        accumulator = callback(accumulator, array[index]);
+      }
     }
     return accumulator;
   }
@@ -92,14 +99,14 @@ function demo() {
     }
   }
 
-/*  var processed = combineArrays(
-    map(averageForArray, pluck(data, 'temperatures')),
-    pluck(data, 'population'));*/
+  /*  var processed = combineArrays(
+      map(averageForArray, pluck(data, 'temperatures')),
+      pluck(data, 'population'));*/
 
-   var populations = pluck(data, 'population');
-   var allTemperatures = pluck(data, 'temperatures');
-   var averageTemps = map(averageForArray, allTemperatures);
-   var processed = combineArrays(averageTemps, populations);
+  var populations = pluck(data, 'population');
+  var allTemperatures = pluck(data, 'temperatures');
+  var averageTemps = map(averageForArray, allTemperatures);
+  var processed = combineArrays(averageTemps, populations);
 }
 
 

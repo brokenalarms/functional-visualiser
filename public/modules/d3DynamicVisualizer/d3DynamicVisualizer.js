@@ -1,15 +1,16 @@
-// TODO - extract options into d3OptionsStore
+import SequencerStore from '../stores/SequencerStore.js'
+
 let options = {
-    rootPositionFixed: true,
-    d3Force: {
-      tuningFactor: (nodes) => {
-        return Math.sqrt(nodes.length / (options.dimensions.width * options.dimensions.height));
-      },
-      charge: -600,
-      chargeDistance: 300,
-      gravity: 0.03,
-      gravityFunc: (nodes) => {
-        return 100 * tuningFactor(nodes);
+  rootPositionFixed: true,
+  d3Force: {
+    tuningFactor: (nodes) => {
+      return Math.sqrt(nodes.length / (options.dimensions.width * options.dimensions.height));
+    },
+    charge: -600,
+    chargeDistance: 300,
+    gravity: 0.03,
+    gravityFunc: (nodes) => {
+      return 100 * tuningFactor(nodes);
     },
   },
   cssVars: {
@@ -23,7 +24,7 @@ let options = {
       failureFactor: 1.3,
       finishedFactor: 4,
     },
-    labelBuffer: 100,
+    labelBuffer: 50,
     width: null,
     height: null,
   },
@@ -77,14 +78,14 @@ function appendArrows() {
     svg.append('svg:defs')
       .append('svg:marker')
       .attr('id', arrow[0])
-      .attr('refX', 20)
-      .attr('refY', 10)
+      .attr('refX', 16)
+      .attr('refY', 8)
       .attr('markerWidth', 30)
       .attr('markerHeight', 30)
       .attr('orient', 'auto')
       .style('fill', arrow[1])
       .append('svg:path')
-      .attr('d', 'M0,0 L0,20 L20,10 L0,0');
+      .attr('d', 'M0,0 L0,16 L16,8 L0,0');
   });
 }
 
@@ -95,7 +96,7 @@ function createNewForceLayout(graphType, nodes, links) {
     .size([options.dimensions.width, options.dimensions.height])
     .linkDistance(options.links.distance.bind(this, nodes))
     .charge(options.d3Force.charge)
-    .friction(0.5)
+    .friction(0.7)
     .gravity(options.d3Force.gravity)
     .linkStrength(options.links.strength)
     .chargeDistance(options.d3Force.chargeDistance)
@@ -103,31 +104,33 @@ function createNewForceLayout(graphType, nodes, links) {
 
   // for keeping nodes within the boundaries
   const inlay = options.dimensions.radius.node * 2;
-  const maxAllowedX = options.dimensions.width - inlay;
-  const maxAllowedY = options.dimensions.height - inlay;
 
   return force;
 
   function tick() {
     link.attr('x1', function(d) {
-        return getBoundingX(d.source.x);
+        d.source.x = getBoundingX(d.source.x);
+        return getCirclePerimiterIntersection(d.target, d.source, 'x');
       })
       .attr('y1', function(d) {
-        return getBoundingY(d.source.y);
+        d.source.y = getBoundingY(d.source.y);
+        return getCirclePerimiterIntersection(d.target, d.source, 'y');
       })
       .attr('x2', function(d) {
-        return getBoundingX(getTargetIntersection(d.source, d.target).x);
+        d.target.x = getBoundingX(d.target.x);
+        return getCirclePerimiterIntersection(d.source, d.target, 'x');
       })
       .attr('y2', function(d) {
-        return getBoundingY(getTargetIntersection(d.source, d.target).y);
+        d.target.y = getBoundingY(d.target.y);
+        return getCirclePerimiterIntersection(d.source, d.target, 'y');
       });
 
     function getBoundingX(x) {
-      return Math.max(inlay, Math.min(maxAllowedX - options.dimensions.labelBuffer, x));
+      return Math.max(inlay, Math.min(options.dimensions.width - options.dimensions.labelBuffer, x));
     }
 
     function getBoundingY(y) {
-      return Math.max(inlay, Math.min(maxAllowedY, y));
+      return Math.max(inlay, Math.min(options.dimensions.height, y));
     }
 
     node.attr('transform', (d) => {
@@ -139,11 +142,12 @@ function createNewForceLayout(graphType, nodes, links) {
       return `translate(${d.radius * (options.dimensions.radius[d.status + 'Factor'] || 1) + 10},${-(d.radius * (options.dimensions.radius[d.status + 'Factor'] || 1) + 10)})`;
     });
   }
+
 }
 
-function getTargetIntersection(start, target) {
+function getCirclePerimiterIntersection(start, target, coord) {
   // NOTE: This particular function to calculate the distance of the line
-  // to the edge of the radius, rather than the center point of the node, 
+  // to the edge of the circle, rather than to the center point of the node, 
   // is taken from this source:
   // http://stackoverflow.com/questions/16568313/arrows-on-links-in-d3js-force-layout/16568625
   // this is the only code I have not written entirely myself,
@@ -152,13 +156,12 @@ function getTargetIntersection(start, target) {
   // overlap with the nodes.
   let dx = target.x - start.x;
   let dy = target.y - start.y;
-  let gamma = Math.atan2(dy, dx); // Math.atan2 returns the angle in the correct quadrant as opposed to Math.atan
-  let tx = target.x - (Math.cos(gamma) * target.radius);
-  let ty = target.y - (Math.sin(gamma) * target.radius);
-  return {
-    x: tx,
-    y: ty,
-  };
+  // Math.atan2 returns the angle in the correct quadrant as opposed to Math.atan
+  let gamma = Math.atan2(dy, dx);
+  if (coord === 'x') {
+    return target.x - (Math.cos(gamma) * target.radius);
+  }
+  return target.y - (Math.sin(gamma) * target.radius);
 }
 
 /* update function is externally available so
@@ -177,6 +180,12 @@ function update() {
     return d.index;
   });
 
+  // set up arrow/line drawing to sync up with live Sequencer options
+  let delay = SequencerStore.getOptions().sequencerDelay;
+  let delayFactor = SequencerStore.getOptions().delayFactor;
+  let visualizerPercentageOfDelay = (SequencerStore.getOptions().staggerEditorAndVisualizer) ?
+    SequencerStore.getOptions().visualizerPercentageOfDelay : 1;
+
   link.enter()
     .append('line')
     .attr('class', (d) => {
@@ -187,16 +196,16 @@ function update() {
         'url(#arrow-calling)' : 'url(#arrow-returning';
     })
     .transition()
-    .duration(500)
+    .duration(delay * delayFactor / 2 / visualizerPercentageOfDelay)
     .ease('circle')
     .attrTween('x2', (d) => {
       return (t) => {
-        return d3.interpolate(getTargetIntersection(d.target, d.source).x, d.target.x)(t);
+        return d3.interpolate(getCirclePerimiterIntersection(d.target, d.source, 'x'), d.target.x)(t);
       };
     })
     .attrTween('y2', (d) => {
       return (t) => {
-        return d3.interpolate(getTargetIntersection(d.target, d.source).y, d.target.y)(t);
+        return d3.interpolate(getCirclePerimiterIntersection(d.target, d.source, 'y'), d.target.y)(t);
       };
     });
 
@@ -221,11 +230,17 @@ function update() {
 
   node.selectAll('circle')
     .attr('class', (d) => {
-      return 'function function-' + d.info.status;
+      return 'function function-' + d.info.status +
+        ((d.fixed) ? ' function-fixed' : '');
     });
 
   node.exit().remove();
-  forceLayout.start();
+  // don't restart the layout if only text or arrows have changed,
+  // otherwise this causes the forceLayout to 'kick' when
+  // the parameter text is the only thing that updates
+  if (nodeGroup[0][nodeGroup[0].length - 1] !== null) {
+    forceLayout.start();
+  }
 }
 
 function onDragStart(d) {
