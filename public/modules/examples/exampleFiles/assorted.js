@@ -59,8 +59,8 @@ function nestedReturn() {
   }
 
   function funcWithoutReturn() {
-
   }
+  funcWithoutReturn();
   funcWithoutReturn();
   var result = foo('fooParamPassed');
 }

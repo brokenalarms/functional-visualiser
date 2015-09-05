@@ -20,7 +20,7 @@ function SequencerStore() {
     staggerEditorAndVisualizer: true,
     visualizerPercentageOfDelay: 2 / 3,
     persistReturnedFunctions: true,
-    sequencerDelay: 0.1, // * 1000 = ms, this is sliderValue
+    sequencerDelay: 0.01, // * 1000 = ms, this is sliderValue
     minSequencerDelay: 0.01,
     delayFactor: 3000,
   };

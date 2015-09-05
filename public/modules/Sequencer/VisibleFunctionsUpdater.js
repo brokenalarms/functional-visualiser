@@ -89,8 +89,8 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     }
 
     if (isSupportedFunctionCall(state)) {
-      let callerNode = last(scopeChain) || null;
       let calleeName = state.node.callee.name || state.node.callee.id.name;
+      let callerNode = last(scopeChain) || null;
       let displayArgs = getInitialArgsArrays(state);
       let status = (nodes.length === 0) ? 'root' : 'calling';
       let calleeNode = {
@@ -100,8 +100,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
           name: calleeName,
           displayArgs,
           displayName: formatOutput.displayName(calleeName, displayArgs),
-          callerNode: last(scopeChain) || null,
-          caller: callerNode,
+          callerNode,
           status,
         },
       };
@@ -183,30 +182,28 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     // change directions and class on returning functions
     // don't want to change links outgoing from the root node:
     // this prevents the last link incorrectly reversing again
-    if (exitingLink.target.callerNode !== null) {
-      let linkStatus;
-      // explicit return of function
-      if ((state.doneCallee_) &&
-        (state.value.isPrimitive && state.value.data !== undefined) ||
-        !state.value.isPrimitive) {
-        linkStatus = 'returning';
-        exitingLink.target.info.status = 'returning';
-      } else {
-        endStatus = 'failure';
-        linkStatus = 'broken';
-        exitingLink.target.info.status = 'failure';
-        exitingLink.source.info.status = 'warning';
-      }
-
-      if (linkStatus !== 'broken') {
-        // reverse source and target to flip arrows
-        let returnLink = getCallLink(
-          exitingLink.target, exitingLink.source, linkStatus);
-        links.unshift(returnLink);
-      }
-      // break the chain for non-returned functions!
-      links.pop();
+    let linkStatus;
+    // explicit return of function
+    if ((state.doneCallee_) &&
+      (state.value.isPrimitive && state.value.data !== undefined) ||
+      !state.value.isPrimitive) {
+      linkStatus = 'returning';
+      exitingLink.target.info.status = 'returning';
+    } else {
+      endStatus = 'failure';
+      linkStatus = 'broken';
+      exitingLink.target.info.status = 'failure';
+      exitingLink.source.info.status = 'warning';
     }
+
+    if (linkStatus !== 'broken') {
+      // reverse source and target to flip arrows and animation
+      let returnLink = getCallLink(
+        exitingLink.target, exitingLink.source, linkStatus);
+      links.unshift(returnLink);
+    }
+    // break the chain for non-returned functions!
+    links.pop();
   }
 
   function exitNode(exitingNode) {
@@ -223,7 +220,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         source: source,
         target: target,
         status,
-        index: linkIndex++,
+        linkIndex: linkIndex++,
       };
       return callLink;
     }

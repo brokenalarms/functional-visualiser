@@ -41,8 +41,6 @@
 }
 
 .link-returning {
-    //@include crossfade(1s);
-    //  @include draw-forwards(1s);
     stroke: $color-secondary;
 }
 
@@ -98,23 +96,28 @@
 }
 
 .function-root-finished {
+    fill: $color-neutral;
     @include scale(4);
     @include transition(3s)
 }
 
 .success {
+    stroke: $color-success;
     fill: $color-success;
 }
 
 .warning {
+    stroke: $color-warning;
     fill: $color-warning;
 }
 
 .neutral {
+    stroke: $color-neutral;
     fill: $color-neutral;
 }
 
 .failure {
+    stroke: $color-failure;
     fill: $color-failure;
 }
 

@@ -72,7 +72,7 @@ function Sequencer() {
       if (doneAction) {
         console.log('this step actioned:');
       }
-      console.log(cloneDeep(interpreter.stateStack[0]));
+      //console.log(cloneDeep(interpreter.stateStack[0]));
       if (doneAction) {
         let representedNode = updateNodes.getRepresentedNode();
         SequencerStore.setEditorOutput({
@@ -100,13 +100,12 @@ function Sequencer() {
         if (doneAction && singleStep) {
           CodeStatusStore.setCodeRunning(false);
         } else {
-          setTimeout(nextStep.bind(null, singleStep), (doneAction) ? delay : 5);
+          setTimeout(nextStep.bind(null, singleStep), (doneAction) ? delay : 0);
         }
       } else {
         updateNodes.finish();
-        SequencerStore.sendUpdate().then(() => {
           CodeStatusStore.setCodeFinished(true);
-        });
+        SequencerStore.sendUpdate();
       }
     }
   }

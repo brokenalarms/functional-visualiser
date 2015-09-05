@@ -93,20 +93,18 @@ function demo() {
     // If both arrays are empty, then we're done
     if (remainingArr1.length === 0 && remainingArr2.length === 0) {
       return finalArr;
-    } else {
-      // Recursion!
-      return combineArrays(remainingArr1, remainingArr2, finalArr);
     }
+    return combineArrays(remainingArr1, remainingArr2, finalArr);
   }
 
-  /*  var processed = combineArrays(
-      map(averageForArray, pluck(data, 'temperatures')),
-      pluck(data, 'population'));*/
+  var processed = combineArrays(
+    map(averageForArray, pluck(data, 'temperatures')),
+    pluck(data, 'population'));
 
-  var populations = pluck(data, 'population');
-  var allTemperatures = pluck(data, 'temperatures');
-  var averageTemps = map(averageForArray, allTemperatures);
-  var processed = combineArrays(averageTemps, populations);
+  /*  var populations = pluck(data, 'population');
+    var allTemperatures = pluck(data, 'temperatures');
+    var averageTemps = map(averageForArray, allTemperatures);
+    var processed = combineArrays(averageTemps, populations);*/
 }
 
 

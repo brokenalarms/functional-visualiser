@@ -170,7 +170,8 @@ function getCirclePerimiterIntersection(start, target, coord) {
 function update() {
 
   link = link.data(forceLayout.links(), (d) => {
-    return d.index;
+    // not the d3 generated node index; this is my own
+    return d.linkIndex;
   });
   node = node.data(forceLayout.nodes(), (d) => {
     // re-matches data to work with shifting rather than popping
