@@ -97,14 +97,14 @@ function demo() {
     return combineArrays(remainingArr1, remainingArr2, finalArr);
   }
 
-  var processed = combineArrays(
+/*  var processed = combineArrays(
     map(averageForArray, pluck(data, 'temperatures')),
     pluck(data, 'population'));
-
-  /*  var populations = pluck(data, 'population');
+*/
+    var populations = pluck(data, 'population');
     var allTemperatures = pluck(data, 'temperatures');
     var averageTemps = map(averageForArray, allTemperatures);
-    var processed = combineArrays(averageTemps, populations);*/
+    var processed = combineArrays(averageTemps, populations);
 }
 
 

@@ -63,6 +63,9 @@ function Sequencer() {
 
   function nextStep(singleStep) {
 
+    // arrows are not drawn in ratio speed  if we're advancing one step at a time
+    SequencerStore.setOptions({singleStep});
+
     let delay = SequencerStore.getOptions().sequencerDelay * 3000;
     let persistReturnedFunctions = SequencerStore.getOptions().persistReturnedFunctions;
     let doneAction = false;
@@ -72,7 +75,7 @@ function Sequencer() {
       if (doneAction) {
         console.log('this step actioned:');
       }
-      //console.log(cloneDeep(interpreter.stateStack[0]));
+      console.log(cloneDeep(interpreter.stateStack[0]));
       if (doneAction) {
         let representedNode = updateNodes.getRepresentedNode();
         SequencerStore.setEditorOutput({

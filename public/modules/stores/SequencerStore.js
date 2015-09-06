@@ -23,6 +23,7 @@ function SequencerStore() {
     sequencerDelay: 0.01, // * 1000 = ms, this is sliderValue
     minSequencerDelay: 0.01,
     delayFactor: 3000,
+    singleStep: false,
   };
 
   let editorStep = {

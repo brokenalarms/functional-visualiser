@@ -23,6 +23,26 @@ function astTools() {
     return escodegen.generate(ast, options);
   }
 
+  function getAstIdentifier(argument) {
+    switch (argument.type) {
+      case 'Literal':
+        return argument.value.toString();
+      case 'Identifier':
+        return argument.name;
+      case 'CallExpression':
+        return argument.callee.name;
+      case 'FunctionDeclaration':
+        return argument.id.name;
+      case 'FunctionExpression':
+        return argument.id;
+      case 'MemberExpression':
+      case 'BinaryExpression':
+        return astTools.createCode(argument);
+      default:
+        console.error('unrecognised astType for formatting');
+    }
+  }
+
   function getCodeRange(node) {
     if (node) {
       let loc = node.loc;
@@ -113,7 +133,7 @@ function astTools() {
   }
 
   return {
-    astTools, createAst, createCode, createsNewFunctionScope,
+    astTools, createAst, createCode, getAstIdentifier, createsNewFunctionScope,
     addScopeInfo, getFirstActionSteps, typeIsSupported, getCodeRange, getCalleeName, getRunCodeString,
   };
 }

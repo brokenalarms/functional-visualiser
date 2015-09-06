@@ -184,13 +184,15 @@ function update() {
   });
 
   // set up arrow/line drawing to sync up with live Sequencer options
+  let singleStep = SequencerStore.getOptions().singleStep;
   let delay = SequencerStore.getOptions().sequencerDelay;
   let delayFactor = SequencerStore.getOptions().delayFactor;
   let visualizerPercentageOfDelay = (SequencerStore.getOptions().staggerEditorAndVisualizer) ?
     SequencerStore.getOptions().visualizerPercentageOfDelay : 1;
 
-  link.enter()
-    .append('line')
+  let newLink = link.enter();
+
+  newLink.append('line')
     .attr('class', (d) => {
       return 'link link-' + d.status;
     })
@@ -199,7 +201,7 @@ function update() {
         'url(#arrow-calling)' : 'url(#arrow-returning';
     })
     .transition()
-    .duration(delay * delayFactor / 2 / visualizerPercentageOfDelay)
+    .duration((singleStep) ? 500 : (delay * delayFactor / visualizerPercentageOfDelay))
     .ease('circle')
     .attrTween('x2', (d) => {
       return (t) => {
@@ -238,10 +240,11 @@ function update() {
     });
 
   node.exit().remove();
-  // don't restart the layout if only text or arrows have changed,
+  // don't restart the layout if only text has changed,
   // otherwise this causes the forceLayout to 'kick' when
   // the parameter text is the only thing that updates
-  if (nodeGroup[0][nodeGroup[0].length - 1] !== null) {
+  if ((nodeGroup[0][nodeGroup[0].length - 1] !== null) ||
+    newLink[0][newLink[0].length - 1] !== null) {
     forceLayout.start();
   }
 }

@@ -49,19 +49,21 @@ function functionalSum() {
 
 function nestedReturn() {
   function foo(fooParamReceived) {
-    function bar(barParamReceived) {
-      function baz(bazParamReceived) {
-        return 'result';
-      }
-      return baz(barParamReceived);
+
+    function bar(receiveLiteral, receiveFunction) {
+      return 'result';
     }
-    return bar(fooParamReceived);
+
+    function passToBar(receiveParentLiteral) {
+      return 'blah'
+    }
+
+    return bar(fooParamReceived, passToBar(fooParamReceived));
   }
 
-  function funcWithoutReturn() {
-  }
-  funcWithoutReturn();
-  funcWithoutReturn();
+  function funcWithoutReturn() {}
+  //funcWithoutReturn();
+  //funcWithoutReturn();
   var result = foo('fooParamPassed');
 }
 
