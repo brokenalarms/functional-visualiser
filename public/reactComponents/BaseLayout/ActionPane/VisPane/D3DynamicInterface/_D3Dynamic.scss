@@ -38,7 +38,7 @@
 }
 
 .link-calling {
-    @include transition(1s);
+    @include transition(0.5s);
     stroke: $color-primary;
 }
 
@@ -83,8 +83,8 @@
 }
 
 .function-root {
-    @include crossfade(3s);
-    @include transition(3s);
+/*     @include crossfade(3s); */
+    @include transition(4s);
 }
 
 .finished {

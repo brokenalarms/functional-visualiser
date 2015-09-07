@@ -26,10 +26,13 @@ function SequencerStore() {
     singleStep: false,
   };
 
-  let editorStep = {
+  let stepOutput = {
     range: null,
     execCodeBlock: null,
+    warning: null,
   };
+
+  let warningsHistory = [];
 
   function subscribeListener(callback) {
     sequencerStore.on('update', callback);
@@ -52,15 +55,18 @@ function SequencerStore() {
   }
 
   function getCurrentRange() {
-    return editorStep.range;
+    return stepOutput.range;
   }
 
   function getCurrentCodeBlock() {
-    return editorStep.execCodeBlock;
+    return stepOutput.execCodeBlock;
   }
 
-  function setEditorOutput(output) {
-    Object.assign(editorStep, output);
+  function setStepOutput(output) {
+    Object.assign(stepOutput, output);
+    if (output.warning) {
+      warningsHistory.push(output.warning);
+    }
   }
 
   function setOptions(newOpts) {
@@ -69,6 +75,14 @@ function SequencerStore() {
 
   function getOptions() {
     return options;
+  }
+
+  function getWarning() {
+    return stepOutput.warning;
+  }
+
+  function setWarningMessageShown() {
+    stepOutput.warning = null;
   }
 
   function resetState() {
@@ -96,7 +110,7 @@ function SequencerStore() {
               sequencerStore.emit('updateEditor');
               resolveEditorStep(true);
             },
-            stepDelay * (1 - options.visualizerPercentageOfDelay)); 
+            stepDelay * (1 - options.visualizerPercentageOfDelay));
         });
 
         editorComplete.then(() => {
@@ -126,7 +140,9 @@ function SequencerStore() {
     linkState: linkSequencerToD3Data,
       getCurrentRange,
       getCurrentCodeBlock,
-      setEditorOutput,
+      setStepOutput,
+      getWarning,
+      setWarningMessageShown,
       setOptions,
       getOptions,
       resetState,

@@ -36,7 +36,7 @@ let options = {
   },
   links: {
     strength: function(d) {
-      return 0.8;
+      return 0.9;
     },
     distance: function(nodes) {
       return (Math.max(options.dimensions.width / ((nodes.length + 1) / 1.5), 90));
@@ -257,11 +257,11 @@ function update() {
   let errorCount;
   rootNode
     .transition()
-    .duration(500)
+    .duration(700)
     .attr('r', (d) => {
       errorCount = d.info.errorCount;
       let nodeSize = errorCount + (options.dimensions.radius.node * options.dimensions.radius.factor.root);
-      d.radius = d.radius = Math.min(nodeSize + errorCount, nodeSize + maxAllowedErrors);
+      d.radius = d.radius = Math.min(nodeSize + errorCount * options.dimensions.radius.factor.root, 50); // nodeSize + maxAllowedErrors);
       return d.radius;
     })
     .attr('fill', (d) => {

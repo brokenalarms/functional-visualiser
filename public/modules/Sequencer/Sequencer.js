@@ -64,23 +64,27 @@ function Sequencer() {
   function nextStep(singleStep) {
 
     // arrows are not drawn in ratio speed  if we're advancing one step at a time
-    SequencerStore.setOptions({singleStep});
+    SequencerStore.setOptions({
+      singleStep,
+    });
 
     let delay = SequencerStore.getOptions().sequencerDelay * 3000;
     let persistReturnedFunctions = SequencerStore.getOptions().persistReturnedFunctions;
     let doneAction = false;
+    let warning = null;
     if (CodeStatusStore.isCodeRunning()) {
+      [doneAction, warning] = updateNodes.action(interpreter, persistReturnedFunctions);
 
-      doneAction = updateNodes.action(interpreter, persistReturnedFunctions);
       if (doneAction) {
         console.log('this step actioned:');
       }
       console.log(cloneDeep(interpreter.stateStack[0]));
       if (doneAction) {
         let representedNode = updateNodes.getRepresentedNode();
-        SequencerStore.setEditorOutput({
+        SequencerStore.setStepOutput({
           execCodeBlock: astTools.createCode(representedNode),
           range: astTools.getCodeRange(representedNode),
+          warning,
         });
         // wait until sequencer has completed timedout editor/d3
         // output before recursing
@@ -107,7 +111,7 @@ function Sequencer() {
         }
       } else {
         updateNodes.finish();
-          CodeStatusStore.setCodeFinished(true);
+        CodeStatusStore.setCodeFinished(true);
         SequencerStore.sendUpdate();
       }
     }

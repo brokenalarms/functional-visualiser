@@ -45,16 +45,18 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   // own index applied when creating links to track them
   let linkIndex = 0;
   let recursion = false;
+  let warning = null;
 
   function action(interpreter, persistReturnedFunctions) {
     let doneAction = false;
+    warning = null;
     state = interpreter.stateStack[0];
     if (state && prevState) {
       doneAction = (addCalledFunctions(state, interpreter, persistReturnedFunctions) ||
         removeExitingFunctions(state, interpreter, persistReturnedFunctions) ||
         updateEnteringFunctionArgs());
     }
-    return doneAction;
+    return [doneAction, warning];
   }
 
 
@@ -164,6 +166,10 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       rootNode.info.errorCount = ++errorCount;
       linkIsBroken = true;
       exitingLink.target.info.status = 'failure';
+      warning = {
+        action: 'Potential side effects',
+        message: 'Function has no return value',
+      };
 
       if (exitingLink.source !== rootNode) {
         exitingLink.source.info.status = 'warning';
@@ -232,10 +238,10 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         updateNode.status = 'warning';
         let callerNode = updateNode.callerNode.info;
         while (!(includes(callerNode.variablesDeclaredInScope, assignedExpression))) {
-          debugger;
           callerNode = callerNode.callerNode.info;
         }
         callerNode.status = 'warning';
+        warning = {action: 'Referential non-transparency', message: 'Function has mutated variable from another scope.'};
         updateNeeded = true;
       }
     }
