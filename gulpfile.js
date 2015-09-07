@@ -68,8 +68,7 @@ var buildJs = function(watch) {
     'estraverse',
     'escodegen',
     'brace',
-    'react-remarkable',
-    'react-ace',  ];
+    'react-remarkable',];
 
   var vendorBundler = browserify({
     debug: true,

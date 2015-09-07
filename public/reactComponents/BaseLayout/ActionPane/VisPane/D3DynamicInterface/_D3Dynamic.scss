@@ -7,9 +7,9 @@
 }
 
 @mixin transition($seconds) {
-    -ms-transition-duration: $seconds;
-    -o-transition-duration: $seconds;
-    transition-duration: $seconds;
+    -ms-transition: $seconds ease-in-out;
+    -o-transitionn: $seconds ease-in-out;
+    transition: $seconds ease-in-out;
 }
 
 @mixin crossfade($seconds) {
@@ -24,12 +24,6 @@
     animation: dash $seconds linear forwards;
 }
 
-@keyframes dash {
-    to {
-        stroke-dashoffset: 0;
-    }
-}
-
 .no-transition {
     -webkit-transition: none !important;
     -moz-transition: none !important;
@@ -37,7 +31,6 @@
     -ms-transition: none !important;
     transition: none !important;
 }
-
 
 .link {
     stroke-width: 1px;
@@ -60,11 +53,6 @@
 .function {
     stroke-width: 2px;
     cursor: pointer;
-}
-
-.function-calling {
-    fill: $color-primary;
-    stroke: $color-primary;
     opacity: 0.8;
 }
 
@@ -73,24 +61,21 @@
     stroke-width: 2px;
 }
 
-.function-returning {
+.returning {
     @include transition(0.5s);
     fill: $color-secondary;
     stroke: $color-secondary;
-    opacity: 0.8;
 }
 
 .function-failure {
     fill: $color-failure;
     stroke: $color-failure;
-    @include scale(1.3);
-    @include transition(0.5s);
+    @include transition(1s);
 }
 
 .function-warning {
-    fill: $color-warning;
-    stroke: $color-warning;
-    @include crossfade(1s);
+    @include transition(1s);
+    @extend .warning;
 }
 
 .function-text {
@@ -98,16 +83,13 @@
 }
 
 .function-root {
-    fill: $color-neutral;
-    stroke: $color-neutral;
-    @include scale(1.5);
-    @include transition(0.5s);
+    @include crossfade(3s);
+    @include transition(3s);
 }
 
-.function-root-finished {
-    fill: $color-neutral;
+.finished {
+    @include transition(3s);
     @include scale(4);
-    @include transition(3s)
 }
 
 .success {
@@ -115,14 +97,19 @@
     fill: $color-success;
 }
 
-.warning {
-    stroke: $color-warning;
-    fill: $color-warning;
+.normal {
+    stroke: $color-primary;
+    fill: $color-primary;
 }
 
 .neutral {
     stroke: $color-neutral;
     fill: $color-neutral;
+}
+
+.warning {
+    stroke: $color-warning;
+    fill: $color-warning;
 }
 
 .failure {

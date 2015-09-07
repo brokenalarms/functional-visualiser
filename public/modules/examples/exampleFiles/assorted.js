@@ -1,9 +1,5 @@
 'use strict';
 
-const id = 'sum';
-const name = 'Sum';
-const desc = 'Add an array of numbers';
-
 function imperativeSum() {
   const arrayToSum = [3, 5, 5, 10];
   let sum = 0;
@@ -44,27 +40,70 @@ function functionalSum() {
   }
   var numbers = [1, 1, 4, 6, 10, 50, 500];
   sumFunction(numbers);
-
 }
 
 function nestedReturn() {
   function foo(fooParamReceived) {
-
     function bar(receiveLiteral, receiveFunction) {
       return 'result';
     }
 
     function passToBar(receiveParentLiteral) {
-      return 'blah'
+      return 'blah';
     }
-
-    return bar(fooParamReceived, passToBar(fooParamReceived));
+    return bar(arr, passToBar(arr));
   }
 
   function funcWithoutReturn() {}
-  //funcWithoutReturn();
-  //funcWithoutReturn();
-  var result = foo('fooParamPassed');
+  funcWithoutReturn();
+  funcWithoutReturn();
+  funcWithoutReturn();
+  funcWithoutReturn();
+  funcWithoutReturn();
+  funcWithoutReturn();
+  funcWithoutReturn();
+  funcWithoutReturn();
+  funcWithoutReturn();
+  funcWithoutReturn();
+  funcWithoutReturn();
+  funcWithoutReturn();
+  funcWithoutReturn();
+  var arr = [0, 3]
+  var result = foo(arr);
+  /*  function foo(fooParamReceived) {
+
+      function bar(receiveLiteral, receiveFunction) {
+        return 'result';
+      }
+
+      function passToBar(receiveParentLiteral) {
+        return 'blah'
+      }
+
+      return bar(fooParamReceived, passToBar(fooParamReceived));
+    }
+
+    function funcWithoutReturn() {}
+    //funcWithoutReturn();
+    //funcWithoutReturn();
+    var result = foo('fooParamPassed');
+  */
+}
+
+function varMutatedOutOfScope() {
+  // this example demonstrates the effect of
+  // mutating a variable that was not declared
+  // in the same scope (no side effects allowed)
+  // The node mutating and the node (scope) in which the
+  // variable was initially declared are both highlighted.
+
+  function foo() {
+    bar = 'mutation';
+  }
+
+  var bar = 'declaration';
+  foo();
+
 }
 
 function fibonacciRecursive() {

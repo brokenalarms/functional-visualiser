@@ -6,8 +6,8 @@ let options = {
     tuningFactor: (nodes) => {
       return Math.sqrt(nodes.length / (options.dimensions.width * options.dimensions.height));
     },
-    charge: -600,
-    chargeDistance: 300,
+    charge: -500,
+    chargeDistance: 400,
     gravity: 0.03,
     gravityFunc: (nodes) => {
       return 100 * tuningFactor(nodes);
@@ -16,13 +16,19 @@ let options = {
   cssVars: {
     colorPrimary: '#2196F3',
     colorSecondary: '#4CAF50',
+    warningErrorRange: ['#FFEB3B', '#FFC107', '#FF9800', '#FF5722',
+      '#F44336', '#D50000',
+    ],
   },
   dimensions: {
     radius: {
       node: 10,
-      rootFactor: 1.5,
-      failureFactor: 1.3,
-      finishedFactor: 4,
+      factor: {
+        'function': 1,
+        'root': 1.6,
+        'failure': 1.2,
+        'finished': 4,
+      },
     },
     labelBuffer: 50,
     width: null,
@@ -45,15 +51,16 @@ let options = {
 // SequencerStore emit event.
 // ======================================================
 import d3 from 'd3';
-// shared by externally available update function
-let svg, node, nodeText, link, forceLayout, drag;
+let svg, node, nodeText, link, forceLayout, drag, rootNode;
 
+// shared by externally available update function
 function initialize(element, nodes, links, dimensions) {
+  // cleanup vars to prevent rootNode remaining allocated
+  destroy();
   options.dimensions.width = dimensions.width;
   options.dimensions.height = dimensions.height;
 
 
-  // cleanup if React udpates and doesn't re-mount DOM element
   d3.select(element).selectAll('*').remove();
 
   svg = d3.select(element).append('svg')
@@ -139,7 +146,7 @@ function createNewForceLayout(graphType, nodes, links) {
       return `translate(${d.x},${d.y})`;
     });
     nodeText.attr('transform', (d) => {
-      return `translate(${d.radius * (options.dimensions.radius[d.status + 'Factor'] || 1) + 10},${-(d.radius * (options.dimensions.radius[d.status + 'Factor'] || 1) + 10)})`;
+      return `translate(${d.radius + 10},${-(d.radius + 10)})`;
     });
   }
 
@@ -150,7 +157,8 @@ function getCirclePerimiterIntersection(start, target, coord) {
   // to the edge of the circle, rather than to the center point of the node, 
   // is taken from this source:
   // http://stackoverflow.com/questions/16568313/arrows-on-links-in-d3js-force-layout/16568625
-  // this is the only code I have not written entirely myself,
+  // these three lines involving atan2, cos and sin are the 
+  // only code I have not written entirely myself,
   // since I know nothing about geometry/trigonometry
   // and it is purely to accomplish the visual effect of not having link arrows
   // overlap with the nodes.
@@ -167,6 +175,7 @@ function getCirclePerimiterIntersection(start, target, coord) {
 /* update function is externally available so
    that React can handle unsubscription of 
    event listeners calling it*/
+
 function update() {
 
   link = link.data(forceLayout.links(), (d) => {
@@ -179,7 +188,7 @@ function update() {
     // re-matches data to work with shifting rather than popping
     // to follow stack behaviour 
     d.radius = options.dimensions.radius.node *
-      (options.dimensions.radius[d.info.status + 'Factor'] || 1);
+      (options.dimensions.radius.factor[d.info.type]);
     return d.index;
   });
 
@@ -194,14 +203,14 @@ function update() {
 
   newLink.append('line')
     .attr('class', (d) => {
-      return 'link link-' + d.status;
+      return 'link link-' + d.state;
     })
     .attr('marker-end', (d) => {
-      return (d.status === 'calling') ?
+      return (d.state === 'calling') ?
         'url(#arrow-calling)' : 'url(#arrow-returning';
     })
     .transition()
-    .duration((singleStep) ? 500 : (delay * delayFactor / visualizerPercentageOfDelay))
+    .duration((singleStep) ? 700 : (delay * delayFactor / visualizerPercentageOfDelay))
     .ease('circle')
     .attrTween('x2', (d) => {
       return (t) => {
@@ -225,6 +234,10 @@ function update() {
   nodeGroup.append('circle')
     .attr('r', options.dimensions.radius.node);
 
+  if (!rootNode) {
+    rootNode = nodeGroup.select('circle');
+  }
+
   nodeText = nodeGroup.append('foreignObject')
     .attr('class', 'unselectable function-text');
 
@@ -235,17 +248,56 @@ function update() {
 
   node.selectAll('circle')
     .attr('class', (d) => {
-      return 'function function-' + d.info.status +
+      return 'function ' + d.info.type + ' ' + d.info.status || '' +
         ((d.fixed) ? ' function-fixed' : '');
     });
+
+  // make the root node more angry for each error... 
+  let maxAllowedErrors = options.cssVars.warningErrorRange.length - 1;
+  let errorCount;
+  rootNode
+    .transition()
+    .duration(500)
+    .attr('r', (d) => {
+      errorCount = d.info.errorCount;
+      let nodeSize = errorCount + (options.dimensions.radius.node * options.dimensions.radius.factor.root);
+      d.radius = d.radius = Math.min(nodeSize + errorCount, nodeSize + maxAllowedErrors);
+      return d.radius;
+    })
+    .attr('fill', (d) => {
+      return options.cssVars.warningErrorRange[Math.min(errorCount, maxAllowedErrors)];
+    });
+
+  if (errorCount > maxAllowedErrors) {
+    rootNode.call(pulse);
+  }
 
   node.exit().remove();
   // don't restart the layout if only text has changed,
   // otherwise this causes the forceLayout to 'kick' when
   // the parameter text is the only thing that updates
-  if ((nodeGroup[0][nodeGroup[0].length - 1] !== null) ||
-    newLink[0][newLink[0].length - 1] !== null) {
+  let newNodesLength = nodeGroup[0].length;
+  let newLinksLength = newLink[0].length;
+  if ((newNodesLength > 0 && nodeGroup[0][newNodesLength - 1] !== null) ||
+    (newLinksLength > 0 && newLink[0][newLinksLength - 1] !== null)) {
     forceLayout.start();
+  }
+}
+
+function pulse() {
+  if (rootNode) {
+    rootNode.transition()
+      .duration(250)
+      .attr('r', (d) => {
+        return d.radius;
+      })
+      .transition()
+      .duration(250)
+      .attr('r', (d) => {
+        return d.radius * 1.1;
+      })
+      .ease('ease')
+      .each('end', pulse);
   }
 }
 
@@ -261,9 +313,11 @@ function onDoubleclickNode(d) {
 
 function destroy() {
   // probably not necessary if React resets components
-  forceLayout.stop();
-  svg.selectAll('*').remove();
-  svg = forceLayout = node = link = null;
+  if (svg) {
+    svg.selectAll('*').remove();
+    forceLayout.stop();
+  }
+  svg = forceLayout = node = link = rootNode = null;
 }
 
 export default {

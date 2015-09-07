@@ -1,5 +1,5 @@
 import React from 'react';
-import AceEditor from 'react-ace';
+import AceEditor from '../../../../../modules/vendor_mod/react-ace/index.js';
 let brace = require('brace');
 require('brace/mode/javascript');
 require('brace/theme/solarized_dark');
@@ -75,7 +75,7 @@ class Editor {
          look as exact. Still starts looking from the actual character the 
          range is on anyway, so should find immediately. */
       let range = editor.find(execCodeBlock, {
-        start: SequencerStore.getCurrentRange()
+        start: SequencerStore.getCurrentRange(),
       });
       if (!range) {
         /* backup selection by node LOC, due to escodegen
@@ -87,17 +87,22 @@ class Editor {
     }
   }
 
-  onChangeCodeInEditor = (newValue) => {
+  onChangeCodeInEditor = (newValue, isPaste) => {
     /* The Sequencer always checks the CodeStore preferentially to 
        the RefreshStore for user-modified code that has overwritten
        the selectedExample.*/
     let editor = this.refs.aceEditor.editor;
     // don't trigger change for programmatic events (adding IIFE info)
     // as this will clear the state of the DynamicControlBar
-    if (editor.curOp && editor.curOp.command.name) {
+    if ((editor.curOp && editor.curOp.command.name) ||
+      isPaste) {
       CodeStore.set(newValue, true);
       this.props.onUserChangeCode();
     }
+  }
+
+  onPaste = () => {
+    this.onChangeCodeInEditor(this.refs.aceEditor.editor.getValue(), true);
   }
 
   onCodeStoreChange = (userUpdate) => {
@@ -116,6 +121,7 @@ class Editor {
         <AceEditor ref="aceEditor"
         value = {this.props.codeString}
         onChange={this.onChangeCodeInEditor}
+        onPaste={this.onPaste}
         {...other}/>
       </div>
     );

@@ -23,23 +23,35 @@ function astTools() {
     return escodegen.generate(ast, options);
   }
 
-  function getAstIdentifier(argument) {
-    switch (argument.type) {
+  function getId(node) {
+    switch (node.type) {
       case 'Literal':
-        return argument.value.toString();
+        return node.value.toString();
       case 'Identifier':
-        return argument.name;
+        return node.name;
       case 'CallExpression':
-        return argument.callee.name;
+        return node.callee.name;
       case 'FunctionDeclaration':
-        return argument.id.name;
+        return node.id.name;
       case 'FunctionExpression':
-        return argument.id;
+        return node.id;
       case 'MemberExpression':
       case 'BinaryExpression':
-        return astTools.createCode(argument);
+        return createCode(node);
       default:
-        console.error('unrecognised astType for formatting');
+        console.error('unrecognised astType');
+    }
+  }
+
+  function getArgs(node) {
+    switch (node.type) {
+      case 'CallExpression':
+        return node.arguments;
+      case 'FunctionDeclaration':
+      case 'FunctionExpression':
+        return node.params;
+      default:
+        return null;
     }
   }
 
@@ -120,7 +132,8 @@ function astTools() {
     // check whether function is an immediately invokable function expression (IIFE)
     // code gen makes '})();' into '}());' for some reason so this is covered
     // in the third branch
-    if (!(codeString.slice(-1) === ')' || codeString.slice(-2) === ');' || codeString.slice(-4) === '());')) {
+    if ((codeString.slice(0, 1) !== '(') ||
+      !(codeString.slice(-1) === ')' || codeString.slice(-2) === ');' || codeString.slice(-4) === '());')) {
       if (!(codeString.slice(-1) === '}' || codeString.slice(-2) === '};')) {
         // allow for commands typed in directly without enclosing function
         runFuncString = `(function Program() { ${codeString} })();`;
@@ -133,7 +146,7 @@ function astTools() {
   }
 
   return {
-    astTools, createAst, createCode, getAstIdentifier, createsNewFunctionScope,
+    astTools, createAst, createCode, getId, getArgs, createsNewFunctionScope,
     addScopeInfo, getFirstActionSteps, typeIsSupported, getCodeRange, getCalleeName, getRunCodeString,
   };
 }
