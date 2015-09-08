@@ -53,7 +53,6 @@
 .function {
     stroke-width: 2px;
     cursor: pointer;
-    opacity: 0.8;
 }
 
 .function-fixed {
@@ -62,6 +61,7 @@
 }
 
 .returning {
+    opacity: 0.8;
     @include transition(0.5s);
     fill: $color-secondary;
     stroke: $color-secondary;
@@ -80,14 +80,15 @@
 
 .function-text {
     white-space: nowrap;
+    @include transition(2s);
 }
 
 .function-root {
-/*     @include crossfade(3s); */
     @include transition(4s);
 }
 
 .finished {
+    opacity: 1;
     @include transition(3s);
     @include scale(4);
 }
@@ -98,13 +99,19 @@
 }
 
 .normal {
-    stroke: $color-primary;
+    opacity: 0.8;
     fill: $color-primary;
+    stroke: $color-primary;
 }
 
 .neutral {
     stroke: $color-neutral;
     fill: $color-neutral;
+}
+
+.notice {
+    stroke: $color-notice;
+    fill: $color-notice;
 }
 
 .warning {

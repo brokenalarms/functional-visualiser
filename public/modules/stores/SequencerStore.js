@@ -19,7 +19,9 @@ function SequencerStore() {
   let options = {
     staggerEditorAndVisualizer: true,
     visualizerPercentageOfDelay: 2 / 3,
-    persistReturnedFunctions: true,
+    limitReturnedNodes: true,
+    maxAllowedReturnNodes: 0.5,
+    maxAllowedReturnNodesFactor: 40,
     sequencerDelay: 0.01, // * 1000 = ms, this is sliderValue
     minSequencerDelay: 0.01,
     delayFactor: 3000,
@@ -38,16 +40,24 @@ function SequencerStore() {
     sequencerStore.on('update', callback);
   }
 
-  function subscribeEditor(callback) {
-    sequencerStore.on('updateEditor', callback);
-  }
-
   function unsubscribeListener(callback) {
     sequencerStore.removeListener('update', callback);
   }
 
+  function subscribeEditor(callback) {
+    sequencerStore.on('updateEditor', callback);
+  }
+
   function unsubscribeEditor(callback) {
     sequencerStore.removeListener('updateEditor', callback);
+  }
+
+  function subscribeOptionListener(callback) {
+    sequencerStore.on('optionsChanged', callback);
+  }
+
+  function unsubscribeOptionListener(callback) {
+    sequencerStore.removeListener('optionsChanged', callback);
   }
 
   function linkSequencerToD3Data() {
@@ -71,6 +81,7 @@ function SequencerStore() {
 
   function setOptions(newOpts) {
     Object.assign(options, newOpts);
+    sequencerStore.emit('optionsChanged', options);
   }
 
   function getOptions() {
@@ -136,6 +147,7 @@ function SequencerStore() {
   return {
     subscribeListener, subscribeEditor,
     unsubscribeListener, unsubscribeEditor,
+    subscribeOptionListener, unsubscribeOptionListener,
     sendUpdate,
     linkState: linkSequencerToD3Data,
       getCurrentRange,

@@ -10,7 +10,9 @@ class OptionMenu extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      persistReturnedFunctions: SequencerStore.getOptions().persistReturnedFunctions,
+      limitReturnedNodes: SequencerStore.getOptions().limitReturnedNodes,
+      maxAllowedReturnNodes: SequencerStore.getOptions().maxAllowedReturnNodes,
+      maxAllowedReturnNodesFactor: SequencerStore.getOptions().maxAllowedReturnNodesFactor,
       showDynamic: RefreshStore.getOptions().showDynamic,
       staggerEditorAndVisualizer: SequencerStore.getOptions().staggerEditorAndVisualizer,
       sequencerDelay: SequencerStore.getOptions().sequencerDelay,
@@ -19,29 +21,33 @@ class OptionMenu extends React.Component {
     };
   }
 
+  componentDidMount = () => {
+    SequencerStore.subscribeOptionListener(this.onSequencerStoreOptionChange);
+  }
+
+  componentWillUnmount = () => {
+    SequencerStore.unsubscribeOptionListener(this.onSequencerStoreOptionChange);
+  }
+
   setStaggerEditorAndVisualizer = (event, checked) => {
     SequencerStore.setOptions({
       staggerEditorAndVisualizer: !checked,
     });
-    this.setState({
-      staggerEditorAndVisualizer: !checked,
-    });
   }
 
-  setPersistReturnedFunctions = (event, checked) => {
+  setlimitReturnedNodes = (event, checked) => {
     SequencerStore.setOptions({
-      persistReturnedFunctions: !checked,
-    });
-    this.setState({
-      persistReturnedFunctions: !checked,
+      limitReturnedNodes: !checked,
     });
   }
 
+  setMaxAllowedReturnNodes = (e, sliderValue) => {
+    SequencerStore.setOptions({
+      maxAllowedReturnNodes: sliderValue,
+    });
+  }
   setDelayValue = (e, sliderValue) => {
     SequencerStore.setOptions({
-      sequencerDelay: sliderValue,
-    });
-    this.setState({
       sequencerDelay: sliderValue,
     });
   }
@@ -56,9 +62,25 @@ class OptionMenu extends React.Component {
     });
   }
 
+  onSequencerStoreOptionChange = () => {
+    this.setState({
+      limitReturnedNodes: SequencerStore.getOptions().limitReturnedNodes,
+      maxAllowedReturnNodes: SequencerStore.getOptions().maxAllowedReturnNodes,
+      maxAllowedReturnNodesFactor: SequencerStore.getOptions().maxAllowedReturnNodesFactor,
+      showDynamic: RefreshStore.getOptions().showDynamic,
+      staggerEditorAndVisualizer: SequencerStore.getOptions().staggerEditorAndVisualizer,
+      sequencerDelay: SequencerStore.getOptions().sequencerDelay,
+      minSequencerDelay: SequencerStore.getOptions().minSequencerDelay,
+      delayFactor: SequencerStore.getOptions().delayFactor,
+    });
+  }
+
   render = () => {
     return (
-      <IconMenu iconButtonElement={<IconButton iconClick={this.handleRightIconClick} style={{zIndex: '2', color: '#EBF6F5'}} tooltip="Options">Options<i className="material-icons">expand_more</i></IconButton>}>
+      <IconMenu
+        closeOnItemTouchTap={false}
+        iconButtonElement={<IconButton style={{zIndex: '2', color: '#EBF6F5'}} tooltip="Options">Options<i className="material-icons">expand_more</i>
+      </IconButton>}>
         <List subheader="Visualization type" subheaderStyle={{color: 'darkgray', width: '250px'}}>
         <MenuItem index={0} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
           <div>static</div>
@@ -91,16 +113,25 @@ class OptionMenu extends React.Component {
         checked={this.state.staggerEditorAndVisualizer}
         onCheck={this.setStaggerEditorAndVisualizer}/>
         <Checkbox style={{padding: '0 24px 0 24px', marginTop: '12px'}}
-        name="persistReturnedFunctions"
-        label="Persist returned functions"
+        name="limitReturnedNodes"
+        label={('Limit visible returned functions')}
         labelPosition="left"
         labelStyle={{width: 'calc(100% - 100px)'}}
-        defaultChecked={this.state.persistReturnedFunctions}
-        checked={this.state.persistReturnedFunctions}
-        onCheck={this.setPersistReturnedFunctions} />
-        <div style={{color: 'lightgrey', fontSize: '12px', margin: '12px 24px'}}>
-          If checked whilst running, will not restore those functions already returned.
-        </div>
+        defaultChecked={this.state.limitReturnedNodes}
+        checked={this.state.limitReturnedNodes}
+        onCheck={this.setlimitReturnedNodes} />
+        <MenuItem index={2}>
+        <div style={!this.state.limitReturnedNodes ? {'color': 'darkgray'} : {}}>Max visible: {((this.state.limitReturnedNodes) ? 
+        (Math.round(this.state.maxAllowedReturnNodes * this.state.maxAllowedReturnNodesFactor)) : 'unlimited')}</div>
+        <Slider style={{margin: '0 12px 24px 12px', touchAction: 'none', cursor: 'pointer'}}
+          disabled={!this.state.limitReturnedNodes}
+          onChange={this.setMaxAllowedReturnNodes}
+          name="maxAllowedReturnNodesSlider"
+          min={0}
+          defaultValue={this.state.maxAllowedReturnNodes}
+          value={this.state.maxAllowedReturnNodes}
+          max={1}/>
+        </MenuItem>
       </List>
       </IconMenu>
     );

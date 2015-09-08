@@ -64,15 +64,15 @@ class ControlBar extends React.Component {
   render = () => {
     return (
       <Toolbar style={{backgroundColor: 'lightgrey', display: 'flex', 'alignItems': 'center', justifyContent: 'space-around'}}>
-        <ToolbarGroup>
-          <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || this.props.codeRunning || this.props.codeFinished} onClick={this.onPlay} style={{'zIndex': 5, margin: '0 18px'}} tooltip="Play or resume dynamic execution"><i className="material-icons">play_arrow</i></IconButton>
-          <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || !this.props.codeRunning || this.props.codeFinished} onClick={this.onPause} style={{'zIndex': 5, margin: '0 18px'}} tooltip="Pause dynamic execution"><i className="material-icons">pause</i></IconButton>
-          <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || this.props.codeRunning || this.props.codeFinished} onClick={this.onAdvance} style={{'zIndex': 5, margin: '0 18px'}} tooltip="Advance one step"><i className="material-icons">skip_next</i></IconButton>
-          <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || !this.state.allowResetButton} onClick={this.onReset} style={{'zIndex': 10, margin: '0 18px'}} tooltip="Stop and reset execution to start"><i className="material-icons">replay</i></IconButton>
+        <ToolbarGroup style={{display: 'flex', 'flexGrow': 2, justifyContent: 'space-around'}}>
+          <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || this.props.codeRunning || this.props.codeFinished} onClick={this.onPlay} style={{'zIndex': 5}} tooltip="Play or resume dynamic execution"><i className="material-icons">play_arrow</i></IconButton>
+          <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || !this.props.codeRunning || this.props.codeFinished} onClick={this.onPause} style={{'zIndex': 5}} tooltip="Pause dynamic execution"><i className="material-icons">pause</i></IconButton>
+          <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || this.props.codeRunning || this.props.codeFinished} onClick={this.onAdvance} style={{'zIndex': 5}} tooltip="Advance one step"><i className="material-icons">skip_next</i></IconButton>
+          <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || !this.state.allowResetButton} onClick={this.onReset} style={{'zIndex': 10}} tooltip="Stop and reset execution to start"><i className="material-icons">replay</i></IconButton>
         </ToolbarGroup>
-        <ToolbarSeparator style={{'top': 0, 'margin': '0 12px 0 12px'}}/>
-        <ToolbarGroup>
-          <FlatButton disabled={this.props.codeParsed} onClick={this.onParse} label="Parse code"  />
+        <ToolbarSeparator style={{'top': 0}}/>
+        <ToolbarGroup style={{flexGrow: 1, display: 'flex', justifyContent: 'space-around'}}>
+          <FlatButton style={{minWidth: '160px'}} disabled={this.props.codeParsed} onClick={this.onParse} label="Parse code"  />
         </ToolbarGroup>
       </Toolbar>
     );

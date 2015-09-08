@@ -1,13 +1,14 @@
 import SequencerStore from '../stores/SequencerStore.js'
 
 let options = {
-  rootPositionFixed: true,
+  rootPositionFixed: false,
+  singleStepDelay: 700,
   d3Force: {
     tuningFactor: (nodes) => {
       return Math.sqrt(nodes.length / (options.dimensions.width * options.dimensions.height));
     },
     charge: -500,
-    chargeDistance: 400,
+    chargeDistance: 500,
     gravity: 0.03,
     gravityFunc: (nodes) => {
       return 100 * tuningFactor(nodes);
@@ -39,7 +40,7 @@ let options = {
       return 0.9;
     },
     distance: function(nodes) {
-      return (Math.max(options.dimensions.width / ((nodes.length + 1) / 1.5), 90));
+      return (Math.max(Math.sqrt(options.dimensions.width * options.dimensions.height) / (nodes.length), 90));
     },
   },
 };
@@ -198,6 +199,8 @@ function update() {
   let delayFactor = SequencerStore.getOptions().delayFactor;
   let visualizerPercentageOfDelay = (SequencerStore.getOptions().staggerEditorAndVisualizer) ?
     SequencerStore.getOptions().visualizerPercentageOfDelay : 1;
+  let singleStepDelay = options.singleStepDelay;
+  let transitionDelay = (singleStep) ? singleStepDelay : (delay * delayFactor / visualizerPercentageOfDelay);
 
   let newLink = link.enter();
 
@@ -210,7 +213,7 @@ function update() {
         'url(#arrow-calling)' : 'url(#arrow-returning';
     })
     .transition()
-    .duration((singleStep) ? 700 : (delay * delayFactor / visualizerPercentageOfDelay))
+    .duration(transitionDelay)
     .ease('circle')
     .attrTween('x2', (d) => {
       return (t) => {
@@ -223,20 +226,17 @@ function update() {
       };
     });
 
-
-  link.exit()
-    .remove();
-
   let nodeGroup = node.enter().append('g')
     .on('dblclick', onDoubleclickNode)
     .call(drag);
 
+  if (!rootNode) {
+    rootNode = nodeGroup;
+  }
+
   nodeGroup.append('circle')
     .attr('r', options.dimensions.radius.node);
 
-  if (!rootNode) {
-    rootNode = nodeGroup.select('circle');
-  }
 
   nodeText = nodeGroup.append('foreignObject')
     .attr('class', 'unselectable function-text');
@@ -248,16 +248,22 @@ function update() {
 
   node.selectAll('circle')
     .attr('class', (d) => {
-      return 'function ' + d.info.type + ' ' + d.info.status || '' +
+      return 'function ' + d.info.type + ' ' + (d.info.status || '') +
         ((d.fixed) ? ' function-fixed' : '');
     });
 
   // make the root node more angry for each error... 
   let maxAllowedErrors = options.cssVars.warningErrorRange.length - 1;
   let errorCount;
-  rootNode
+  let finished = false;
+  rootNode.select('circle')
+    .classed('finished', (d) => {
+      if (d.info.status === 'finished') {
+        return (finished = true);
+      }
+    })
     .transition()
-    .duration(700)
+    .duration(singleStepDelay)
     .attr('r', (d) => {
       errorCount = d.info.errorCount;
       let nodeSize = errorCount + (options.dimensions.radius.node * options.dimensions.radius.factor.root);
@@ -272,7 +278,29 @@ function update() {
     rootNode.call(pulse);
   }
 
-  node.exit().remove();
+  if (finished) {
+    rootNode.select('foreignObject')
+      .style('opacity', 0);
+  }
+
+  // break links exceeding max return capacity,
+  // then fade out their nodes
+  link.exit().remove();
+
+  node.exit()
+    .transition()
+    .duration(singleStepDelay)
+    .style('opacity', 0)
+    .remove();
+  // the above alone does not fade out foreignObject text
+  // so I fade out the text twice as fast as well, which is less obtrusive
+  node.exit().selectAll('foreignObject')
+    .transition()
+    .duration(singleStepDelay / 2)
+    .style('opacity', 0)
+    .remove();
+
+
   // don't restart the layout if only text has changed,
   // otherwise this causes the forceLayout to 'kick' when
   // the parameter text is the only thing that updates

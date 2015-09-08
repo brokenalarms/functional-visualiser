@@ -69,11 +69,12 @@ function Sequencer() {
     });
 
     let delay = SequencerStore.getOptions().sequencerDelay * 3000;
-    let persistReturnedFunctions = SequencerStore.getOptions().persistReturnedFunctions;
+    let maxAllowedReturnNodes =
+      SequencerStore.getOptions().maxAllowedReturnNodes * SequencerStore.getOptions().maxAllowedReturnNodesFactor;
     let doneAction = false;
     let warning = null;
     if (CodeStatusStore.isCodeRunning()) {
-      [doneAction, warning] = updateNodes.action(interpreter, persistReturnedFunctions);
+      [doneAction, warning] = updateNodes.action(interpreter, maxAllowedReturnNodes);
 
       if (doneAction) {
         console.log('this step actioned:');

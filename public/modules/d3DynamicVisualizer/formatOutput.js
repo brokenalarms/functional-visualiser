@@ -3,19 +3,21 @@ import astTools from '../astTools/astTools.js';
 function formatOutput() {
 
   function getArgIdentifiers(node) {
-    return getDisplayArgs(node, astTools.getId);
+    let args = astTools.getArgs(node);
+    if (args) {
+      return args.map((arg) => {
+        return astTools.getId(arg);
+      });
+    }
+    return getDisplayArgs(node, null, astTools.getId);
   }
 
-  function getDisplayArgs(node, callback) {
+  function getDisplayArgs(node) {
     let displayArgs = [];
     let args = astTools.getArgs(node);
     if (args) {
       args.forEach((arg, i) => {
-        if (typeof callback === 'function') {
-          displayArgs[i] = callback(arg);
-        } else {
-          displayArgs[i] = formatAstIdentifier(arg);
-        }
+        displayArgs[i] = formatAstIdentifier(arg);
       });
     }
     return displayArgs;

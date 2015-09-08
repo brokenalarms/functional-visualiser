@@ -44,16 +44,23 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   let endStatusArr = ['success', 'warning', 'failure'];
   // own index applied when creating links to track them
   let linkIndex = 0;
+  // as we start to return nodes, we pop them off the array
+  // and unshift them onto the front. The oldest returning nodes
+  // that can be removed if the maxAllowedReturnNodes limit is exceeded are those
+  // behind from the rootNodeIndex.
+  let rootNodeIndex = 0;
   let recursion = false;
   let warning = null;
+  // we don't want to give the same warning multiple times for multiple assignments to, say an
+  let assignmentWarningVar = null;
 
-  function action(interpreter, persistReturnedFunctions) {
+  function action(interpreter, maxAllowedReturnNodes) {
     let doneAction = false;
     warning = null;
     state = interpreter.stateStack[0];
     if (state && prevState) {
-      doneAction = (addCalledFunctions(state, interpreter, persistReturnedFunctions) ||
-        removeExitingFunctions(state, interpreter, persistReturnedFunctions) ||
+      doneAction = (addCalledFunctions(state, interpreter) ||
+        removeExitingFunctions(state, interpreter, maxAllowedReturnNodes) ||
         updateEnteringFunctionArgs());
     }
     return [doneAction, warning];
@@ -66,7 +73,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
      nodes have type: root or normal
         nodes additionally have status: neutral, warning, failure or finished 
    */
-  function addCalledFunctions(state, interpreter, persistReturnedFunctions) {
+  function addCalledFunctions(state, interpreter) {
 
     if (isSupportedFunctionCall(state)) {
       let calleeName = state.node.callee.name || state.node.callee.id.name;
@@ -80,9 +87,22 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
           // later used for formatting
           recursion = true;
         }
+        if (callerNode.info.paramIds) {
+          let callerParams = callerNode.info.paramIds;
+          // we know the param identifier names for the function surrounding this call;
+          // if there are any identifiers in arguments for the call expression
+          // which match, then replace them with the values passed in from the parent
+          argumentIds.forEach((arg, i) => {
+            let callerParamIndex = callerParams.indexOf(arg);
+            if (callerParamIndex > -1) {
+              // replace the arg node with the node passed in from
+              // the enclosing function
+              argumentIds[i] = callerNode.info.argumentIds[callerParamIndex];
+            }
+          });
+        }
       }
-
-      let displayArgs = formatOutput.getDisplayArgs(state.node, currentScope);
+      let displayArgs = formatOutput.getDisplayArgs(state.node);
 
       let calleeNode = {
         // d3 fills up the rest of the object,
@@ -102,8 +122,6 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         calleeNode.info.status = 'neutral';
         calleeNode.info.errorCount = 0;
       }
-      console.log(calleeNode);
-
 
       nodes.push(calleeNode);
       let callLink = getCallLink(callerNode, calleeNode, 'calling');
@@ -119,7 +137,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     return false;
   }
 
-  function removeExitingFunctions(state, interpreter, persistReturnedFunctions) {
+  function removeExitingFunctions(state, interpreter, maxAllowedReturnNodes) {
 
     function isNotExitingRootNode(state, rootNode) {
       // don't want to exit the last node
@@ -135,20 +153,24 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     if (isSupportedReturnToCaller(state) &&
       isNotExitingRootNode(state, scopeChain[0])) {
 
-      if (persistReturnedFunctions) {
-        let link = last(links) || null;
-        if (link) {
-          exitLink(link, interpreter.stateStack);
-          exitNode(last(scopeChain));
-        } else {
-          links.splice(scopeChain.length - 1, Number.MAX_VALUE);
-          nodes.splice(scopeChain.length, Number.MAX_VALUE);
-        }
-        scopeChain.pop();
-        return true;
+      let link = last(links) || null;
+      if (link) {
+        exitLink(link);
+        exitNode(last(scopeChain));
       }
-      return false;
+      // exiting the function; can allow a new warning again for same-named variable in higher scope
+      assignmentWarningVar = null;
+
+      if (rootNodeIndex > maxAllowedReturnNodes) {
+        // the returned nodes shifted to the front of the array
+        // has exceeded the limit; start removing the oldest
+        // from the root node position backwards 
+        removeOldestReturned(nodes, links, maxAllowedReturnNodes);
+      }
+      scopeChain.pop();
+      return true;
     }
+    return false;
   }
 
   function exitLink(exitingLink) {
@@ -167,8 +189,8 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       linkIsBroken = true;
       exitingLink.target.info.status = 'failure';
       warning = {
-        action: 'Potential side effects',
-        message: 'Function has no return value',
+        action: 'Principle: Referential transparency',
+        message: 'Function does not return a value',
       };
 
       if (exitingLink.source !== rootNode) {
@@ -196,6 +218,30 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     let originalIdentifier = exitingNode.info.displayArgs[state.n_ - 1];
     let returnValue = formatOutput.interpreterIdentifier(state.value, originalIdentifier);
     exitingNode.info.displayName = `return (${returnValue})`;
+
+    nodes.pop();
+    nodes.unshift(exitingNode);
+    rootNodeIndex++;
+  }
+
+  function removeOldestReturned(nodes, links, maxAllowedReturnNodes) {
+    // cannot remove so many nodes that the root node onwards would be deleted
+    // (ie onlf returning nodes shifted to the start of the array
+    //  are eligible for deletion)
+    //  this may not always be 1, since the user can adjust
+    //  the maxAllowedReturnNodes on the fly
+    let itemsToRemoveCount = rootNodeIndex - maxAllowedReturnNodes;
+    let removalStartIndex = rootNodeIndex - itemsToRemoveCount;
+    // links always have one less item than nodes
+    // (root node has no calling link attached)
+    // the indexes match on the way back,
+    // except we don't want to try and remove
+    // a link when there is only one node
+    if (nodes.length > 1) {
+      links.splice(removalStartIndex, itemsToRemoveCount);
+    }
+    nodes.splice(removalStartIndex, itemsToRemoveCount);
+    rootNodeIndex -= itemsToRemoveCount;
   }
 
 
@@ -233,32 +279,42 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     if (state.node.type === 'AssignmentExpression' &&
       state.doneLeft === true && state.doneRight === true) {
       let assignedExpression = state.node.left.name;
-      if (updateNode.callerNode &&
-        !(includes(updateNode.variablesDeclaredInScope, assignedExpression))) {
-        updateNode.status = 'warning';
-        let callerNode = updateNode.callerNode.info;
-        while (!(includes(callerNode.variablesDeclaredInScope, assignedExpression))) {
+      if (!(includes(updateNode.variablesDeclaredInScope, assignedExpression))) {
+        let callerNode = updateNode;
+        let varPresentInScope = false;
+        while (!(varPresentInScope = includes(callerNode.variablesDeclaredInScope, assignedExpression)) ||
+          callerNode.callerNode !== null) {
           callerNode = callerNode.callerNode.info;
         }
-        callerNode.status = 'warning';
-        warning = {action: 'Referential non-transparency', message: 'Function has mutated variable from another scope.'};
-        updateNeeded = true;
+        if (varPresentInScope) {
+          updateNode.status = 'warning';
+          callerNode.status = 'warning';
+          warning = {
+            action: 'Principle: Side effects',
+            message: 'Function has mutated variable in another scope',
+          };
+        } else {
+          updateNode.status = 'failure';
+          warning = {
+            'action': 'Principle: Side effects',
+            'message': 'Function refers to an external variable that does not exist in the scope chain',
+          };
+        }
+      } else {
+        updateNode.status = 'notice';
+        warning = {
+          'action': 'Principle: Immutability',
+          'message': 'Function has changed a variable in scope after creation',
+        };
       }
+      updateNeeded = (assignmentWarningVar !== assignedExpression);
+      assignmentWarningVar = assignedExpression;
     }
 
     if (state.func_ && !state.func_.nativeFunc) {
       // get the identifier params so we can match with variables referring
-      // to values declared in its callerNode scope;
+      // to values declared in its callerNode scope when we hit the next function
       updateNode.paramIds = pluck(state.func_.node.params, 'name');
-      updateNode.argumentIds.forEach((argId, i) => {
-        let paramIndex = updateNode.paramIds.indexOf(argId);
-        if (paramIndex > -1) {
-          // we have used a paramName that refers to an argument passed in;
-          // we should instead replace that param id with the argument passed in
-          // from the caller,
-          updatedDisplayArgs[i] = updateNode.callerNode.info.argumentIds[paramIndex];
-        }
-      });
     }
 
     if (state.doneCallee_ && !state.doneExec) {
@@ -313,9 +369,10 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
 
   function finish() {
     // no more actions, prep before final update
-    let rootNode = nodes[0];
+    let rootNode = nodes[nodes.length - 1];
     let endStatus = endStatusArr[Math.min(errorCount, 2)];
-    rootNode.info.status = 'finished '.concat(endStatus);
+    rootNode.info.status = 'finished';
+    rootNode.info.endStatus = endStatus;
   }
 
   return {

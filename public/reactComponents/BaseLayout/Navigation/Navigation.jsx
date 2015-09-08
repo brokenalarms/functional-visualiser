@@ -28,6 +28,8 @@ class Navigation extends React.Component {
     if (this.state.warningMessage) {
       this.refs.snackbar.show();
       SequencerStore.setWarningMessageShown();
+    } else {
+      this.refs.snackbar.dismiss();
     }
   };
 
