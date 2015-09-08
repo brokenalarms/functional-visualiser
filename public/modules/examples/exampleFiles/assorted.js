@@ -42,18 +42,7 @@ function functionalSum() {
   sumFunction(numbers);
 }
 
-function nestedReturn() {
-  function foo(fooParamReceived) {
-    function bar(receiveLiteral, receiveFunction) {
-      return 'result';
-    }
-
-    function passToBar(receiveParentLiteral) {
-      return 'blah';
-    }
-    return bar(arr, passToBar(arr));
-  }
-
+function functionWithNoReturn() {
   function funcWithoutReturn() {}
   funcWithoutReturn();
   funcWithoutReturn();
@@ -68,26 +57,24 @@ function nestedReturn() {
   funcWithoutReturn();
   funcWithoutReturn();
   funcWithoutReturn();
-  var arr = [0, 3]
-  var result = foo(arr);
-  /*  function foo(fooParamReceived) {
+}
 
-      function bar(receiveLiteral, receiveFunction) {
-        return 'result';
-      }
+function nestedReturn() {
+  function foo(receivedLiteralInFoo) {
 
-      function passToBar(receiveParentLiteral) {
-        return 'blah'
-      }
-
-      return bar(fooParamReceived, passToBar(fooParamReceived));
+    function bar(receivedLiteralInBar, receivedFunctionInBar) {
+      return receivedLiteralInBar + ' and ' + receivedFunctionInBar;
     }
 
-    function funcWithoutReturn() {}
-    //funcWithoutReturn();
-    //funcWithoutReturn();
-    var result = foo('fooParamPassed');
-  */
+    function passToBar(receivedParentLiteral) {
+      return "I've been passed into function bar" + receivedParentLiteral;
+    }
+
+    return bar(receivedLiteralInFoo, passToBar(receivedLiteralInFoo));
+  }
+
+  var result = foo('fooArgumentLiteralPassed');
+
 }
 
 function varMutatedOutOfScope() {

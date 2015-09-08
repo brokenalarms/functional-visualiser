@@ -98,7 +98,7 @@ function Sequencer() {
       if (doneAction) {
         console.log('this step actioned:');
       }
-     // console.log(cloneDeep(interpreter.stateStack[0]));
+      console.log(cloneDeep(interpreter.stateStack[0]));
       if (doneAction) {
         let representedNode = updateNodes.getRepresentedNode();
         SequencerStore.setStepOutput({

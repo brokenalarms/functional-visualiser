@@ -236,7 +236,9 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         nodeReturning.status = 'returning';
       }
     } else {
-      rootNode.info.errorCount++;
+      // treating no returns as twice as worse
+      // easiest way to infer there are side effects
+      rootNode.info.errorCount += 2;
       functionSuccessfullyReturns = false;
       nodeReturning.status = 'failure';
       warning = warningConstants.functionDoesNotReturnValue;
@@ -345,10 +347,19 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     }
   }
 
-  function nodeIsNotBeingAssigned(node) {
-    return !(node.type === 'VariableDeclarator' ||
+  function nodeIsBeingAssigned(node) {
+    return (node.type === 'ReturnStatement' ||
+      node.type === 'VariableDeclarator' ||
+      node.type === 'VariableDeclaration' ||
       node.type === 'BinaryExpression' ||
       node.type === 'AssignmentExpression');
+  }
+
+  function variableDeclaredInScope(node, argIndex) {
+    return (
+      node.type === 'BlockStatement' &&
+      nodeIsBeingAssigned(node.body[argIndex - 1])
+    );
   }
 
   function isFunctionReturnUnassigned(updateNode) {
@@ -357,18 +368,26 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       // used to track an exit node to the next state, and ensure that
       // a returning funtion is being assigned to a variable (type VariableDeclarator)
       // on the next step
-      if (nodeIsNotBeingAssigned(state.node)) {
-        exitingNode.info.callerNode.info.status = 'warning';
-        rootNode.info.errorCount++;
-        // only create warning if a more critical one is not
-        // already showing for that step
-        if (!warning) {
-          warning = warningConstants.functionReturnUnassigned;
+      if (!nodeIsBeingAssigned(state.node)) {
+        // this is the result of an argument, so we haven't got to assignment stage yet
+        // leave exitingNode open
+        if ((state.hasOwnProperty('n_') &&
+            // stops returns that returns returns triggering...
+            !variableDeclaredInScope(state.node, state.n_))) {
+          exitingNode.info.callerNode.info.status = 'warning';
+          rootNode.info.errorCount++;
+          // only create warning if a more critical one is not
+          // already showing for that step
+          if (!warning) {
+            warning = warningConstants.functionReturnUnassigned;
+          }
+          // break off this function too..
+          links.pop();
+          exitingNode.info.warningsInScope.add(warning);
+          exitingNode = null;
+          conditionMet = true;
         }
-        exitingNode.info.warningsInScope.add(warning);
-        conditionMet = true;
       }
-      exitingNode = null;
     }
     return conditionMet;
   }
@@ -430,6 +449,15 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         } else {
           updatedDisplayArgs[argIndex] = formatOutput.interpreterIdentifier(state.value, identifier);
         }
+      } else {
+        // try to match any remaining identifiers
+        // currently written as 'paramId?' with the
+        // argument identifiers passed in
+        /*        updateNode.argumentIds.forEach((arg, i) => {
+                  if (!updatedDisplayArgs[i]) {
+                    updatedDisplayArgs[i] = arg;
+                  }
+                });*/
       }
 
       // check that we have updated all args and are ready to display
