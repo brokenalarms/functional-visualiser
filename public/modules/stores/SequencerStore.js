@@ -77,6 +77,7 @@ function SequencerStore() {
     if (output.warning) {
       warningsHistory.push(output.warning);
     }
+    
   }
 
   function setOptions(newOpts) {

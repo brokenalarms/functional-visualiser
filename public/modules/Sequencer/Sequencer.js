@@ -23,6 +23,17 @@ function Sequencer() {
   let astWithLocations;
   let updateNodes;
 
+  function displaySnackBarError(e) {
+    SequencerStore.setStepOutput({
+      warning: {
+        'action': 'Error',
+        'message': `Unsuccessful parsing code.
+           Syntax error or usage of ES6 (ES5 only).`,
+      },
+    });
+    SequencerStore.sendUpdate();
+  }
+
   /* run once on code parse from editor.
      State can then be reset without re-parsing.
      Parsing will select user-written code once
@@ -31,8 +42,14 @@ function Sequencer() {
 
     let codeString = (CodeStore.get());
     let runCodeString = astTools.getRunCodeString(codeString);
+    try {
+      astWithLocations = astTools.createAst(runCodeString, true);
+    } catch (e) {
+      // display message if user types in invalid code;
+      displaySnackBarError(e);
+      return;
+    }
 
-    astWithLocations = astTools.createAst(runCodeString, true);
     /* save back from AST to generated code and push that to the editor,
        so the dynamic selection of running code is still correct,
        as there are trivial but syntactically differences between 
@@ -55,9 +72,11 @@ function Sequencer() {
         SequencerStore.linkState().links);
     /* create deep copy so that d3 root modifications
      and interpreter transformations are not maintained */
-    if (astWithLocations) {
-      let sessionAst = cloneDeep(astWithLocations).valueOf();
+    let sessionAst = cloneDeep(astWithLocations).valueOf();
+    try {
       interpreter = new Interpreter(sessionAst, initFunc);
+    } catch (e) {
+      displaySnackBarError(e);
     }
   }
 
@@ -79,7 +98,7 @@ function Sequencer() {
       if (doneAction) {
         console.log('this step actioned:');
       }
-      console.log(cloneDeep(interpreter.stateStack[0]));
+     // console.log(cloneDeep(interpreter.stateStack[0]));
       if (doneAction) {
         let representedNode = updateNodes.getRepresentedNode();
         SequencerStore.setStepOutput({
@@ -111,7 +130,6 @@ function Sequencer() {
           setTimeout(nextStep.bind(null, singleStep), (doneAction) ? delay : 0);
         }
       } else {
-        updateNodes.finish();
         CodeStatusStore.setCodeFinished(true);
         SequencerStore.sendUpdate();
       }

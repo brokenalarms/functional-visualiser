@@ -80,7 +80,20 @@
 
 .function-text {
     white-space: nowrap;
-    @include transition(2s);
+    font-size: 0.9rem;
+    transition: font-size 0.1s linear;
+}
+
+.update-text-shrink {
+    white-space: nowrap;
+    font-size: 0;
+    transition: font-size 0.1s linear;
+}
+
+.update-text-blur {
+    white-space: nowrap;
+    color: transparent;
+    text-shadow: black 0 0 10px;
 }
 
 .function-root {

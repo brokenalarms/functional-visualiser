@@ -178,6 +178,9 @@ function getCirclePerimiterIntersection(start, target, coord) {
    event listeners calling it*/
 
 function update() {
+  if (!link || !node) {
+    return;
+  }
 
   link = link.data(forceLayout.links(), (d) => {
     // not the d3 generated node index; this is my own:
@@ -206,10 +209,10 @@ function update() {
 
   newLink.append('line')
     .attr('class', (d) => {
-      return 'link link-' + d.state;
+      return 'link link-' + d.linkState;
     })
     .attr('marker-end', (d) => {
-      return (d.state === 'calling') ?
+      return (d.linkState === 'calling') ?
         'url(#arrow-calling)' : 'url(#arrow-returning';
     })
     .transition()
@@ -237,14 +240,28 @@ function update() {
   nodeGroup.append('circle')
     .attr('r', options.dimensions.radius.node);
 
-
   nodeText = nodeGroup.append('foreignObject')
     .attr('class', 'unselectable function-text');
 
-  node.selectAll('foreignObject').html((d) => {
-    return '<div class="pointer unselectable"}>' +
-      d.info.displayName + '</div>';
+  // d3 will not notice changed text otherwise
+  let allText = node.selectAll('foreignObject')
+    .html((d) => {
+      return '<div class="pointer unselectable function-text"}>' +
+        d.info.displayName + '</div>';
+    });
+
+  // similarly, trigger single text animation via internal flag on node
+  let updateText = allText.filter((d) => {
+    if (d.info.updateText) {
+      d.info.updateText = false;
+      return true;
+    }
   });
+  updateText.select('div')
+    .transition().duration(transitionDelay / 2)
+    .attr('class', 'update-text-shrink')
+    .transition().duration(transitionDelay / 2)
+    .attr('class', 'unselectable function-text');
 
   node.selectAll('circle')
     .attr('class', (d) => {
