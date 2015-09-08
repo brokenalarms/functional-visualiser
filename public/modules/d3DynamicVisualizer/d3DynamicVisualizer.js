@@ -17,7 +17,7 @@ let options = {
   cssVars: {
     colorPrimary: '#2196F3',
     colorSecondary: '#4CAF50',
-    warningErrorRange: ['#FFEB3B', '#FFC107', '#FF9800', '#FF5722',
+    warningErrorRange: ['#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722',
       '#F44336', '#D50000',
     ],
   },
@@ -259,6 +259,8 @@ function update() {
   rootNode.select('circle')
     .classed('finished', (d) => {
       if (d.info.status === 'finished') {
+        rootNode.select('foreignObject')
+          .style('opacity', 0);
         return (finished = true);
       }
     })
@@ -267,7 +269,8 @@ function update() {
     .attr('r', (d) => {
       errorCount = d.info.errorCount;
       let nodeSize = errorCount + (options.dimensions.radius.node * options.dimensions.radius.factor.root);
-      d.radius = d.radius = Math.min(nodeSize + errorCount * options.dimensions.radius.factor.root, 50); // nodeSize + maxAllowedErrors);
+      d.radius = Math.min(nodeSize + errorCount * options.dimensions.radius.factor.root,
+        nodeSize + maxAllowedErrors * options.dimensions.radius.factor.root);
       return d.radius;
     })
     .attr('fill', (d) => {
@@ -276,11 +279,6 @@ function update() {
 
   if (errorCount > maxAllowedErrors) {
     rootNode.call(pulse);
-  }
-
-  if (finished) {
-    rootNode.select('foreignObject')
-      .style('opacity', 0);
   }
 
   // break links exceeding max return capacity,
@@ -314,7 +312,8 @@ function update() {
 
 function pulse() {
   if (rootNode) {
-    rootNode.transition()
+    rootNode.select('circle')
+      .transition()
       .duration(250)
       .attr('r', (d) => {
         return d.radius;

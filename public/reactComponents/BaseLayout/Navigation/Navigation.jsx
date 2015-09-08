@@ -19,76 +19,76 @@ class Navigation extends React.Component {
     this.state = {
       isNavBarShowing: NavigationStore.isNavBarShowing(),
       selectedMarkdown: NavigationStore.getSelectedMarkdown(),
-      warningAction: null,
-      warningMessage: null,
-    };
-  }
-
-  componentDidUpdate = () => {
-    if (this.state.warningMessage) {
-      this.refs.snackbar.show();
-      SequencerStore.setWarningMessageShown();
-    } else {
-      this.refs.snackbar.dismiss();
-    }
+      warning: {},
   };
+}
 
-  componentDidMount = () => {
-    NavigationStore.subscribeListener(this.onNavigationStoreChange);
-    SequencerStore.subscribeListener(this.onSequencerStoreUpdate);
+componentDidUpdate = () => {
+  if (this.state.warning.message) {
+    this.refs.snackbar.show();
+    SequencerStore.setWarningMessageShown();
+  } else {
+    this.refs.snackbar.dismiss();
   }
+};
 
-  componentWillUnmount = () => {
-    NavigationStore.unsubscribeListener(this.onNavigationStoreChange);
-    SequencerStore.unsubscribeListener(this.onSequencerStoreUpdate);
-  }
+componentDidMount = () => {
+  NavigationStore.subscribeListener(this.onNavigationStoreChange);
+  SequencerStore.subscribeListener(this.onSequencerStoreUpdate);
+}
 
-  setIsNavBarShowing = (isNavBarShowing) => {
-    NavigationStore.setOptions({
-      isNavBarShowing,
-    });
-  }
+componentWillUnmount = () => {
+  NavigationStore.unsubscribeListener(this.onNavigationStoreChange);
+  SequencerStore.unsubscribeListener(this.onSequencerStoreUpdate);
+}
 
-  onNavigationStoreChange = (newOpts) => {
+setIsNavBarShowing = (isNavBarShowing) => {
+  NavigationStore.setOptions({
+    isNavBarShowing,
+  });
+}
+
+onNavigationStoreChange = (newOpts) => {
+  this.setState({
+    isNavBarShowing: newOpts.isNavBarShowing,
+    selectedMarkdown: newOpts.selectedMarkdown,
+    warning: {},
+  });
+}
+
+onSequencerStoreUpdate = () => {
+  let warning = SequencerStore.getWarning();
+  if (warning) {
     this.setState({
-      isNavBarShowing: newOpts.isNavBarShowing,
-      selectedMarkdown: newOpts.selectedMarkdown,
-      warningAction: null,
-      warningMessage: null,
+      warning,
+    });
+  } else {
+    this.setState({
+      warning: {},
     });
   }
+}
 
-  onSequencerStoreUpdate = () => {
-    let warning = SequencerStore.getWarning();
-    if (warning) {
-      this.setState({
-        warningAction: warning.action,
-        warningMessage: warning.message,
-      });
+dismissSnackbar = () => {
+  if (this.refs.snackbar) {
+    if (this.state.furtherReadingLink) {
+      window.open(this.state.furtherReadingLink);
     } else {
-      this.setState({
-        warningAction: null,
-        warningMessage: null,
-      });
-    }
-  }
-
-  dismissSnackbar = () => {
-    if (this.refs.snackbar) {
       this.refs.snackbar.dismiss();
     }
   }
+}
 
-  render = () => {
-    return (
-      <div>
+render = () => {
+  return (
+    <div>
       <MarkdownModal 
         selectedMarkdown={this.state.selectedMarkdown}
         zDepth={5}/>
         <Snackbar
           ref="snackbar"
-          action={this.state.warningAction}
-          message={this.state.warningMessage}
+          action={this.state.warning.action}
+          message={this.state.warning.message}
           onActionTouchTap={this.dismissSnackbar}
           style={{maxWidth: 'auto'}}
         />
@@ -102,8 +102,8 @@ class Navigation extends React.Component {
             onNavClose={this.setIsNavBarShowing.bind(this, false)}
           />
       </div>
-    );
-  }
+  );
+}
 
 
 }

@@ -39,41 +39,61 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   let scopeChain = [];
   let currentScope = {};
   let updatedDisplayArgs = [];
-  // index of errorCount is equivalent to the endStatusArr diplayed
-  let errorCount = 0;
-  let endStatusArr = ['success', 'warning', 'failure'];
-  // own index applied when creating links to track them
+  // index of errorCount tracked here is passed to d3 for angry colours
+  let rootNode = null;
+  // own index applied when creating links to track them, otherwise they don't
+  // update on reversal of source and target
   let linkIndex = 0;
   // as we start to return nodes, we pop them off the array
   // and unshift them onto the front. The oldest returning nodes
   // that can be removed if the maxAllowedReturnNodes limit is exceeded are those
-  // behind from the rootNodeIndex.
+  // immediately behind the rootNodeIndex.
   let rootNodeIndex = 0;
   let recursion = false;
   let warning = null;
   // we don't want to give the same warning multiple times for multiple assignments to, say an
   let assignmentWarningVar = null;
+  let exitingNode = null;
+
+  /**
+   * VisibleFunctionsUpdater - runs three procedures: add, remove and update, analgous to D3,
+   * via the action method.
+   * Each has a main controlling function which returns true if a Sequencer update is required,
+   *  and a number of helper functions which follow each
+   */
 
   function action(interpreter, maxAllowedReturnNodes) {
     let doneAction = false;
     warning = null;
     state = interpreter.stateStack[0];
     if (state && prevState) {
-      doneAction = (addCalledFunctions(state, interpreter) ||
-        removeExitingFunctions(state, interpreter, maxAllowedReturnNodes) ||
-        updateEnteringFunctionArgs());
+      doneAction = (addEnteringFunction(state, interpreter) ||
+        removeExitingFunction(state, interpreter, maxAllowedReturnNodes) ||
+        updateEnteringFunction(state));
     }
     return [doneAction, warning];
   }
 
+  function getCallLink(source, target, state) {
+    if (source && target) {
+      let callLink = {
+        source: source,
+        target: target,
+        state,
+        linkIndex: linkIndex++,
+      };
+      return callLink;
+    }
+  }
+
 
   /**
-   * [addCalledFunctions - checks to see if new nodes need to be added]
+   * [addEnteringFunction - checks to see if new nodes need to be added]
    * links have state: calling and returning
      nodes have type: root or normal
         nodes additionally have status: neutral, warning, failure or finished 
    */
-  function addCalledFunctions(state, interpreter) {
+  function addEnteringFunction(state, interpreter) {
 
     if (isSupportedFunctionCall(state)) {
       let calleeName = state.node.callee.name || state.node.callee.id.name;
@@ -119,8 +139,9 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       };
       if (nodes.length === 0) {
         calleeNode.info.type = 'root';
-        calleeNode.info.status = 'neutral';
         calleeNode.info.errorCount = 0;
+        calleeNode.info.status = 'success';
+        rootNode = calleeNode;
       }
 
       nodes.push(calleeNode);
@@ -137,18 +158,11 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     return false;
   }
 
-  function removeExitingFunctions(state, interpreter, maxAllowedReturnNodes) {
+  function removeExitingFunction(state, interpreter, maxAllowedReturnNodes) {
 
-    function isNotExitingRootNode(state, rootNode) {
-      // don't want to exit the last node
-      // (FunctionExpression used to run program in interpreter):
-      // leave it on last success/failure animation
-      return !(state.node.type === 'FunctionExpression' &&
-          state.node.callee.id.name === rootNode.info.name) &&
-        !(state.node.type === 'CallExpression' &&
-          state.node.callee.type === 'FunctionExpression' &&
-          state.node.callee.id.name === rootNode.info.name);
-    }
+    // ===================
+    // Exiting controller
+    // ===================
 
     if (isSupportedReturnToCaller(state) &&
       isNotExitingRootNode(state, scopeChain[0])) {
@@ -156,7 +170,9 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       let link = last(links) || null;
       if (link) {
         exitLink(link);
-        exitNode(last(scopeChain));
+        // we'll check on this on update cycle to make sure its result is assigned to a variable 
+        exitingNode = last(scopeChain);
+        exitNode(exitingNode);
       }
       // exiting the function; can allow a new warning again for same-named variable in higher scope
       assignmentWarningVar = null;
@@ -167,10 +183,25 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         // from the root node position backwards 
         removeOldestReturned(nodes, links, maxAllowedReturnNodes);
       }
-      scopeChain.pop();
       return true;
     }
     return false;
+  }
+
+  // =========================
+  // Exiting helpers
+  // May mutate state in variables defined at top of VisibleFunctionsUpdater
+  // =========================
+
+  function isNotExitingRootNode() {
+    // don't want to exit the last node
+    // (FunctionExpression used to run program in interpreter):
+    // leave it on last success/failure animation
+    return !(state.node.type === 'FunctionExpression' &&
+        state.node.callee.id.name === rootNode.info.name) &&
+      !(state.node.type === 'CallExpression' &&
+        state.node.callee.type === 'FunctionExpression' &&
+        state.node.callee.id.name === rootNode.info.name);
   }
 
   function exitLink(exitingLink) {
@@ -184,8 +215,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       !state.value.isPrimitive) {
       exitingLink.target.info.status = 'returning';
     } else {
-      let rootNode = nodes[0];
-      rootNode.info.errorCount = ++errorCount;
+      rootNode.info.errorCount++;
       linkIsBroken = true;
       exitingLink.target.info.status = 'failure';
       warning = {
@@ -226,7 +256,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
 
   function removeOldestReturned(nodes, links, maxAllowedReturnNodes) {
     // cannot remove so many nodes that the root node onwards would be deleted
-    // (ie onlf returning nodes shifted to the start of the array
+    // (ie only returning nodes shifted to the start of the array
     //  are eligible for deletion)
     //  this may not always be 1, since the user can adjust
     //  the maxAllowedReturnNodes on the fly
@@ -244,26 +274,36 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     rootNodeIndex -= itemsToRemoveCount;
   }
 
+  // ===================================================
+  // Update controller:
+  // update node parameters and provide warning messages
+  // ===================================================
 
-  function getCallLink(source, target, state) {
-    if (source && target) {
-      let callLink = {
-        source: source,
-        target: target,
-        state,
-        linkIndex: linkIndex++,
-      };
-      return callLink;
-    }
-  }
-
-
-  function updateEnteringFunctionArgs() {
-    let updateNode = scopeChain.length ? last(scopeChain).info : null;
-    let updateNeeded = false;
+  function updateEnteringFunction(state) {
     // check whether updatedDisplayArgs has been updated with fetched values for identifiers:
     // ance all args have been updated, tell the Sequencer to treat this as a display step.
 
+    let updateNode = (scopeChain.length) ? last(scopeChain).info : null;
+    let updateNeeded = false;
+    getVariablesInScope(updateNode);
+    updateParamsIdsFromCaller(updateNode);
+
+    if (updateNode) {
+
+      updateNeeded = (
+        isFunctionReturnUnassigned(updateNode) ||
+        isVariableModifiedOutOfScope(updateNode) ||
+        doesDisplayNameNeedUpdating(updateNode)
+      );
+    }
+    return updateNeeded;
+  }
+  // ===================================
+  // Update helpers
+  // May mutate state in variables defined at top of VisibleFunctionsUpdater
+  // ===================================
+
+  function getVariablesInScope(updateNode) {
     if (state.scope) {
       // we have finished gathering args for the function and
       // entered it: reset computed args
@@ -275,7 +315,37 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         updateNode.variablesDeclaredInScope = Object.keys(currentScope.properties);
       }
     }
+  }
 
+  function updateParamsIdsFromCaller(updateNode) {
+    if (state.func_ && !state.func_.nativeFunc) {
+      // get the identifier params so we can match with variables referring
+      // to values declared in its callerNode scope when we hit the next function
+      updateNode.paramIds = pluck(state.func_.node.params, 'name');
+    }
+  }
+
+  function isFunctionReturnUnassigned(updateNode) {
+    let conditionMet = false;
+    if (exitingNode) {
+      // used to track an exit node to the next state, and ensure that
+      // a returning funtion is being assigned to a variable (type VariableDeclarator)
+      // on the next step
+      if (state.node.type !== 'VariableDeclarator') {
+        exitingNode.info.callerNode.info.status = 'warning';
+        rootNode.info.errorCount++;
+        warning = {
+          action: 'Principle: Side effects',
+          message: 'Function result is not assigned to a value',
+        };
+        conditionMet = true;
+      }
+      exitingNode = null;
+    }
+    return conditionMet;
+  }
+
+  function isVariableModifiedOutOfScope(updateNode) {
     if (state.node.type === 'AssignmentExpression' &&
       state.doneLeft === true && state.doneRight === true) {
       let assignedExpression = state.node.left.name;
@@ -287,6 +357,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
           callerNode = callerNode.callerNode.info;
         }
         if (varPresentInScope) {
+          rootNode.info.errorCount++;
           updateNode.status = 'warning';
           callerNode.status = 'warning';
           warning = {
@@ -294,6 +365,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
             message: 'Function has mutated variable in another scope',
           };
         } else {
+          rootNode.info.errorCount++;
           updateNode.status = 'failure';
           warning = {
             'action': 'Principle: Side effects',
@@ -307,18 +379,15 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
           'message': 'Function has changed a variable in scope after creation',
         };
       }
-      updateNeeded = (assignmentWarningVar !== assignedExpression);
+      let conditionMet = (assignmentWarningVar !== assignedExpression);
       assignmentWarningVar = assignedExpression;
+      return conditionMet;
     }
+  }
 
-    if (state.func_ && !state.func_.nativeFunc) {
-      // get the identifier params so we can match with variables referring
-      // to values declared in its callerNode scope when we hit the next function
-      updateNode.paramIds = pluck(state.func_.node.params, 'name');
-    }
-
+  function doesDisplayNameNeedUpdating(updateNode) {
+    let conditionMet = false;
     if (state.doneCallee_ && !state.doneExec) {
-
       // pre-calculation of call arguments passed to the callee
       // these will overwrite the args passed based on the paramIds
       if (state.n_) {
@@ -344,15 +413,15 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
           let displayArg = updateNode.displayArgs[i];
           if (updateArg && updateArg !== displayArg) {
             updateNode.displayArgs[i] = updateArg;
-            updateNeeded = true;
+            conditionMet = true;
           }
         });
-
         updateNode.displayName = formatOutput.displayName(updateNode.name, updateNode.displayArgs, recursion);
       }
     }
-    return updateNeeded;
+    return conditionMet;
   }
+
 
   function getRepresentedNode() {
     if (prevState.node.type === 'ReturnStatement') {
@@ -369,10 +438,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
 
   function finish() {
     // no more actions, prep before final update
-    let rootNode = nodes[nodes.length - 1];
-    let endStatus = endStatusArr[Math.min(errorCount, 2)];
     rootNode.info.status = 'finished';
-    rootNode.info.endStatus = endStatus;
   }
 
   return {

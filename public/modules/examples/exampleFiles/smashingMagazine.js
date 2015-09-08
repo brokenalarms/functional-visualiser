@@ -4,6 +4,12 @@ const description = '';
 
 function demo() {
 
+  /* This code is an adaptation of that supplied with the 
+     Smashing Magazine article, "Don't be Afraid of Functional
+     Programming", by Jonathan Morgan. It can be found here:
+     http://www.smashingmagazine.com/2014/07/dont-be-scared-of-functional-programming 
+     */
+
   function map(iteratee, array) {
     var index = -1,
       length = array.length,
@@ -97,14 +103,14 @@ function demo() {
     return combineArrays(remainingArr1, remainingArr2, finalArr);
   }
 
-/*  var processed = combineArrays(
-    map(averageForArray, pluck(data, 'temperatures')),
-    pluck(data, 'population'));
-*/
-    var populations = pluck(data, 'population');
-    var allTemperatures = pluck(data, 'temperatures');
-    var averageTemps = map(averageForArray, allTemperatures);
-    var processed = combineArrays(averageTemps, populations);
+  /*  var processed = combineArrays(
+      map(averageForArray, pluck(data, 'temperatures')),
+      pluck(data, 'population'));
+  */
+  var populations = pluck(data, 'population');
+  var allTemperatures = pluck(data, 'temperatures');
+  var averageTemps = map(averageForArray, allTemperatures);
+  var processed = combineArrays(averageTemps, populations);
 }
 
 
