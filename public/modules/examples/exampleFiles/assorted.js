@@ -18,6 +18,23 @@ function imperativeSum() {
   sumFunction(4);
 }
 
+function passParams() {
+  function foo(f1, f2, f3) {
+    function bar(b1, b2, b3) {
+
+    }
+    
+    function passedFunc(pf1){
+        return pf1;
+    }
+    
+
+    bar(passedFunc('hi'), f2, f1);
+  }
+
+  foo('arg1', 'arg2', 'arg3')
+}
+
 function functionalSum() {
 
   function reduce(array, iteratee, accumulator, initFromArray) {

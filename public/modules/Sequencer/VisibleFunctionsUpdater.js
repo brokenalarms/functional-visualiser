@@ -9,9 +9,10 @@
 // a display update step.
 // =============================================
 
-import {last, pluck, includes} from 'lodash';
+import {last, pluck, includes, equals} from 'lodash';
 import formatOutput from '../d3DynamicVisualizer/formatOutput.js';
 import warningConstants from './warningConstants.js';
+import astTools from '../astTools/astTools.js';
 /**
  * VisibleFunctionsUpdater - runs three procedures: add, remove and update,
  * analgous to D3, via the action method.
@@ -29,8 +30,8 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   let state;
   let prevState;
   let scopeChain = [];
-  let currentScope = {};
-  let updatedDisplayArgs = [];
+  let currentScope = null;
+  let currentEnclosingParams = null;
   // index of errorCount tracked here is passed to d3 for angry colours.
   let rootNode = null;
   // use custom link index for d3 links and nodes, as otherwise they do not
@@ -108,58 +109,41 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
 
       let calleeName = state.node.callee.name || state.node.callee.id.name;
       let callerNode = last(scopeChain) || null;
-      let argumentIds = formatOutput.getArgIdentifiers(state.node);
-      recursion = false;
 
-      if (callerNode) {
-        if (calleeName === callerNode.info.name) {
-          // function has already been executed in higher scope - recursion
-          // later used for '<i>r</i>' formatting
-          recursion = true;
-        }
-        if (callerNode.info.paramIds) {
-          // we know the param identifier names for the function surrounding this call;
-          // if there are any identifiers in arguments for the call expression
-          // now in consideration which match, replace them with the identifiers
-          // or primitives passed in from the caller arguments
-          let callerParams = callerNode.info.paramIds;
-          argumentIds.forEach((arg, i) => {
-            let callerParamIndex = callerParams.indexOf(arg);
-            if (callerParamIndex > -1) {
-              // replace the arg identifier with the identifier passed in from
-              // the enclosing function
-              argumentIds[i] = callerNode.info.argumentIds[callerParamIndex];
-            }
-          });
-        }
+      recursion = false;
+      if (callerNode && calleeName === callerNode.name) {
+        // function has already been executed in higher scope - recursion
+        // later used for '<i>r</i>' formatting
+        recursion = true;
       }
-      let displayArgs = formatOutput.getDisplayArgs(state.node);
+
+      // the display name will first show the raw arguments, then the computed ones
+      let displayArgs = formatOutput.getDisplayArgs(state.node, true);
+      let displayName = formatOutput.displayName(calleeName, displayArgs, recursion);
 
       let calleeNode = {
-        // d3 fills up the root of the object with properties,
-        // hence nesting under 'info' for separation and readability in dev tools.
-        info: {
-          name: calleeName,
-          argumentIds,
-          displayArgs,
-          displayName: formatOutput.displayName(calleeName, displayArgs, recursion),
-          callerNode,
-          // variablesDeclaredInScope is not populated until the interpreter generates scope
-          variablesDeclaredInScope: null,
-          warningsInScope: new Set(),
-          type: 'function',
-          status: 'normal',
-        },
+        name: calleeName,
+        interpreterArgTypes: [],
+        displayArgs,
+        updatedDisplayArgs: [],
+        displayName,
+        callerNode,
+        // variablesDeclaredInScope is not populated until the interpreter generates scope
+        variablesDeclaredInScope: null,
+        warningsInScope: new Set(),
+        type: 'function',
+        status: 'normal',
       };
 
       // the root node carries through information to d3 about overall progress.
       if (nodes.length === 0) {
-        calleeNode.info.type = 'root';
-        calleeNode.info.errorCount = 0;
-        calleeNode.info.status = 'success';
+        calleeNode.type = 'root';
+        calleeNode.errorCount = 0;
+        calleeNode.status = 'success';
         rootNode = calleeNode;
       }
 
+      // add nodes and links to D3
       nodes.push(calleeNode);
       let callLink = getCallLink(callerNode, calleeNode, 'calling');
       if (callLink) {
@@ -182,28 +166,30 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
 
     if (isSupportedReturnToCaller(state)) {
       exitingNode = last(scopeChain);
+
       if (exitingNode !== rootNode) {
         let link = last(links) || null;
         if (link) {
+          // don't want to come full circle and break links outgoing from root
           exitLink(link);
           // we'll check on this on update cycle
           // next run to make sure its result is assigned to a variable 
           exitNode(exitingNode);
+          updateNeeded = true;
+          scopeChain.pop();
         }
-
-        if (rootNodeIndex > maxAllowedReturnNodes) {
-          // the returned nodes shifted to the front of the array
-          // has exceeded the limit; start removing the oldest
-          // from the root node position backwards 
-          removeOldestReturned(nodes, links, maxAllowedReturnNodes);
-        }
-        scopeChain.pop();
-        updateNeeded = true;
       } else {
-        // no more actions, prep before final update animation
+        // we're at the root scope, there can't be a node exiting
         exitingNode = null;
-        rootNode.info.status = 'finished';
       }
+
+      if (rootNodeIndex > maxAllowedReturnNodes) {
+        // the returned nodes shifted to the front of the array
+        // has exceeded the limit; start removing the oldest
+        // from the root node position backwards 
+        removeOldestReturned(nodes, links, maxAllowedReturnNodes);
+      }
+
     }
     return updateNeeded;
   }
@@ -222,7 +208,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     // change directions and class on returning functions
     // don't want to change links outgoing from the root node:
     // this prevents the last link incorrectly reversing again
-    let nodeReturning = exitingLink.target.info;
+    let nodeReturning = exitingLink.target;
     let functionSuccessfullyReturns = true;
     // explicit return of function
     if ((state.doneCallee_) &&
@@ -241,17 +227,17 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       if (!nodeReturning.warningsInScope.has(warning)) {
         // treating no returns as twice as worse
         // easiest way to infer there are side effects
-        rootNode.info.errorCount += 2;
+        rootNode.errorCount += 2;
       }
       nodeReturning.warningsInScope.add(warning);
 
-      if (exitingLink.sourceS !== rootNode) {
-        exitingLink.source.info.status = 'warning';
+      if (exitingLink.source !== rootNode) {
+        exitingLink.source.status = 'warning';
       } else {
         // d3 handles the coloring of rootNode directly
         // in proportion to amount of errors -
         // let it take over now
-        rootNode.info.status = '';
+        rootNode.status = '';
       }
     }
 
@@ -267,10 +253,10 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
 
   function exitNode(exitingNode) {
     // update parameters with data as it returns from callees
-    let originalIdentifier = exitingNode.info.displayArgs[state.n_ - 1];
-    let returnValue = formatOutput.interpreterIdentifier(state.value, originalIdentifier);
-    exitingNode.info.displayName = `return (${returnValue})`;
-    exitingNode.info.updateText = true;
+    let originalIdentifier = exitingNode.displayArgs[state.n_ - 1];
+    let returnValue = (state.value.isPrimitive) ? state.value.data : formatOutput.interpreterIdentifier(state.value, originalIdentifier);
+    exitingNode.displayName = `return (${returnValue})`;
+    exitingNode.updateText = true;
 
     // move exiting node to the front of the queue and increase the marker
     // - the oldest nodes that can be removed if maxAllowedNodes are exceeded
@@ -309,9 +295,9 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     // check whether updatedDisplayArgs has been updated with fetched values for identifiers:
     // ance all args have been updated, tell the Sequencer to treat this as a display step.
 
-    let updateNode = (scopeChain.length) ? last(scopeChain).info : null;
+    let updateNode = (scopeChain.length) ? last(scopeChain) : null;
     getVariablesInScope(updateNode);
-    updateParamsIdsFromCaller(updateNode);
+    updateParams(updateNode);
 
     if (updateNode) {
       // unlike action, this should not short circuit
@@ -329,9 +315,6 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   // ==========================
   function getVariablesInScope(updateNode) {
     if (state.scope) {
-      // we have finished gathering args for the function and
-      // entered it: reset computed args
-      updatedDisplayArgs = [];
       currentScope = state.scope;
       // refresh list of variables declared in that scope,
       // Use these for seeing if variables out of function scope were mutated (side effects)
@@ -341,11 +324,14 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     }
   }
 
-  function updateParamsIdsFromCaller(updateNode) {
+  function updateParams(updateNode) {
     if (state.func_ && !state.func_.nativeFunc) {
-      // get the identifier params so we can match with variables referring
+      // get the identifier paramNodes so we can match with variables referring
       // to values declared in its callerNode scope when we hit the next function
-      updateNode.paramIds = pluck(state.func_.node.params, 'name');
+      // needs to be additionally tracked for matching up names,
+      // since the param names we want to look up for 'return map(reduce(myFunc))'
+      // are not going to be those of the direct parent node
+      currentEnclosingParams = updateNode.paramNodes = state.func_.node.params;
     }
   }
 
@@ -358,14 +344,20 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     );
   }
 
-  function nodeWillBeAssigned(node, argIndex) {
+  function nodeWillBeAssigned(state) {
+    let node = state.node;
     let expressionAssigned = (node.type === 'ExpressionStatement' &&
       nodeIsBeingAssigned(node.expression));
 
-    if (argIndex) {
-      let variableWillBeAssignedInScope = (node.type === 'BlockStatement' &&
+    let callNotFinished = (node.type === 'CallExpression' && !state.doneExec);
+
+    let argIndex = state.n_;
+    let variableWillBeAssignedInScope = true;
+    if (argIndex !== undefined) {
+      variableWillBeAssignedInScope = (node.type === 'BlockStatement' &&
         (nodeIsBeingAssigned(node.body[argIndex - 1]) || nodeWillBeAssigned(node.body[argIndex - 1])));
-      return (expressionAssigned || variableWillBeAssignedInScope);
+
+      return (expressionAssigned || variableWillBeAssignedInScope || callNotFinished);
     }
     return expressionAssigned;
   }
@@ -377,23 +369,23 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       // a returning funtion is being or will be (likely) assigned to a variable:
       // if the state progresses too far past the return then this potential error
       // just abandoned as it becomes increasingly unreliable to infer.
-      if (!(nodeIsBeingAssigned(state.node) || nodeWillBeAssigned(state.node, state.n_))) {
+      if (!(nodeIsBeingAssigned(state.node) || nodeWillBeAssigned(state))) {
 
-        exitingNode.info.callerNode.info.status = 'warning';
-        rootNode.info.errorCount++;
+        exitingNode.callerNode.status = 'warning';
+        rootNode.errorCount++;
         // only create warning if a more critical one is not
         // already showing for that step
         if (!warning) {
           warning = warningConstants.functionReturnUnassigned;
         }
-        if (links[0].source === exitingNode) {
+        if (links[0] && links[0].source === exitingNode) {
           // break off this link too..but only if the returning link
           // (pointing back from target to source, and shifted back 
           // onto the front of the links array)
           // hasn't already been removed because the function didn't have a return statement
           links.shift();
         }
-        exitingNode.info.warningsInScope.add(warning);
+        exitingNode.warningsInScope.add(warning);
         conditionMet = true;
       }
       // there will likely be other conditions where the node is being unassigned,
@@ -407,13 +399,14 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   function isVariableModifiedOutOfScope(updateNode) {
     let conditionMet = false;
     if (state.node.type === 'AssignmentExpression' &&
-      (state.doneLeft === state.doneRight === true)) {
-      let assignedExpression = state.node.left.name;
+      (state.doneLeft === true && state.doneRight === true)) {
+      let assignedExpression = (state.node.left.type !== 'MemberExpression') ?
+        state.node.left.name : state.node.left.property.name;
       if (!(includes(updateNode.variablesDeclaredInScope, assignedExpression))) {
         let callerNode = updateNode;
         let varPresentInScope = false;
         while (callerNode.callerNode !== null && !varPresentInScope) {
-          callerNode = callerNode.callerNode.info;
+          callerNode = callerNode.callerNode;
           varPresentInScope = includes(callerNode.variablesDeclaredInScope, assignedExpression);
         }
         if (varPresentInScope) {
@@ -426,7 +419,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
             warningConstants.variableMutatedOutOfScope : warning;
           // don't add 50 errors for 50 mutations of a single array!
           if (!updateNode.warningsInScope.has(warning)) {
-            rootNode.info.errorCount++;
+            rootNode.errorCount++;
           }
         } else {
           updateNode.status = 'failure';
@@ -434,12 +427,14 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
             warningConstants.variableDoesNotExist : warning;
           // don't add 50 errors for 50 mutations of a single array!
           if (!updateNode.warningsInScope.has(warning)) {
-            rootNode.info.errorCount++;
+            rootNode.errorCount++;
           }
         }
       } else {
-        // don't count these as errors, since it's the least
-        // 'enforceable' rule in theory
+        // don't count variables mutated in scope as errors,
+        // just give a notice
+        // since it's more a 'use when appropriate' rule,
+        // especially with JavaScript
         updateNode.status = 'notice';
         warning = (!warning) ?
           warningConstants.variableMutatedInScope : warning;
@@ -450,48 +445,138 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     }
   }
 
-  function doesDisplayNameNeedUpdating(updateNode) {
-    let conditionMet = false;
-    if (state.doneCallee_ && !state.doneExec) {
-      // pre-calculation of call arguments passed to the callee
-      // these will overwrite the args passed based on the paramIds
-      if (state.n_) {
-        // an argument has been calculated and fetched
-        // for the outgoing function - add to the retrieveFunctionArgs
-        // where it will later replace the displayed originalIdentifier and update.
-        let argIndex = state.n_ - 1;
-        let identifier = updateNode.argumentIds[argIndex];
-        updatedDisplayArgs[argIndex] = formatOutput.interpreterIdentifier(state.value, identifier);
+  function matchRemainingIdentifiersWithArgs(updateNode, node, isRecursion) {
 
-        if (state.value.isPrimitive) {
-          // interpreter already has reference - show it directly
-          updatedDisplayArgs[argIndex] = formatOutput.interpreterIdentifier(state.value);
+    let args = formatOutput.getArguments(node);
+    let newArgs = [];
+    let interpreterArgTypes = [];
+    // ========================================
+    // the worst function in this program.    
+    // ========================================
+    args.forEach((arg, i) => {
+      // don't write over the interpreter results we have already
+      if (updateNode.updatedDisplayArgs[i] === undefined) {
+        let matchIdentifier = astTools.getId(arg);
+
+        // get the type for formatting purposes
+        // don't overwrite if already there because
+        // this may be the recursing version and change 'function'
+        // to 'string' for a parameter passed in
+        if (matchIdentifier in currentScope.properties &&
+          updateNode.interpreterArgTypes[i] === undefined) {
+          updateNode.interpreterArgTypes[i] = currentScope.properties[matchIdentifier].type;
+        }
+
+        if (arg.type === 'Literal') {
+          newArgs[i] = matchIdentifier;
+          if (updateNode.interpreterArgTypes[i] === undefined) {
+            updateNode.interpreterArgTypes[i] = (arg.raw.substring(0, 1) === "'") ?
+              'string' : 'number';
+          }
+        } else if (arg.type === 'Identifier' && !updateNode.callerNode.callerNode) {
+          newArgs[i] = matchIdentifier;
+        } else if (matchIdentifier in currentScope.properties &&
+          currentScope.properties[matchIdentifier].isPrimitive) {
+          // gets conditions like var i = 20 = length = Array(length);
+          newArgs[i] = currentScope.properties[matchIdentifier].data;
+        } else if (arg.arguments) {
+          updateNode.interpreterArgTypes[i] = 'function';
+          // recursively add arguments for functions passed as arguments
+          newArgs[i] = matchIdentifier + ' (' + matchRemainingIdentifiersWithArgs(updateNode, arg).join(', ') + ')';
+        } else if (updateNode.callerNode) {
+          // if we're in the root scope, there's no params (for this exercise)
+          // must need to match param names to arguments passed in from enclosing function
+          // - may be more than one level up due to nested functions in parameters
+          let enclosingParamsParent = updateNode.callerNode;
+          while (!enclosingParamsParent.paramNodes) {
+            enclosingParamsParent = enclosingParamsParent.callerNode;
+          }
+          let enclosingParamNames = pluck(enclosingParamsParent.paramNodes, 'name') || [];
+          let matchedParamIndex = enclosingParamNames.indexOf(matchIdentifier);
+          if (matchedParamIndex > -1) {
+            let parentArgumentsPassed = enclosingParamsParent.displayArgs;
+            newArgs[i] = parentArgumentsPassed[matchedParamIndex];
+            updateNode.interpreterArgTypes[i] = enclosingParamsParent.interpreterArgTypes[matchedParamIndex];
+          } else {
+            // backup - this covers things like anonymous functions
+            newArgs[i] = updateNode.displayArgs[i];
+            updateNode.interpreterArgTypes[i] = 'direct';
+          }
         } else {
-          updatedDisplayArgs[argIndex] = formatOutput.interpreterIdentifier(state.value, identifier);
+          console.error('should have matched something...');
         }
       } else {
-        // try to match any remaining identifiers
-        // currently written as 'paramId?' with the
-        // argument identifiers passed in
-        /*        updateNode.argumentIds.forEach((arg, i) => {
-                  if (!updatedDisplayArgs[i]) {
-                    updatedDisplayArgs[i] = arg;
-                  }
-                });*/
+        newArgs[i] = updateNode.updatedDisplayArgs[i];
       }
+    });
+    return [newArgs, interpreterArgTypes];
+  }
 
-      // check that we have updated all args and are ready to display
-      if (updateNode.displayArgs.length &&
-        updatedDisplayArgs.length === updateNode.displayArgs.length) {
-        updatedDisplayArgs.forEach((updateArg, i) => {
-          let displayArg = updateNode.displayArgs[i];
-          if (updateArg && updateArg !== displayArg) {
-            updateNode.displayArgs[i] = updateArg;
-            updateNode.updateText = true;
+  function doesDisplayNameNeedUpdating(updateNode) {
+    let conditionMet = false;
+
+    function argsHaveChangedValue(initArgs, updateArgs) {
+      // check for gaps in sparse array or some updateArgs missing.
+      // Not ready to display until all arguments are available (if there are any at all)
+      if (!(initArgs.length > 0)) {
+        return false;
+      }
+      for (let i = 0, length = initArgs.length; i < length; i++) {
+        if (initArgs[i] !== updateArgs[i]) {
+          return true;
+        }
+        if (i === length - 1) {
+          return false;
+        }
+      }
+    }
+
+    if (state.doneCallee_) {
+      if (!state.doneExec) {
+
+        if (state.n_) {
+          // an argument has been calculated and fetched:
+          // if it is primitive, show it, otherwise keep the
+          // passed through argument/param identifiers
+          // - need to keep this to get provided interpreter
+          // expressions, eg 9 from 10 --> (n-10)
+          let argIndex = updateNode.argIndex = (state.n_ - 1);
+          if (state.value.isPrimitive) {
+            // interpreter already has reference - show it directly
+            updateNode.updatedDisplayArgs[argIndex] = state.value.data.toString();
+          }
+          // keep this to determine formatting later
+          updateNode.argsChangedType = true;
+          updateNode.interpreterArgTypes[argIndex] = state.value.type;
+        }
+
+        if (updateNode.argIndex === (updateNode.displayArgs.length - 1) ||
+          state.value.data === updateNode.name) {
+
+          // need to fill in the gap now between params and arguments        
+          updateNode.updatedDisplayArgs = matchRemainingIdentifiersWithArgs(updateNode, state.node);
+
+          if (argsHaveChangedValue(updateNode.displayArgs, updateNode.updatedDisplayArgs) ||
+            updateNode.argsChangedType) {
+            updateNode.displayArgs = updateNode.updatedDisplayArgs;
+            updateNode.updatedDisplayArgs = [];
+            updateNode.argIndex = -1;
+            updateNode.argsChangedType = false;
             conditionMet = true;
           }
+        }
+      }
+
+      if (conditionMet) {
+        updateNode.updateText = true;
+        // formatted display args are not kept - need original identifiers
+        // for comparison or even more of a mess....learnt this the first time!
+        let formattedDisplayArgs = updateNode.displayArgs.map((arg, i) => {
+          return formatOutput.interpreterIdentifier({
+            type: updateNode.interpreterArgTypes[i],
+          }, updateNode.displayArgs[i]);
         });
-        updateNode.displayName = formatOutput.displayName(updateNode.name, updateNode.displayArgs, recursion);
+        updateNode.displayName = formatOutput.displayName(updateNode.name, formattedDisplayArgs, recursion);
       }
     }
     return conditionMet;
@@ -517,10 +602,16 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     }
   }
 
+  function setFinished() {
+    // set final action state for animation
+    rootNode.status = 'finished';
+  }
+
   return {
     nextStep: setPrevState,
     action,
     getRepresentedNode,
+    setFinished,
   };
 }
 

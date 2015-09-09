@@ -23,12 +23,11 @@ function Sequencer() {
   let astWithLocations;
   let updateNodes;
 
-  function displaySnackBarError(e) {
+  function displaySnackBarError(action, message) {
     SequencerStore.setStepOutput({
       warning: {
-        'action': 'Error',
-        'message': `Unsuccessful parsing code.
-           Syntax error or usage of ES6 (ES5 only).`,
+        action,
+        message,
       },
     });
     SequencerStore.sendUpdate();
@@ -46,7 +45,7 @@ function Sequencer() {
       astWithLocations = astTools.createAst(runCodeString, true);
     } catch (e) {
       // display message if user types in invalid code;
-      displaySnackBarError(e);
+      displaySnackBarError('Parser error', e);
       return;
     }
 
@@ -76,7 +75,7 @@ function Sequencer() {
     try {
       interpreter = new Interpreter(sessionAst, initFunc);
     } catch (e) {
-      displaySnackBarError(e);
+      displaySnackBarError('Interpreter error', e);
     }
   }
 
@@ -98,7 +97,7 @@ function Sequencer() {
       if (doneAction) {
         console.log('this step actioned:');
       }
-      console.log(cloneDeep(interpreter.stateStack[0]));
+      // console.log(cloneDeep(interpreter.stateStack[0]));
       if (doneAction) {
         let representedNode = updateNodes.getRepresentedNode();
         SequencerStore.setStepOutput({
@@ -122,16 +121,25 @@ function Sequencer() {
     }
 
     function gotoNextStep() {
-      if (interpreter.step()) {
-        updateNodes.nextStep();
-        if (doneAction && singleStep) {
-          CodeStatusStore.setCodeRunning(false);
+      try {
+        if (interpreter.step()) {
+          updateNodes.nextStep();
+          if (doneAction && singleStep) {
+            CodeStatusStore.setCodeRunning(false);
+          } else {
+            setTimeout(nextStep.bind(null, singleStep), (doneAction) ? delay : 0);
+          }
         } else {
-          setTimeout(nextStep.bind(null, singleStep), (doneAction) ? delay : 0);
+          updateNodes.setFinished();
+          CodeStatusStore.setCodeFinished(true);
+          SequencerStore.sendUpdate();
         }
-      } else {
+      } catch (e) {
+        // the interpreter may throw errors if you type
+        // valid AST code but containing unknown identifiers
+        // in deeper scopes.
         CodeStatusStore.setCodeFinished(true);
-        SequencerStore.sendUpdate();
+        displaySnackBarError('Interpreter error', e);
       }
     }
   }

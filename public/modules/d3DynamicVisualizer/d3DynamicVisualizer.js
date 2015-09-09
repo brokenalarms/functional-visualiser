@@ -5,7 +5,7 @@ let options = {
   singleStepDelay: 700,
   d3Force: {
     tuningFactor: (nodes) => {
-      return Math.sqrt(nodes.length / (options.dimensions.width * options.dimensions.height));
+      return Math.max(Math.sqrt(nodes.length / (options.dimensions.width * options.dimensions.height)), 80);
     },
     charge: -500,
     chargeDistance: 500,
@@ -40,7 +40,7 @@ let options = {
       return 0.9;
     },
     distance: function(nodes) {
-      return (Math.max(Math.sqrt(options.dimensions.width * options.dimensions.height) / (nodes.length), 90));
+      return Math.sqrt((options.dimensions.width * options.dimensions.height)) / (nodes.length);
     },
   },
 };
@@ -192,7 +192,7 @@ function update() {
     // re-matches data to work with shifting rather than popping
     // to follow stack behaviour 
     d.radius = options.dimensions.radius.node *
-      (options.dimensions.radius.factor[d.info.type]);
+      (options.dimensions.radius.factor[d.type]);
     return d.index;
   });
 
@@ -246,8 +246,8 @@ function update() {
   let allText = node.selectAll('foreignObject');
   // trigger single text animation via internal flag on node
   let updateText = allText.filter((d) => {
-    if (d.info.updateText) {
-      d.info.updateText = false;
+    if (d.updateText) {
+      d.updateText = false;
       return true;
     }
   });
@@ -256,7 +256,7 @@ function update() {
   // unless this is done to all nodes
   allText.html((d) => {
     return '<div class="pointer unselectable function-text"}>' +
-      d.info.displayName + '</div>';
+      d.displayName + '</div>';
   });
 
   // hide the text that is to be updated then re-grow
@@ -272,7 +272,7 @@ function update() {
 
   node.selectAll('circle')
     .attr('class', (d) => {
-      return 'function ' + d.info.type + ' ' + (d.info.status || '') +
+      return 'function ' + d.type + ' ' + (d.status || '') +
         ((d.fixed) ? ' function-fixed' : '');
     });
 
@@ -282,7 +282,7 @@ function update() {
   let finished = false;
   rootNode.select('circle')
     .classed('finished', (d) => {
-      if (d.info.status === 'finished') {
+      if (d.status === 'finished') {
         rootNode.select('foreignObject')
           .style('opacity', 0);
         return (finished = true);
@@ -291,7 +291,7 @@ function update() {
     .transition()
     .duration(singleStepDelay)
     .attr('r', (d) => {
-      errorCount = d.info.errorCount;
+      errorCount = d.errorCount;
       let nodeSize = errorCount + (options.dimensions.radius.node * options.dimensions.radius.factor.root);
       d.radius = Math.min(nodeSize + errorCount * options.dimensions.radius.factor.root,
         nodeSize + maxAllowedErrors * options.dimensions.radius.factor.root);
