@@ -91,6 +91,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
      nodes additionally have status: neutral, notice, warning, failure or finished 
    */
   function addEnteringFunction(state, interpreter) {
+    let updateNeeded = false;
 
     function isSupportedFunctionCall(state) {
       // won't show stepping into and out of member methods (e.g array.slice)
@@ -168,18 +169,18 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       /* Tracking by scope reference allows for
       displaying nested functions and recursion */
       scopeChain.push(calleeNode);
-      return true;
+      updateNeeded = true;
     }
-    return false;
+    return updateNeeded;
   }
 
+  // ===================
+  // Exiting controller
+  // ===================
   function removeExitingFunction(state, interpreter, maxAllowedReturnNodes) {
+    let updateNeeded = false;
 
-    // ===================
-    // Exiting controller
-    // ===================
     if (isSupportedReturnToCaller(state)) {
-
       exitingNode = last(scopeChain);
       if (exitingNode !== rootNode) {
         let link = last(links) || null;
@@ -197,17 +198,14 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
           removeOldestReturned(nodes, links, maxAllowedReturnNodes);
         }
         scopeChain.pop();
+        updateNeeded = true;
       } else {
         // no more actions, prep before final update animation
-        // (interpreter has no more steps, which tells Sequencer
-        // to displays an update instead)
         exitingNode = null;
         rootNode.info.status = 'finished';
       }
-      return true;
     }
-
-    return false;
+    return updateNeeded;
   }
 
   // =========================
@@ -236,15 +234,18 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         nodeReturning.status = 'returning';
       }
     } else {
-      // treating no returns as twice as worse
-      // easiest way to infer there are side effects
-      rootNode.info.errorCount += 2;
       functionSuccessfullyReturns = false;
       nodeReturning.status = 'failure';
       warning = warningConstants.functionDoesNotReturnValue;
+      // don't add 50 errors for 50 mutations of a single array!
+      if (!nodeReturning.warningsInScope.has(warning)) {
+        // treating no returns as twice as worse
+        // easiest way to infer there are side effects
+        rootNode.info.errorCount += 2;
+      }
       nodeReturning.warningsInScope.add(warning);
 
-      if (exitingLink.source !== rootNode) {
+      if (exitingLink.sourceS !== rootNode) {
         exitingLink.source.info.status = 'warning';
       } else {
         // d3 handles the coloring of rootNode directly
@@ -269,6 +270,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     let originalIdentifier = exitingNode.info.displayArgs[state.n_ - 1];
     let returnValue = formatOutput.interpreterIdentifier(state.value, originalIdentifier);
     exitingNode.info.displayName = `return (${returnValue})`;
+    exitingNode.info.updateText = true;
 
     // move exiting node to the front of the queue and increase the marker
     // - the oldest nodes that can be removed if maxAllowedNodes are exceeded
@@ -300,7 +302,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   }
 
   // ===================================================
-  // Update controller:
+  // Update controller
   // update node parameters and provide warning messages
   // ===================================================
   function updateEnteringFunction(state) {
@@ -312,9 +314,9 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     updateParamsIdsFromCaller(updateNode);
 
     if (updateNode) {
-      // unlike action, this should not short circuited
+      // unlike action, this should not short circuit
       // as the displayName may be updated as well
-      // as warning messages generated;
+      // as warning messages generated.
       let a = isFunctionReturnUnassigned(updateNode);
       let b = isVariableModifiedOutOfScope(updateNode);
       let c = doesDisplayNameNeedUpdating(updateNode);
@@ -352,59 +354,69 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       node.type === 'VariableDeclarator' ||
       node.type === 'VariableDeclaration' ||
       node.type === 'BinaryExpression' ||
-      node.type === 'AssignmentExpression');
+      node.type === 'AssignmentExpression'
+    );
   }
 
-  function variableDeclaredInScope(node, argIndex) {
-    return (
-      node.type === 'BlockStatement' &&
-      nodeIsBeingAssigned(node.body[argIndex - 1])
-    );
+  function nodeWillBeAssigned(node, argIndex) {
+    let expressionAssigned = (node.type === 'ExpressionStatement' &&
+      nodeIsBeingAssigned(node.expression));
+
+    if (argIndex) {
+      let variableWillBeAssignedInScope = (node.type === 'BlockStatement' &&
+        (nodeIsBeingAssigned(node.body[argIndex - 1]) || nodeWillBeAssigned(node.body[argIndex - 1])));
+      return (expressionAssigned || variableWillBeAssignedInScope);
+    }
+    return expressionAssigned;
   }
 
   function isFunctionReturnUnassigned(updateNode) {
     let conditionMet = false;
     if (exitingNode) {
       // used to track an exit node to the next state, and ensure that
-      // a returning funtion is being assigned to a variable (type VariableDeclarator)
-      // on the next step
-      if (!nodeIsBeingAssigned(state.node)) {
-        // this is the result of an argument, so we haven't got to assignment stage yet
-        // leave exitingNode open
-        if ((state.hasOwnProperty('n_') &&
-            // stops returns that returns returns triggering...
-            !variableDeclaredInScope(state.node, state.n_))) {
-          exitingNode.info.callerNode.info.status = 'warning';
-          rootNode.info.errorCount++;
-          // only create warning if a more critical one is not
-          // already showing for that step
-          if (!warning) {
-            warning = warningConstants.functionReturnUnassigned;
-          }
-          // break off this function too..
-          links.pop();
-          exitingNode.info.warningsInScope.add(warning);
-          exitingNode = null;
-          conditionMet = true;
+      // a returning funtion is being or will be (likely) assigned to a variable:
+      // if the state progresses too far past the return then this potential error
+      // just abandoned as it becomes increasingly unreliable to infer.
+      if (!(nodeIsBeingAssigned(state.node) || nodeWillBeAssigned(state.node, state.n_))) {
+
+        exitingNode.info.callerNode.info.status = 'warning';
+        rootNode.info.errorCount++;
+        // only create warning if a more critical one is not
+        // already showing for that step
+        if (!warning) {
+          warning = warningConstants.functionReturnUnassigned;
         }
+        if (links[0].source === exitingNode) {
+          // break off this link too..but only if the returning link
+          // (pointing back from target to source, and shifted back 
+          // onto the front of the links array)
+          // hasn't already been removed because the function didn't have a return statement
+          links.shift();
+        }
+        exitingNode.info.warningsInScope.add(warning);
+        conditionMet = true;
       }
+      // there will likely be other conditions where the node is being unassigned,
+      // but it is getting hard to infer now and so best to prevent the warning then
+      // to show it as a false positive
+      exitingNode = null;
     }
     return conditionMet;
   }
 
   function isVariableModifiedOutOfScope(updateNode) {
+    let conditionMet = false;
     if (state.node.type === 'AssignmentExpression' &&
       (state.doneLeft === state.doneRight === true)) {
       let assignedExpression = state.node.left.name;
       if (!(includes(updateNode.variablesDeclaredInScope, assignedExpression))) {
         let callerNode = updateNode;
         let varPresentInScope = false;
-        while (!varPresentInScope || callerNode.callerNode !== null) {
-          varPresentInScope = includes(callerNode.variablesDeclaredInScope, assignedExpression);
+        while (callerNode.callerNode !== null && !varPresentInScope) {
           callerNode = callerNode.callerNode.info;
+          varPresentInScope = includes(callerNode.variablesDeclaredInScope, assignedExpression);
         }
         if (varPresentInScope) {
-          rootNode.info.errorCount++;
           // highlight both the mutation node and the affected node
           updateNode.status = callerNode.status = 'warning';
           // cascade from previous:
@@ -412,19 +424,27 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
           // already showing for that step
           warning = (!warning) ?
             warningConstants.variableMutatedOutOfScope : warning;
-
+          // don't add 50 errors for 50 mutations of a single array!
+          if (!updateNode.warningsInScope.has(warning)) {
+            rootNode.info.errorCount++;
+          }
         } else {
-          rootNode.info.errorCount++;
           updateNode.status = 'failure';
           warning = (!warning) ?
             warningConstants.variableDoesNotExist : warning;
+          // don't add 50 errors for 50 mutations of a single array!
+          if (!updateNode.warningsInScope.has(warning)) {
+            rootNode.info.errorCount++;
+          }
         }
       } else {
+        // don't count these as errors, since it's the least
+        // 'enforceable' rule in theory
         updateNode.status = 'notice';
         warning = (!warning) ?
           warningConstants.variableMutatedInScope : warning;
       }
-      let conditionMet = !(updateNode.warningsInScope.has(warning));
+      conditionMet = !(updateNode.warningsInScope.has(warning));
       updateNode.warningsInScope.add(warning);
       return conditionMet;
     }

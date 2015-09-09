@@ -243,25 +243,32 @@ function update() {
   nodeText = nodeGroup.append('foreignObject')
     .attr('class', 'unselectable function-text');
 
-  // d3 will not notice changed text otherwise
-  let allText = node.selectAll('foreignObject')
-    .html((d) => {
-      return '<div class="pointer unselectable function-text"}>' +
-        d.info.displayName + '</div>';
-    });
-
-  // similarly, trigger single text animation via internal flag on node
+  let allText = node.selectAll('foreignObject');
+  // trigger single text animation via internal flag on node
   let updateText = allText.filter((d) => {
     if (d.info.updateText) {
       d.info.updateText = false;
       return true;
     }
   });
-  updateText.select('div')
-    .transition().duration(transitionDelay / 2)
+  // swap out old text with new text
+  // d3 will not notice changed text
+  // unless this is done to all nodes
+  allText.html((d) => {
+    return '<div class="pointer unselectable function-text"}>' +
+      d.info.displayName + '</div>';
+  });
+
+  // hide the text that is to be updated then re-grow
+  let animateText = updateText.select('div');
+  animateText.transition().duration(transitionDelay / 1 / 3)
+    .attr('opacity', 0)
     .attr('class', 'update-text-shrink')
-    .transition().duration(transitionDelay / 2)
-    .attr('class', 'unselectable function-text');
+    .each('end', () => {
+      animateText.transition().duration(transitionDelay / 2 / 3)
+        .attr('opacity', 1)
+        .attr('class', 'unselectable function-text');
+    });
 
   node.selectAll('circle')
     .attr('class', (d) => {
@@ -269,9 +276,9 @@ function update() {
         ((d.fixed) ? ' function-fixed' : '');
     });
 
-  // make the root node more angry for each error... 
+  // make the root node more 'angry' and bigger for each error... 
   let maxAllowedErrors = options.cssVars.warningErrorRange.length - 1;
-  let errorCount;
+  let errorCount = 0;
   let finished = false;
   rootNode.select('circle')
     .classed('finished', (d) => {

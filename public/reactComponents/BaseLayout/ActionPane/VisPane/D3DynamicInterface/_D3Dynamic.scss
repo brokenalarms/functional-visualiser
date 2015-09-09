@@ -81,13 +81,12 @@
 .function-text {
     white-space: nowrap;
     font-size: 0.9rem;
-    transition: font-size 0.1s linear;
+    transition: font-size 0.1s cubic-bezier(0.4, 0, 1, 1);
 }
 
 .update-text-shrink {
     white-space: nowrap;
     font-size: 0;
-    transition: font-size 0.1s linear;
 }
 
 .update-text-blur {
