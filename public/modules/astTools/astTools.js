@@ -112,7 +112,7 @@ function astTools() {
   function typeIsSupported(type) {
     if (!(type === 'Identifier' ||
         type === 'FunctionExpression')) {
-      throw new Error('Only Identifier variable types currently supported.');
+      console.error('Only Identifier variable types currently supported.');
     }
     return true;
   }
@@ -124,7 +124,18 @@ function astTools() {
     if (node.callee.type === 'Identifier') {
       return node.callee.name;
     }
+    if (node.callee.type === 'MemberExpression') {
+      return getEndMemberExpression(node.callee);
+    }
     throw new Error('couldn\'t get callee name');
+  }
+
+  function getEndMemberExpression(node) {
+    let _ = node;
+    while (_.object) {
+      _ = _.object;
+    }
+    return _.name;
   }
 
   function getRunCodeString(codeString) {
@@ -146,8 +157,11 @@ function astTools() {
   }
 
   return {
-    astTools, createAst, createCode, getId, getArgs, createsNewFunctionScope,
-    addScopeInfo, getFirstActionSteps, typeIsSupported, getCodeRange, getCalleeName, getRunCodeString,
+    astTools, createAst, createCode, getId,
+    getArgs, createsNewFunctionScope,
+    addScopeInfo, getFirstActionSteps, typeIsSupported,
+    getCodeRange, getCalleeName, getEndMemberExpression,
+    getRunCodeString,
   };
 }
 

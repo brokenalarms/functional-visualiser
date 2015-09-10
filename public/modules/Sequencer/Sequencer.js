@@ -43,24 +43,13 @@ function Sequencer() {
     let codeString = (CodeStore.get());
     let runCodeString = astTools.getRunCodeString(codeString);
     try {
-      let astWithoutLocations = astTools.createAst(runCodeString);
-      /* save back from AST to generated code and push that to the editor,
-         so the dynamic selection of running code is still correct,
-         as there are trivial but syntactically differences between 
-         the user's code and AST-generated code before roundtrip. */
-      let regeneratedCode = astTools.createCode(astWithoutLocations, true);
-      if (regeneratedCode && regeneratedCode !== codeString) {
-        astWithLocations = regeneratedCode;
-        CodeStore.set(regeneratedCode, false);
-      }
-      astWithLocations = astTools.createAst(regeneratedCode, true);
-      resetInterpreterAndSequencerStore();
+      astWithLocations = astTools.createAst(runCodeString, true);
     } catch (e) {
       // display message if user types in invalid code;
       displaySnackBarError('Parser error', e);
       return;
     }
-
+    resetInterpreterAndSequencerStore();
   }
 
   /* resets interpreter and SequencerStore state to begin the program again,
@@ -74,11 +63,14 @@ function Sequencer() {
         SequencerStore.linkState().links);
     /* create deep copy so that d3 root modifications
      and interpreter transformations are not maintained */
-    let sessionAst = cloneDeep(astWithLocations).valueOf();
-    try {
-      interpreter = new Interpreter(sessionAst, initFunc);
-    } catch (e) {
-      displaySnackBarError('Interpreter error', e);
+    if (astWithLocations) {
+      // there isn't an AST if we switch from dynamic without parsing
+      let sessionAst = cloneDeep(astWithLocations).valueOf();
+      try {
+        interpreter = new Interpreter(sessionAst, initFunc);
+      } catch (e) {
+        displaySnackBarError('Interpreter error', e);
+      }
     }
   }
 

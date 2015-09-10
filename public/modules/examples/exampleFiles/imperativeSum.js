@@ -14,16 +14,23 @@ const imperativeSum = {
          have mutated other variables without us knowing...      
           `,
   func: function Program() {
+    /*  This base case demonstarates adding an array of
+        numbers imperatively.
+        The variables arrayToSum and sum are mutated
+        out of scope, so the function 'sumFunction' causes
+        side effects. */
+
+    /*  In this situation, a warning notice is given and 
+        both the function mutating the variable and the 
+        function in which the variable is declared are
+        both highlighted orange. 
+    */
 
     var arrayToSum = [3, 5, 5, 10];
     var sum = 0;
 
-    var arrayIndices = arrayToSum.map(function(number, i) {
-      return i;
-    });
-
     function sumFunction() {
-      for (let i = 0; i < arrayToSum.length; i++) {
+      for (var i = 0; i < arrayToSum.length; i++) {
         sum += arrayToSum[i];
       }
     }

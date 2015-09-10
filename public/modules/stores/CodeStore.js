@@ -16,20 +16,23 @@ function CodeStore() {
     codeStore.removeListener('change', callback);
   }
 
-  function set(newCode, userUpdate) {
+  function set(newCode, userUpdate, fromExample) {
     codeString = newCode.toString().trim();
-    codeStore.emit('change', userUpdate);
+    if (fromExample) {
+      codeString = codeString.replace(/\n(    )/, '');
   }
+  codeStore.emit('change', userUpdate);
+}
 
-  function get() {
-    return codeString;
-  }
+function get() {
+  return codeString;
+}
 
-  return {
-    subscribeListener,
-    unsubscribeListener,
-    set,
-    get,
-  };
+return {
+  subscribeListener,
+  unsubscribeListener,
+  set,
+  get,
+};
 }
 export default new CodeStore;

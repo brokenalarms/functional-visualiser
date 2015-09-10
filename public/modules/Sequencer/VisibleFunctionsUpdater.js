@@ -27,25 +27,39 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   // are passed explicitly
   let nodes = resetNodes;
   let links = resetLinks;
-  let state;
-  let prevState;
-  let scopeChain = [];
-  let currentScope = null;
-  let currentEnclosingParams = null;
-  // index of errorCount tracked here is passed to d3 for angry colours.
-  let rootNode = null;
+
   // use custom link index for d3 links and nodes, as otherwise they do not
   // reassociate reliably on popping off the end of the array and shifting
-  // onto the front 
+  // onto the front .
   let linkIndex = 0;
+  // used to track current and previous interpreter state, 
+  // to make inferencese about what is happening. Try to limit use
+  // of prevState.
+  let state;
+  let prevState;
+
+  // track the current depth of the scope chain
+  // - by d3 node, not interpreter scope.
+  let scopeChain = [];
+  // this is the interpreter scope, which is sometimes used
+  // for filling in missing primitive values and types if they
+  // have been evaluated beyond their original AST node format.
+  let currentScope = null;
+
+  let currentEnclosingParams = null;
+
+  // index of errorCount tracked here is passed to d3 for angry colours.
+  let rootNode = null;
+
   // as we start to return nodes, we pop them off the array
   // and unshift them onto the front. The oldest returning nodes
   // that can be removed once the maxAllowedReturnNodes limit is exceeded
   // are therefore those immediately behind the rootNodeIndex.
   let rootNodeIndex = 0;
-  let recursion = false;
 
   let warning = null;
+  let warningHistory = [];
+
   // this is assigned if returning to a callExpression;
   // the next state is then checked to ensure that the
   // return result is assigned back to a variable.
@@ -55,9 +69,9 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   // ===============================================
   // Main action method. Runs add, remove and update
   // checks and returns warnings and updates for display.
-  // Will short-circuits other checks if one satisfies
-  // condition - interpreter can only be entering,
-  // exiting or updating.
+  // Will short-circuit other checks if one satisfies
+  // condition - Sequencer can only show entering,
+  // exiting or updating step for a single interpreter step/state.
   // ===============================================
   function action(interpreter, maxAllowedReturnNodes) {
     let doneAction = false;
@@ -110,15 +124,8 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       let calleeName = state.node.callee.name || state.node.callee.id.name;
       let callerNode = last(scopeChain) || null;
 
-      recursion = false;
-      if (callerNode && calleeName === callerNode.name) {
-        // function has already been executed in higher scope - recursion
-        // later used for '<i>r</i>' formatting
-        recursion = true;
-      }
-
-      // the display name will first show the raw arguments, then the computed ones
       let displayArgs = formatOutput.getDisplayArgs(state.node, true);
+      let recursion = (callerNode && calleeName === callerNode.name);
       let displayName = formatOutput.displayName(calleeName, displayArgs, recursion);
 
       let calleeNode = {
@@ -165,6 +172,8 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     let updateNeeded = false;
 
     if (isSupportedReturnToCaller(state)) {
+      // we'll check on this on update cycle
+      // next run to make sure its result is assigned to a variable 
       exitingNode = last(scopeChain);
 
       if (exitingNode !== rootNode) {
@@ -172,8 +181,6 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         if (link) {
           // don't want to come full circle and break links outgoing from root
           exitLink(link);
-          // we'll check on this on update cycle
-          // next run to make sure its result is assigned to a variable 
           exitNode(exitingNode);
           updateNeeded = true;
           scopeChain.pop();
@@ -253,7 +260,9 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
 
   function exitNode(exitingNode) {
     // update parameters with data as it returns from callees
-    let originalIdentifier = exitingNode.displayArgs[state.n_ - 1];
+    // TODO ----4 this was state.n_ - replacing with exitingNode.argIndex
+    // fixed, but find out why trying to read from absent n_
+    let originalIdentifier = exitingNode.displayArgs[exitingNode.argIndex];
     let returnValue = (state.value.isPrimitive) ? state.value.data : formatOutput.interpreterIdentifier(state.value, originalIdentifier);
     exitingNode.displayName = `return (${returnValue})`;
     exitingNode.updateText = true;
@@ -300,7 +309,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     updateParams(updateNode);
 
     if (updateNode) {
-      // unlike action, this should not short circuit
+      // unlike action method, this should not short circuit
       // as the displayName may be updated as well
       // as warning messages generated.
       let a = isFunctionReturnUnassigned(updateNode);
@@ -402,7 +411,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     if (state.node.type === 'AssignmentExpression' &&
       (state.doneLeft === true && state.doneRight === true)) {
       let assignedExpression = (state.node.left.type !== 'MemberExpression') ?
-        state.node.left.name : state.node.left.property.name;
+        state.node.left.name : astTools.getEndMemberExpression(state.node.left);
       if (!(includes(updateNode.variablesDeclaredInScope, assignedExpression))) {
         let callerNode = updateNode;
         let varPresentInScope = false;
@@ -449,7 +458,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     }
   }
 
-  function matchRemainingIdentifiersWithArgs(updateNode, node, isRecursion) {
+  function matchRemainingIdentifiersWithArgs(updateNode, node) {
 
     let args = formatOutput.getArguments(node);
     let newArgs = [];
@@ -474,7 +483,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         if (arg.type === 'Literal') {
           newArgs[i] = matchIdentifier;
           if (updateNode.interpreterArgTypes[i] === undefined) {
-            updateNode.interpreterArgTypes[i] = (arg.raw.substring(0, 1) === "'") ?
+            updateNode.interpreterArgTypes[i] = (isNaN(arg.value)) ?
               'string' : 'number';
           }
         } else if (arg.type === 'Identifier' && !updateNode.callerNode.callerNode) {
@@ -513,7 +522,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         newArgs[i] = updateNode.updatedDisplayArgs[i];
       }
     });
-    return [newArgs, interpreterArgTypes];
+    return newArgs;
   }
 
   function doesDisplayNameNeedUpdating(updateNode) {
@@ -549,23 +558,21 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
             // interpreter already has reference - show it directly
             updateNode.updatedDisplayArgs[argIndex] = state.value.data.toString();
           }
-          // keep this to determine formatting later
-          updateNode.argsChangedType = true;
           updateNode.interpreterArgTypes[argIndex] = state.value.type;
         }
 
+        // if the interpreter is pre-processing arguments, check they're all fetched
         if (updateNode.argIndex === (updateNode.displayArgs.length - 1) ||
-          state.value.data === updateNode.name) {
+          // if not, we get everything
+          updateNode.argIndex === undefined && state.value) {
 
           // need to fill in the gap now between params and arguments        
           updateNode.updatedDisplayArgs = matchRemainingIdentifiersWithArgs(updateNode, state.node);
 
-          if (argsHaveChangedValue(updateNode.displayArgs, updateNode.updatedDisplayArgs) ||
-            updateNode.argsChangedType) {
+          if (argsHaveChangedValue(updateNode.displayArgs, updateNode.updatedDisplayArgs)) {
             updateNode.displayArgs = updateNode.updatedDisplayArgs;
             updateNode.updatedDisplayArgs = [];
             updateNode.argIndex = -1;
-            updateNode.argsChangedType = false;
             conditionMet = true;
           }
         }
@@ -580,6 +587,8 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
             type: updateNode.interpreterArgTypes[i],
           }, updateNode.displayArgs[i]);
         });
+
+        let recursion = (updateNode.callerNode && updateNode.name === updateNode.callerNode.name);
         updateNode.displayName = formatOutput.displayName(updateNode.name, formattedDisplayArgs, recursion);
       }
     }
@@ -609,6 +618,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   function setFinished() {
     // set final action state for animation
     rootNode.status = 'finished';
+    return warningHistory;
   }
 
   return {

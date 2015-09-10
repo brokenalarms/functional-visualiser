@@ -2,6 +2,10 @@ const fibonacciRecursive = {
   id: fibonacciRecursive,
   title: 'Fibonacci sequence',
   func: function Program() {
+    /* This example demonstrates a side-effect free,
+       functional implementation of the
+       Fibonacci sequence. */
+
     function fibonacci(n) {
       if (n <= 2) {
         return 1;

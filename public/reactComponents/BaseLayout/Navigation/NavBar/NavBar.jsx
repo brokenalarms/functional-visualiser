@@ -40,7 +40,7 @@ class NavBar {
       text: 'GitHub source',
     }, {
       optionGroup: 'markdown',
-      text: 'Early Deliverable',
+      text: 'Early deliverable',
       id: 'earlyDeliverable',
     }, {
       optionGroup: 'markdown',
@@ -72,7 +72,7 @@ class NavBar {
         // user has selected pre-written example; this resets the user-typed code.
         let staticCodeExample =
           constants[menuItem.optionGroup][menuItem.index].func;
-        CodeStore.set(staticCodeExample);
+        CodeStore.set(staticCodeExample, false, true);
         CodeStatusStore.setCodeParsed(false);
         break;
 

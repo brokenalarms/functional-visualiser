@@ -2,6 +2,7 @@ const warnings = {
   functionDoesNotReturnValue: {
     action: 'Principle: Referential transparency',
     message: 'Function does not return a value',
+    log: `Function ${name} did not return a value`,
   },
   functionReturnUnassigned: {
     action: 'Principle: Side effects',

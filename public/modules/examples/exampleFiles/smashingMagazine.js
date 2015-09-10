@@ -1,8 +1,14 @@
 const id = 'smashingMagazineDemo';
-const title = 'Smashing Magazine Demo';
+const title = 'Smashing Magazine demo';
 const description = '';
 
-function func() {
+function Program() {
+  /* NOTE - this example does not work with the
+     'static' Proof of Concept visualization - I 
+     stopped work on that before I began working
+     with this. The static POC was only intended to get me
+     to grips with the various challenges involved
+     for the dynamic visualization. */
 
   /* This code is an adaptation of that supplied with the 
      Smashing Magazine article, "Don't be Afraid of Functional
@@ -115,5 +121,5 @@ function func() {
 
 
 export default {
-  id, title, description, func,
+  id, title, description, func: Program,
 };

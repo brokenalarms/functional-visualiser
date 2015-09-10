@@ -110,6 +110,9 @@ class Editor {
       let editor = this.refs.aceEditor.editor;
       editor.setValue(CodeStore.get());
       editor.selection.clearSelection();
+      // prettify
+      editor.setValue(editor.getValue());
+      //editor.session.setUseSoftTabs()
     }
   }
 
