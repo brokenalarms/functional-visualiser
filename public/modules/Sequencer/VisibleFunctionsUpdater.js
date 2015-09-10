@@ -370,8 +370,9 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       // if the state progresses too far past the return then this potential error
       // just abandoned as it becomes increasingly unreliable to infer.
       if (!(nodeIsBeingAssigned(state.node) || nodeWillBeAssigned(state))) {
-
-        exitingNode.callerNode.status = 'warning';
+        if (exitingNode.callerNode !== rootNode) {
+          exitingNode.callerNode.status = 'warning';
+        }
         rootNode.errorCount++;
         // only create warning if a more critical one is not
         // already showing for that step
@@ -411,7 +412,10 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         }
         if (varPresentInScope) {
           // highlight both the mutation node and the affected node
-          updateNode.status = callerNode.status = 'warning';
+          updateNode.status = 'warning';
+          if (callerNode !== rootNode) {
+            callerNode.status = 'warning';
+          }
           // cascade from previous:
           // only create warning if a more relavant one is not
           // already showing for that step

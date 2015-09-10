@@ -23,33 +23,15 @@ class NavBar {
   static defaultProps = {
     menuItems: [{
       type: MenuItem.Types.SUBHEADER,
-      text: 'Examples',
-    }, {
-      optionGroup: 'codeExamples',
-      text: 'Sum: imperative',
-      moduleId: 'assorted',
-      functionId: 'imperativeSum',
-    }, {
-      optionGroup: 'codeExamples',
-      text: 'Sum: functional',
-      moduleId: 'assorted',
-      functionId: 'functionalSum',
-    }, {
-      optionGroup: 'codeExamples',
-      text: 'Nested return',
-      moduleId: 'assorted',
-      functionId: 'nestedReturn',
-    }, {
-      optionGroup: 'codeExamples',
-      text: 'Fibonacci: recursion',
-      moduleId: 'assorted',
-      functionId: 'fibonacciRecursive',
-    }, {
-      optionGroup: 'codeExamples',
-      text: 'Smashing Magazine demo',
-      moduleId: 'smashingMagazineDemo',
-      functionId: 'demo',
-    }, {
+      text: 'Tutorials',
+    }].concat(ConstantStore.getConstants().codeExamples
+      .map((example, i) => {
+        return ({
+          optionGroup: 'codeExamples',
+          text: (i + 1) + ': ' + example.title,
+          index: i,
+        });
+      })).concat([{
       type: MenuItem.Types.SUBHEADER,
       text: 'Docs',
     }, {
@@ -66,7 +48,7 @@ class NavBar {
       text: 'Dissertation',
       'id': 'dissertation',
       disabled: true,
-    }, ],
+    }, ])
   }
 
   componentDidMount = () => {
@@ -89,7 +71,7 @@ class NavBar {
       case 'codeExamples':
         // user has selected pre-written example; this resets the user-typed code.
         let staticCodeExample =
-          constants[menuItem.optionGroup][menuItem.moduleId][menuItem.functionId];
+          constants[menuItem.optionGroup][menuItem.index].func;
         CodeStore.set(staticCodeExample);
         CodeStatusStore.setCodeParsed(false);
         break;

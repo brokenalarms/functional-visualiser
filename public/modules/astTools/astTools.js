@@ -59,7 +59,7 @@ function astTools() {
     if (node) {
       let loc = node.loc;
       let range = new Range(loc.start.line - 1, loc.start.column,
-        loc.end.line, loc.end.column);
+        loc.end.line - 1, loc.end.column);
       return range;
     }
     return null;

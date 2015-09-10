@@ -1,50 +1,54 @@
 // the interpreter only supports basic built-in functions
 // here I add some more wrappers to native functions I wanted to
 // see supported for the purpose of this exercise:
-// array.map and array.reduce, care of ES5 polyfills.
+// array.map and array.reduce, care of lodash and ES5 polyfills.
+
 
 function init(interpreter, scope) {
 
-  var wrapper = function(callback, initialValue) {
-    'use strict';
-    callback = interpreter.createNativeFunction(callback);
-    if (this == null) {
-      throw new TypeError('Array.prototype.reduce called on null or undefined');
-    }
+  var map = function map(iteratee, array) {
 
-    var t = this,
-      len = t.length >>> 0,
-      k = 0,
-      value;
+    array = this;
+    iteratee = interpreter.FUNCTION.nativeFunc(iteratee)
+
+    var index = -1,
+      length = array.length,
+      result = [];
+    result.length = length;
+
+    while (++index < length) {
+      result[index] = iteratee(array[index], index, array);
+    }
+    return interpreter.wrapPrimitive(result);
+  }
+
+  var reduce = function reduce(array, callback, initialValue) {
+
+    var array = this;
+    var len = array.length >>> 0,
+      index = 0,
+      accumulator;
     if (arguments.length == 2) {
-      value = arguments[1];
+      accumulator = arguments[1];
     } else {
-      while (k < len && !(k in t)) {
-        k++;
+      while (index < len && !(index in array)) {
+        index++;
       }
-      if (k >= len) {
-        throw new TypeError('Reduce of empty array with no initial value');
-      }
-      value = t[k++];
+      accumulator = array[index++];
     }
-    for (; k < len; k++) {
-      if (k in t) {
-        value = callback(value, t[k], k, t);
+    for (; index < len; index++) {
+      if (index in array) {
+        accumulator = callback(accumulator, array[index]);
       }
     }
-    return value;
-  };
+    return accumulator;
+  }
 
-/*  var wrapper = function(callback, initialValue) {
-    //var thisArray = interpreter.createPrimitive(this);
-    var callbackFunc = interpreter.createNativeFunction(callback);
-    return interpreter.createPrimitive(Array.prototype.reduce.call(this, callbackFunc, initialValue));
 
-    //return Array.prototype.reduce.call(this, callback, initialValue);
-  };*/
-
+  interpreter.setProperty(interpreter.ARRAY.properties.prototype, 'map',
+    interpreter.createNativeFunction(map), false, true);
   interpreter.setProperty(interpreter.ARRAY.properties.prototype, 'reduce',
-    interpreter.createNativeFunction(wrapper), false, true);
+    interpreter.createNativeFunction(reduce), false, true);
 }
 
 export default init;

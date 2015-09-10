@@ -19,12 +19,12 @@ class Navigation extends React.Component {
     this.state = {
       isNavBarShowing: NavigationStore.isNavBarShowing(),
       selectedMarkdown: NavigationStore.getSelectedMarkdown(),
-      warning: {},
+      warning: null,
   };
 }
 
 componentDidUpdate = () => {
-  if (this.state.warning.message) {
+  if (this.state.warning) {
     this.refs.snackbar.show();
     SequencerStore.setWarningMessageShown();
   } else {
@@ -52,7 +52,7 @@ onNavigationStoreChange = (newOpts) => {
   this.setState({
     isNavBarShowing: newOpts.isNavBarShowing,
     selectedMarkdown: newOpts.selectedMarkdown,
-    warning: {},
+    warning: null,
   });
 }
 
@@ -64,7 +64,7 @@ onSequencerStoreUpdate = () => {
     });
   } else {
     this.setState({
-      warning: {},
+      warning: null,
     });
   }
 }
@@ -87,8 +87,8 @@ render = () => {
         zDepth={5}/>
         <Snackbar
           ref="snackbar"
-          action={this.state.warning.action}
-          message={this.state.warning.message}
+          action={(this.state.warning) ? this.state.warning.action : ''}
+          message={(this.state.warning) ? this.state.warning.message : ''}
           onActionTouchTap={this.dismissSnackbar}
           style={{maxWidth: 'auto'}}
         />

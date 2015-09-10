@@ -1,16 +1,25 @@
 /*  examples constants file.
-	every file in example dir has exports:
-	name
-	functional
-	imperative
-	this reads in all the exports and adds them to the RefreshStore
+  every file in example dir has exports.
+  can pre-sort by order here for easy adding/removal
+  to NavBar.
+  */
 
-	not doing it programatically via fs for security
-	*/
-
-import assorted from './exampleFiles/assorted.js';
+import funcWithoutReturn from './exampleFiles/funcWithoutReturn.js';
+import imperativeSum from './exampleFiles/imperativeSum.js';
+import functionalSum from './exampleFiles/functionalSum.js';
+import varMutatedOutOfScope from './exampleFiles/varMutatedOutOfScope.js';
+import fibonacciRecursive from './exampleFiles/fibonacciRecursive.js';
+import nestedReturn from './exampleFiles/nestedReturn.js';
 import smashingMagazineDemo from './exampleFiles/smashingMagazine.js';
-const examples = {
-  assorted, smashingMagazineDemo,
-};
+
+let examples = [
+  funcWithoutReturn,
+  imperativeSum,
+  functionalSum,
+  varMutatedOutOfScope,
+  nestedReturn,
+  fibonacciRecursive,
+  smashingMagazineDemo,
+];
+
 export default examples;

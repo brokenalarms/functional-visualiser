@@ -75,7 +75,7 @@ class Editor {
          look as exact. Still starts looking from the actual character the 
          range is on anyway, so should find immediately. */
       let range = editor.find(execCodeBlock, {
-        start: SequencerStore.getCurrentRange(),
+        start: SequencerStore.getCurrentRange().start,
       });
       if (!range) {
         /* backup selection by node LOC, due to escodegen

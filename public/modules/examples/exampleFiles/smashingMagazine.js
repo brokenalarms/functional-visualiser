@@ -1,8 +1,8 @@
 const id = 'smashingMagazineDemo';
-const name = 'demo from Smashing Magazine';
+const title = 'Smashing Magazine Demo';
 const description = '';
 
-function demo() {
+function func() {
 
   /* This code is an adaptation of that supplied with the 
      Smashing Magazine article, "Don't be Afraid of Functional
@@ -115,5 +115,5 @@ function demo() {
 
 
 export default {
-  id, name, description, demo,
+  id, title, description, func,
 };

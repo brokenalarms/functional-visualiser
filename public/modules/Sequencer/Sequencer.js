@@ -27,7 +27,8 @@ function Sequencer() {
     SequencerStore.setStepOutput({
       warning: {
         action,
-        message,
+        message: `"${message.message || message}"
+        (Only basic built-in methods and ES5 supported)`,
       },
     });
     SequencerStore.sendUpdate();
@@ -42,22 +43,24 @@ function Sequencer() {
     let codeString = (CodeStore.get());
     let runCodeString = astTools.getRunCodeString(codeString);
     try {
-      astWithLocations = astTools.createAst(runCodeString, true);
+      let astWithoutLocations = astTools.createAst(runCodeString);
+      /* save back from AST to generated code and push that to the editor,
+         so the dynamic selection of running code is still correct,
+         as there are trivial but syntactically differences between 
+         the user's code and AST-generated code before roundtrip. */
+      let regeneratedCode = astTools.createCode(astWithoutLocations, true);
+      if (regeneratedCode && regeneratedCode !== codeString) {
+        astWithLocations = regeneratedCode;
+        CodeStore.set(regeneratedCode, false);
+      }
+      astWithLocations = astTools.createAst(regeneratedCode, true);
+      resetInterpreterAndSequencerStore();
     } catch (e) {
       // display message if user types in invalid code;
       displaySnackBarError('Parser error', e);
       return;
     }
 
-    /* save back from AST to generated code and push that to the editor,
-       so the dynamic selection of running code is still correct,
-       as there are trivial but syntactically differences between 
-       the user's code and AST-generated code before roundtrip. */
-    let regeneratedCode = astTools.createCode(astWithLocations);
-    if (regeneratedCode && regeneratedCode !== codeString) {
-      CodeStore.set(regeneratedCode, false);
-    }
-    resetInterpreterAndSequencerStore();
   }
 
   /* resets interpreter and SequencerStore state to begin the program again,
