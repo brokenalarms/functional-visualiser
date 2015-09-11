@@ -11,6 +11,11 @@
     -o-transitionn: $seconds ease-in-out;
     transition: $seconds ease-in-out;
 }
+@mixin transition-scale($seconds) {
+    -ms-transition: transform $seconds ease-in-out;
+    -o-transitionn: transform $seconds ease-in-out;
+    transition: transform $seconds ease-in-out;
+}
 
 @mixin crossfade($seconds) {
     -moz-transition: color $seconds ease-in;
@@ -96,13 +101,22 @@
 }
 
 .function-root {
-    @include transition(4s);
+    @include transition(1s);
+}
+
+.finish-text {
+    color: whitesmoke;
+    font-size: 1.5rem;
+    text-shadow: 0 0 1px whitesmoke;
+    width: 135px;
+    margin-top: -20px;
+    margin-left: 20px;
 }
 
 .finished {
     opacity: 1;
-    @include transition(3s);
-    @include scale(4);
+    @include transition-scale(3s);
+    @include scale(15);
 }
 
 .success {

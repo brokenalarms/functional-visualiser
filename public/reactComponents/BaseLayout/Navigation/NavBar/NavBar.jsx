@@ -23,7 +23,7 @@ class NavBar {
   static defaultProps = {
     menuItems: [{
       type: MenuItem.Types.SUBHEADER,
-      text: 'Tutorials',
+      text: 'Program walkthrough',
     }].concat(ConstantStore.getConstants().codeExamples
       .map((example, i) => {
         return ({
@@ -54,15 +54,21 @@ class NavBar {
   componentDidMount = () => {
     if (this.props.showNavBar) {
       this.refs.leftNav.toggle();
+    } else {
+      this.refs.leftNav.close();
     }
   }
 
   shouldComponentUpdate(nextProps) {
-    return nextProps.showNavBar;
+    return (this.props.showNavBar !== nextProps.showNavBar);
   }
 
   componentDidUpdate() {
-    this.refs.leftNav.toggle();
+    if (this.props.showNavBar) {
+      this.refs.leftNav.toggle();
+    } else {
+      this.refs.leftNav.close();
+    }
   }
 
   handleClick = (e, selectedIndex, menuItem) => {

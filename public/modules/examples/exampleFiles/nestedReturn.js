@@ -22,7 +22,7 @@ const nestedReturn = {
           ' and ' + receivedLiteralInBar;
       }
 
-      return bar(receivedLiteralInFoo, passToBar(receivedLiteralInFoo));
+      return bar(receivedLiteralInFoo, passToBarAsArgument(receivedLiteralInFoo));
     }
 
     var result = foo("I've been passed into foo");

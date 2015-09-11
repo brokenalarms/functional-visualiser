@@ -17,7 +17,7 @@ let options = {
   cssVars: {
     colorPrimary: '#2196F3',
     colorSecondary: '#4CAF50',
-    warningErrorRange: ['#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722',
+    warningErrorRange: ['#4CAF50', '#8BC34A', '#CDDC39', '#FDD835', '#FFC107', '#FF9800', '#FF5722',
       '#F44336', '#D50000',
     ],
   },
@@ -52,7 +52,7 @@ let options = {
 // SequencerStore emit event.
 // ======================================================
 import d3 from 'd3';
-let svg, node, nodeText, link, forceLayout, drag, rootNode;
+let svg, node, nodeText, link, forceLayout, drag, rootNode, finished;
 
 // shared by externally available update function
 function initialize(element, nodes, links, dimensions) {
@@ -259,16 +259,19 @@ function update() {
       d.displayName + '</div>';
   });
 
+  function shrinkAndGrowText(selection) {
+    selection.transition().duration(transitionDelay / 1 / 3)
+      .attr('opacity', 0)
+      .attr('class', 'update-text-shrink')
+      .each('end', () => {
+        selection.transition().duration(transitionDelay / 2 / 3)
+          .attr('opacity', 1)
+          .attr('class', 'unselectable function-text');
+      });
+  }
   // hide the text that is to be updated then re-grow
   let animateText = updateText.select('div');
-  animateText.transition().duration(transitionDelay / 1 / 3)
-    .attr('opacity', 0)
-    .attr('class', 'update-text-shrink')
-    .each('end', () => {
-      animateText.transition().duration(transitionDelay / 2 / 3)
-        .attr('opacity', 1)
-        .attr('class', 'unselectable function-text');
-    });
+  shrinkAndGrowText(animateText);
 
   node.selectAll('circle')
     .attr('class', (d) => {
@@ -279,12 +282,14 @@ function update() {
   // make the root node more 'angry' and bigger for each error... 
   let maxAllowedErrors = options.cssVars.warningErrorRange.length - 1;
   let errorCount = 0;
-  let finished = false;
-  rootNode.select('circle')
-    .classed('finished', (d) => {
+  let endGroup = rootNode.select('circle');
+
+  endGroup.classed('finished', (d) => {
       if (d.status === 'finished') {
-        rootNode.select('foreignObject')
-          .style('opacity', 0);
+        let finalText = rootNode.select('foreignObject')
+        finalText.html('<div class="finish-text"><div>' +
+          ((d.errorCount > 0) ? d.errorCount : 'No') + ' critical errors.</div>' +
+          ((!d.errorCount) ? '<div>FUNCTIONAL.</div></div>' : '</div>'));
         return (finished = true);
       }
     })
@@ -332,34 +337,39 @@ function update() {
     (newLinksLength > 0 && newLink[0][newLinksLength - 1] !== null)) {
     forceLayout.start();
   }
-}
 
-function pulse() {
-  if (rootNode) {
-    rootNode.select('circle')
-      .transition()
-      .duration(250)
-      .attr('r', (d) => {
-        return d.radius;
-      })
-      .transition()
-      .duration(250)
-      .attr('r', (d) => {
-        return d.radius * 1.1;
-      })
-      .ease('ease')
-      .each('end', pulse);
+  function pulse() {
+    if (rootNode && !finished) {
+      rootNode.select('circle')
+        .transition()
+        .duration(250)
+        .attr('r', (d) => {
+          return d.radius;
+        })
+        .transition()
+        .duration(250)
+        .attr('r', (d) => {
+          return d.radius * 1.1;
+        })
+        .ease('ease')
+        .each('end', pulse);
+    }
   }
 }
 
+
 function onDragStart(d) {
-  d3.select(this).select('circle').classed('function-fixed no-transition', d.fixed = true);
-  // prevents browser scrolling whilst dragging about node
-  d3.event.sourceEvent.preventDefault();
+  if (!finished) {
+    d3.select(this).select('circle').classed('function-fixed no-transition', d.fixed = true);
+    // prevents browser scrolling whilst dragging about node
+    d3.event.sourceEvent.preventDefault();
+  }
 }
 
 function onDoubleclickNode(d) {
-  d3.select(this).select('circle').classed('function-fixed no-transition', d.fixed = false);
+  if (!finished) {
+    d3.select(this).select('circle').classed('function-fixed no-transition', d.fixed = false);
+  }
 }
 
 function destroy() {
@@ -368,7 +378,8 @@ function destroy() {
     svg.selectAll('*').remove();
     forceLayout.stop();
   }
-  svg = forceLayout = node = link = rootNode = null;
+  svg = forceLayout = node = link = rootNode = null
+  finished = false;
 }
 
 export default {

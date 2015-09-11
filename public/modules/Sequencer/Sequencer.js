@@ -61,10 +61,10 @@ function Sequencer() {
     updateNodes =
       new VisibleFunctionsUpdater(SequencerStore.linkState().nodes,
         SequencerStore.linkState().links);
-    /* create deep copy so that d3 root modifications
-     and interpreter transformations are not maintained */
+    // there isn't an AST if we switch from dynamic without parsing
     if (astWithLocations) {
-      // there isn't an AST if we switch from dynamic without parsing
+      /* create deep copy so that d3 root modifications
+       and interpreter transformations are not maintained */
       let sessionAst = cloneDeep(astWithLocations).valueOf();
       try {
         interpreter = new Interpreter(sessionAst, initFunc);

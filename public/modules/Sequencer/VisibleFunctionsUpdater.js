@@ -58,7 +58,6 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   let rootNodeIndex = 0;
 
   let warning = null;
-  let warningHistory = [];
 
   // this is assigned if returning to a callExpression;
   // the next state is then checked to ensure that the
@@ -229,14 +228,12 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
     } else {
       functionSuccessfullyReturns = false;
       nodeReturning.status = 'failure';
-      warning = warningConstants.functionDoesNotReturnValue;
+      warning = warningConstants.functionDoesNotReturnValue.get(nodeReturning.name);
       // don't add 50 errors for 50 mutations of a single array!
-      if (!nodeReturning.warningsInScope.has(warning)) {
-        // treating no returns as twice as worse
-        // easiest way to infer there are side effects
-        rootNode.errorCount += 2;
+      if (!nodeReturning.warningsInScope.has(warning.message)) {
+        rootNode.errorCount++;
       }
-      nodeReturning.warningsInScope.add(warning);
+      nodeReturning.warningsInScope.add(warning.message);
 
       if (exitingLink.source !== rootNode) {
         exitingLink.source.status = 'warning';
@@ -382,11 +379,13 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         if (exitingNode.callerNode !== rootNode) {
           exitingNode.callerNode.status = 'warning';
         }
-        rootNode.errorCount++;
         // only create warning if a more critical one is not
         // already showing for that step
         if (!warning) {
-          warning = warningConstants.functionReturnUnassigned;
+          warning = warningConstants.functionReturnUnassigned.get(exitingNode.name);
+          if (!exitingNode.warningsInScope.has(warning.message)) {
+            rootNode.errorCount++;
+          }
         }
         if (links[0] && links[0].source === exitingNode) {
           // break off this link too..but only if the returning link
@@ -395,7 +394,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
           // hasn't already been removed because the function didn't have a return statement
           links.shift();
         }
-        exitingNode.warningsInScope.add(warning);
+        exitingNode.warningsInScope.add(warning.message);
         conditionMet = true;
       }
       // there will likely be other conditions where the node is being unassigned,
@@ -429,17 +428,17 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
           // only create warning if a more relavant one is not
           // already showing for that step
           warning = (!warning) ?
-            warningConstants.variableMutatedOutOfScope : warning;
+            warningConstants.variableMutatedOutOfScope.get(updateNode.name, callerNode.name) : warning;
           // don't add 50 errors for 50 mutations of a single array!
-          if (!updateNode.warningsInScope.has(warning)) {
+          if (!updateNode.warningsInScope.has(warning.message)) {
             rootNode.errorCount++;
           }
         } else {
           updateNode.status = 'failure';
           warning = (!warning) ?
-            warningConstants.variableDoesNotExist : warning;
+            warningConstants.variableDoesNotExist.get(updateNode.name) : warning;
           // don't add 50 errors for 50 mutations of a single array!
-          if (!updateNode.warningsInScope.has(warning)) {
+          if (!updateNode.warningsInScope.has(warning.message)) {
             rootNode.errorCount++;
           }
         }
@@ -450,10 +449,10 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         // especially with JavaScript
         updateNode.status = 'notice';
         warning = (!warning) ?
-          warningConstants.variableMutatedInScope : warning;
+          warningConstants.variableMutatedInScope.get(updateNode.name) : warning;
       }
-      conditionMet = !(updateNode.warningsInScope.has(warning));
-      updateNode.warningsInScope.add(warning);
+      conditionMet = !(updateNode.warningsInScope.has(warning.message));
+      updateNode.warningsInScope.add(warning.message);
       return conditionMet;
     }
   }
@@ -618,7 +617,6 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   function setFinished() {
     // set final action state for animation
     rootNode.status = 'finished';
-    return warningHistory;
   }
 
   return {
