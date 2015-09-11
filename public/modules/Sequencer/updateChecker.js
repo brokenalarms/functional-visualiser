@@ -4,8 +4,7 @@ function UpdateChecker() {
 
 
   return {
-    updateWarnings,
-    updateErrors,
+
   };
 }
 

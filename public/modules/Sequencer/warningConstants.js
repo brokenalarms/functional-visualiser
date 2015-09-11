@@ -1,5 +1,6 @@
 const warnings = {
   functionDoesNotReturnValue: {
+    status: 'failure',
     action: 'Principle: Referential transparency',
     get: (name) => {
       return {
@@ -9,6 +10,7 @@ const warnings = {
     },
   },
   functionReturnUnassigned: {
+    status: 'failure',
     action: 'Principle: Side effects',
     get: (name) => {
       return {
@@ -18,6 +20,7 @@ const warnings = {
     },
   },
   variableMutatedOutOfScope: {
+    status: 'warning',
     action: 'Principle: Side effects',
     get: (mutatorScopeName, declarationScopeName) => {
       return {
@@ -27,6 +30,7 @@ const warnings = {
     },
   },
   variableDoesNotExist: {
+    'status': 'failure',
     'action': 'Principle: Side effects',
     get: (name) => {
       return {
@@ -36,6 +40,11 @@ const warnings = {
     },
   },
   variableMutatedInScope: {
+    // don't count variables mutated in scope as errors,
+    // just give a notice
+    // since it's more a 'use when appropriate' rule,
+    // especially with JavaScript.
+    'status': 'notice',
     'action': 'Principle: Immutability (notice only)',
     get: (name) => {
       return {
