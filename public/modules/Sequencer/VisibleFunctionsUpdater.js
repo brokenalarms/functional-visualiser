@@ -81,7 +81,7 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
         updateEnteringFunction(state)
       );
     }
-    if (rootNode) {
+    if (doneAction) {
       rootNode.errorCount = WarningHandler.getErrorCount();
     }
     return [doneAction, WarningHandler.getCurrentWarningAndStep()];
@@ -435,7 +435,6 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
 
     let args = formatOutput.getArguments(node);
     let newArgs = [];
-    let interpreterArgTypes = [];
     // ========================================
     // the worst function in this program.    
     // ========================================
@@ -591,7 +590,6 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   function setFinished() {
     // set final action state for animation
     rootNode.status = 'finished';
-    console.log(WarningHandler.getErrorCount())
     WarningHandler.reset();
   }
 
