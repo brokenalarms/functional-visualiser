@@ -286,10 +286,10 @@ function update() {
 
   endGroup.classed('finished', (d) => {
       if (d.status === 'finished') {
-        let finalText = rootNode.select('foreignObject')
-        finalText.html('<div class="finish-text"><div>' +
-          ((d.errorCount > 0) ? d.errorCount : 'No') + ' critical errors.</div>' +
-          ((!d.errorCount) ? '<div>FUNCTIONAL.</div></div>' : '</div>'));
+        rootNode.select('foreignObject')
+          .html('<div class="finish-text"><div>' +
+            ((d.errorCount > 0) ? d.errorCount : 'No') + ' critical errors.</div>' +
+            ((!d.errorCount) ? '<div>FUNCTIONAL.</div></div>' : '</div>'));
         return (finished = true);
       }
     })
