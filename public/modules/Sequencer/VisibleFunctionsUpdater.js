@@ -13,6 +13,7 @@ import {last, pluck, includes, equals} from 'lodash';
 import formatOutput from '../d3DynamicVisualizer/formatOutput.js';
 import warningConstants from './warningConstants.js';
 import astTools from '../astTools/astTools.js';
+import UpdateChecker from './UpdateChecker.js';
 /**
  * VisibleFunctionsUpdater - runs three procedures: add, remove and update,
  * analgous to D3, via the action method.
@@ -63,6 +64,8 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   // the next state is then checked to ensure that the
   // return result is assigned back to a variable.
   let exitingNode = null;
+
+  let updateChecker = new UpdateChecker;
 
 
   // ===============================================
@@ -257,9 +260,8 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
 
   function exitNode(exitingNode) {
     // update parameters with data as it returns from callees
-    // TODO ----4 this was state.n_ - replacing with exitingNode.argIndex
-    // fixed, but find out why trying to read from absent n_
-    let originalIdentifier = exitingNode.displayArgs[exitingNode.argIndex];
+    let index = (state.n_ !== undefined)? state.n_ : exitingNode.argIndex;
+    let originalIdentifier = exitingNode.displayArgs[index];
     let returnValue = (state.value.isPrimitive) ? state.value.data : formatOutput.interpreterIdentifier(state.value, originalIdentifier);
     exitingNode.displayName = `return (${returnValue})`;
     exitingNode.updateText = true;
@@ -376,6 +378,8 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
       // if the state progresses too far past the return then this potential error
       // just abandoned as it becomes increasingly unreliable to infer.
       if (!(nodeIsBeingAssigned(state.node) || nodeWillBeAssigned(state))) {
+        // don't assign class to the rootNode,
+        // it has it's own color scheme
         if (exitingNode.callerNode !== rootNode) {
           exitingNode.callerNode.status = 'warning';
         }
