@@ -13,7 +13,6 @@ import {last, pluck, includes, equals} from 'lodash';
 import formatOutput from '../d3DynamicVisualizer/formatOutput.js';
 import warningConstants from './warningConstants.js';
 import astTools from '../astTools/astTools.js';
-import UpdateChecker from './UpdateChecker.js';
 /**
  * VisibleFunctionsUpdater - runs three procedures: add, remove and update,
  * analgous to D3, via the action method.
@@ -65,7 +64,6 @@ function VisibleFunctionUpdater(resetNodes, resetLinks) {
   // return result is assigned back to a variable.
   let exitingNode = null;
 
-  let updateChecker = new UpdateChecker;
 
 
   // ===============================================
