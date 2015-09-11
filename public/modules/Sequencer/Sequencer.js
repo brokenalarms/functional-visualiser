@@ -5,7 +5,7 @@ import SequencerStore from '../stores/SequencerStore.js';
 import Interpreter from '../vendor_mod/JS-Interpreter/interpreter.js';
 import initFunc from '../jsInterpreterInit/jsInterpreterInit.js';
 import astTools from '../astTools/astTools.js';
-import VisibleFunctionsUpdater from './VisibleFunctionsUpdater.js';
+import StateToNodeConverter from './StateToNodeConverter.js';
 import {cloneDeep} from 'lodash';
 
 /* Sequencer for d3DynamicVisualizer/Editor.
@@ -58,8 +58,8 @@ function Sequencer() {
     SequencerStore.resetState();
     /* SequencerStore now has new node/link refs,
        update via function closure */
-    updateNodes =
-      new VisibleFunctionsUpdater(SequencerStore.linkState().nodes,
+    stateToNodeConverter =
+      new StateToNodeConverter(SequencerStore.linkState().nodes,
         SequencerStore.linkState().links);
     // there isn't an AST if we switch from dynamic without parsing
     if (astWithLocations) {
@@ -125,7 +125,6 @@ function Sequencer() {
             setTimeout(nextStep.bind(null, singleStep), (doneAction) ? delay : 0);
           }
         } else {
-          updateNodes.setFinished();
           CodeStatusStore.setCodeFinished(true);
           SequencerStore.sendUpdate();
         }

@@ -1,6 +1,8 @@
 import warningConstants from './warningConstants.js';
 
-// tracks the warnings for each step and overall count
+// tracks the warnings for each step and overall count.
+// modifies properties on the passed nodes directly for
+// use by d3.
 
 function WarningHandler() {
 
@@ -28,11 +30,11 @@ function WarningHandler() {
     // don't add 50 errors for 50 mutations of a single array!
     if (opts.variableName) {
       if (!opts.actingNode.warningsInScope.has(opts.variableName)) {
-        errorCount++;
+        errorCount += warning.errorValue;
         opts.actingNode.warningsInScope.add(opts.variableName);
       }
     } else {
-      errorCount++;
+      errorCount += warning.errorValue;
     }
 
 
@@ -70,21 +72,13 @@ function WarningHandler() {
     return returnWarning;
   }
 
-
-  function reset() {
-    errorCount = 0;
-    warning = null;
-  }
-
-
   return {
     add,
     getErrorCount,
     getCurrentWarning,
     getCurrentWarningAndStep,
-    reset,
   };
 }
 
 
-export default new WarningHandler;
+export default WarningHandler;
