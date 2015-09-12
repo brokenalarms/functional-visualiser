@@ -5,7 +5,7 @@ import {parse} from 'acorn';
 import estraverse from 'estraverse';
 import escodegen from 'escodegen';
 import {includes, pluck, uniq as unique, last} from 'lodash';
-import DeclarationTracker from '../astTools/DeclarationTracker.js';
+import DeclarationTracker from './DeclarationTracker.js';
 import astTools from '../astTools/astTools.js';
 
 function StaticCallGraph() {
