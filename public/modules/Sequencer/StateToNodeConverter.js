@@ -133,29 +133,33 @@ function StateToNodeConverter(resetNodes, resetLinks) {
     // recursively tokenizes functions as arguments:
     // e.g., [name, arg1, arg2, [name, arg1, arg2]].
     function getInitialDisplayTokens(funcName, nodeArgs) {
-      let displayArgs = [];
+      let displayTokens = [];
       nodeArgs.forEach((arg, i) => {
         if (arg.type === 'Literal') {
-          displayArgs[i] = {
+          displayTokens[i] = {
             value: arg.value.toString(),
             type: isNaN(arg.value) ? 'string' : 'number',
           };
         } else if (arg.type === 'CallExpression') {
-          displayArgs[i] = getInitialDisplayTokens(arg.callee.name, arg.arguments);
+          displayTokens[i] = getInitialDisplayTokens(arg.callee.name, arg.arguments);
         } else if (arg.type === 'Identifier') {
-          displayArgs[i] = {
+          displayTokens[i] = {
             value: arg.name,
             type: 'Identifier',
           };
         } else {
-          console.error('what is this');
+          // BinaryExpressions, MemberExpressions etc...just get the code
+          displayTokens[i] = {
+            value: astTools.createCode(arg),
+            type: 'code',
+          };
         }
       });
-      displayArgs.unshift({
+      displayTokens.unshift({
         value: funcName,
-        type: 'string',
+        type: 'function',
       });
-      return displayArgs;
+      return displayTokens;
     }
 
     if (isSupportedFunctionCall(state)) {
@@ -164,15 +168,16 @@ function StateToNodeConverter(resetNodes, resetLinks) {
       let parent = last(scopeChain) || null;
 
       // {arg, type} for formatting
-      let displayArgs = getInitialDisplayTokens(calleeName, state.node.arguments);
+      let displayTokens = getInitialDisplayTokens(calleeName, state.node.arguments);
       let recursion = (parent && calleeName === parent.name);
-      let displayName = astTools.joinDisplayTokens(displayArgs);
+      let displayName = astTools.joinDisplayTokens(displayTokens);
 
       let calleeNode = {
         name: calleeName,
-        displayArgs,
+        displayTokens,
         displayName,
         parent,
+        interpreterComputedArgs: [],
         // variablesDeclaredInScope is not populated until the interpreter generates scope
         variablesDeclaredInScope: null,
         warningsInScope: new Set(),
@@ -268,15 +273,27 @@ function StateToNodeConverter(resetNodes, resetLinks) {
     links.pop();
   }
 
+
+  function findReturnIdentifier(node, index) {
+
+    return prevState.node.argument[index];
+  }
+
   function exitNode(node) {
-    // TODO - I just changed this return value
-    // update parameters with data as it returns from callees
-    let index = (state.n_ !== undefined) ? state.n_ : node.argIndex;
-    // IF IT'S NOT A PRIMITIVE, I JUST NEED TO KEEP WHAT IT WAS
-    // THEREFORE MATCH NODE IDENTIFIER VIA PARAMS, NOT NODE.ARGINDEX
-    let originalIdentifier = node.displayArgs[index];
-    // let returnValue = (state.value.isPrimitive) ? state.value.data : formatOutput.interpreterIdentifier(state.value, originalIdentifier);
-    let returnValue = (state.value.isPrimitive) ? state.value.data : originalIdentifier;
+    let returnValue = undefined;
+
+    // interpreter provides result
+    if (state.doneCallee_ && state.doneExec && state.value.isPrimitive) {
+      returnValue = state.value.data;
+    } else {
+      let index = (state.n_ !== undefined) ? (state.n_ - 1) : null;
+      if (index !== null) {
+        returnValue = findReturnIdentifier(state.node, index);
+      } else {
+        debugger;
+      }
+    }
+
     node.displayName = `return (${returnValue})`;
     node.updateText = true;
 

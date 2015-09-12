@@ -33,11 +33,13 @@ function UpdateHandler() {
     return conditionMet;
   }
 
-  function getComputedDisplayTokens(currentTokens, scope) {
+
+  // if you think this is horrible, you should have seen it the first 5 times...
+  function fillRemainingDisplayTokens(currentTokens, updateNode, interpreterComputedArgs) {
     // same as getInitialDisplayArgs, but this time adapted for
     // interpreter results rather than nodes, to update
     // any arguments with computed interpreter results
-    if (currentTokens.length <= 1) {
+    if (currentTokens.length === 1) {
       // return function name only
       return [{
         value: currentTokens[0],
@@ -45,67 +47,120 @@ function UpdateHandler() {
       }];
     }
 
-    let displayArgs = [];
+    let displayTokens = [];
     let currentArgs = currentTokens.slice();
     let funcNameObject = currentArgs.shift();
-    currentArgs.forEach((arg, i) => {
 
+    for (let i = 0, length = currentArgs.length; i < length; i++) {
+      let arg = currentArgs[i];
+
+      // recursive update for nested argument functions
       if (Array.isArray(arg)) {
-        displayArgs[i] = getComputedDisplayTokens(arg, scope);
-      } else {
-
-        if (arg.value in scope) {
-          let interpreterArg = scope[arg.value];
-          if (interpreterArg.isPrimitive) {
-            displayArgs[i] = {
-              value: interpreterArg.data.toString(),
-              type: interpreterArg.type,
-            };
-          } else {
-            debugger;
-            displayArgs[i] = {
-              value: null,
-              type: interpreterArg.type,
-            };
-          }
-        } else {
-          // this value is just a literal:
-          // keep the original value
-          displayArgs[i] = currentArgs[i];
-        }
+        // interpreterComputed args to null for recursion -
+        // they are only for top-level primitive results
+        displayTokens[i] = fillRemainingDisplayTokens(arg, updateNode, null);
+        continue;
       }
-    });
 
-    displayArgs.unshift(funcNameObject);
-    return displayArgs;
+      // use the interpreter-calculated primitives
+      // if it has already done so (eg for (10 === n) => ((n-1) === 9)))
+      if (interpreterComputedArgs && interpreterComputedArgs[i]) {
+        displayTokens[i] = interpreterComputedArgs[i];
+        continue;
+      }
+
+      // pass literals straight through
+      // (should be covered by interpreter case above
+      // for the top level, but needed for nested args
+      // in functions)
+      if (arg.type === 'string' || arg.type === 'number') {
+        displayTokens[i] = currentArgs[i];
+        continue;
+      }
+
+      // get object type from immediate interpreter scope for formatting otherwise
+      let scopeContainingValue = scope;
+      while (!(arg.value in scopeContainingValue.properties) &&
+        scopeContainingValue.parentScope !== null) {
+        scopeContainingValue = scopeContainingValue.parentScope;
+      }
+      if (arg.value in scopeContainingValue.properties) {
+        let interpreterArg = scopeContainingValue.properties[arg.value];
+        if (interpreterArg.isPrimitive) {
+          displayTokens[i] = {
+            value: interpreterArg.data.toString(),
+            type: interpreterArg.type,
+          };
+        } else {
+          displayTokens[i] = {
+            value: arg.value,
+            type: interpreterArg.type,
+          };
+        }
+        continue;
+      } else {
+        console.error('its a param then, right?');
+        debugger;
+      }
+
+      // last case - must be referring to a paramName, so
+      // match by index to the parent argument passed in
+      let enclosingParams = updateNode.paramNodes || [];
+      let matchedParamIndex = enclosingParams.indexOf(arg.value);
+      if (matchedParamIndex > -1) {
+        let parentTokens = updateNode.parent.displayTokens;
+        displayTokens[i] = {
+          value: parentTokens[matchedParamIndex + 1].value,
+          type: parentTokens[matchedParamIndex + 1].type,
+        };
+        continue;
+      } else {
+        debugger;
+      }
+    }
+
+    displayTokens.unshift(funcNameObject);
+    return displayTokens;
   }
-
 
   function doesDisplayNameNeedUpdating(state, updateNode) {
     let conditionMet = false;
     if (state.scope) {
-      scope = state.scope.properties;
-      updateNode.variablesDeclaredInScope = Object.keys(scope);
+      scope = state.scope;
+      updateNode.variablesDeclaredInScope = Object.keys(scope.properties);
+    }
+    if (state.func_ && !state.func_.nativeFunc) {
+      // get the identifier paramNodes so we can match with variables referring
+      // to values declared in its parent scope when we hit the next function
+      updateNode.paramNodes = pluck(state.func_.node.params, 'name');
     }
 
-    console.log(updateNode.name)
-    if (state.doneCallee_ && state.value.data === updateNode.name && state.node.arguments.length > 0) {
-      // refresh list of variables declared in that scope,
-      // Use these for seeing if variables out of function scope were mutated (side effects)
-      // getComputedDisplayTokens(updateNode.name, state.node.arguments);
-      let newDisplayTokens = getComputedDisplayTokens(updateNode.displayArgs, scope);
+    if (state.n_ && state.value && state.value.isPrimitive) {
+      // need to get the interpreter computed values as they appear, eg (n-1)
+      // take state.n_ -1 since interpreterComputedArgs does not have
+      // a leading function identifier
+      updateNode.interpreterComputedArgs[state.n_ - 1] = {
+        value: state.value.data.toString(),
+        type: state.value.type,
+      };
+    }
 
-      if (argsHaveChanged(updateNode.displayArgs, newDisplayTokens)) {
+
+    // don't try to fill in remaining args until the interpreter
+    // has finished computing any interpolated ones (eg n-1);
+    // once there is state.func_ it has the complete function
+    // ready to execute.
+    if (updateNode.displayTokens.length > 1 &&
+      state.doneCallee_ && state.func_) {
+      let newDisplayTokens = fillRemainingDisplayTokens(
+        updateNode.displayTokens, updateNode, updateNode.interpreterComputedArgs);
+
+      if (tokensHaveChanged(updateNode.displayTokens, newDisplayTokens)) {
         updateNode.displayName = astTools.joinDisplayTokens(newDisplayTokens);
-        updateNode.displayArgs = newDisplayTokens;
+        updateNode.displayTokens = newDisplayTokens;
         conditionMet = true;
       }
 
-      /*      if (state.func_ && !state.func_.nativeFunc) {
-              // get the identifier paramNodes so we can match with variables referring
-              // to values declared in its parent scope when we hit the next function
-              updateNode.paramNodes = state.func_.node.params;
-            }*/
     }
     return conditionMet;
   }
@@ -211,12 +266,12 @@ function UpdateHandler() {
               let enclosingParamNames = pluck(enclosingParamsParent.paramNodes, 'name') || [];
               let matchedParamIndex = enclosingParamNames.indexOf(matchIdentifier);
               if (matchedParamIndex > -1) {
-                let parentArgumentsPassed = enclosingParamsParent.displayArgs;
+                let parentArgumentsPassed = enclosingParamsParent.displayTokens;
                 newArgs[i] = parentArgumentsPassed[matchedParamIndex];
                 updateNode.interpreterArgTypes[i] = enclosingParamsParent.interpreterArgTypes[matchedParamIndex];
               } else {
                 // backup - this covers things like anonymous functions
-                newArgs[i] = updateNode.displayArgs[i];
+                newArgs[i] = updateNode.displayTokens[i];
                 updateNode.interpreterArgTypes[i] = 'direct';
               }
             } else {
@@ -229,20 +284,30 @@ function UpdateHandler() {
     return newArgs;
   }
 
-  function argsHaveChanged(initArgs, updateArgs) {
-    // check for gaps in sparse array or some updateArgs missing.
-    // Not ready to display until all arguments are available (if there are any at all)
-    if (initArgs.length === 0) {
+  function tokensHaveChanged(initTokens, updateTokens) {
+    if (initTokens.length === 1) {
       return false;
     }
 
-    for (let i = 0, length = initArgs.length; i < length; i++) {
-      if (initArgs[i] !== updateArgs[i]) {
-        return true;
-      }
-      if (i === length - 1) {
+    for (let i = 0, length = initTokens.length; i < length; i++) {
+      if (!updateTokens[i]) {
+        // the interpreter needs to calculate these values
+        // (eg (n-1) as argument)
         return false;
       }
+
+      if (Array.isArray(initTokens[i])) {
+        if (tokensHaveChanged(initTokens[i], updateTokens[i])) {
+          return true;
+        }
+        continue;
+      } else if ((initTokens[i].value !== updateTokens[i].value) ||
+        (initTokens[i].type !== updateTokens[i].type)) {
+        return true;
+      } else {
+        continue;
+      }
+      return false;
     }
   }
 
@@ -251,7 +316,7 @@ function UpdateHandler() {
     // then we know the parent scope will contain all
     // possible calculated primitive values for scope
     // we're interested in
-    if (!scope) { //|| !updateNode.displayArgs.length) {
+    if (!scope) { //|| !updateNode.displayTokens.length) {
       return false;
     }
 
@@ -259,8 +324,8 @@ function UpdateHandler() {
     // need to fill in the gap now between params and arguments        
     updateNode.updatedDisplayArgs = matchIdentifiersWithArgs(updateNode, state.node);
 
-    if (argsHaveChangedValue(updateNode.displayArgs, updateNode.updatedDisplayArgs)) {
-      updateNode.displayArgs = updateNode.updatedDisplayArgs;
+    if (argsHaveChangedValue(updateNode.displayTokens, updateNode.updatedDisplayArgs)) {
+      updateNode.displayTokens = updateNode.updatedDisplayArgs;
       updateNode.updatedDisplayArgs = [];
       conditionMet = true;
     }
@@ -270,15 +335,15 @@ function UpdateHandler() {
       updateNode.updateText = true;
       // formatted display args are not kept - need original identifiers
       // for comparison or even more of a mess....learnt this the first time!
-      /*    let formattedDisplayArgs = updateNode.displayArgs.map((arg, i) => {
+      /*    let formattedDisplayArgs = updateNode.displayTokens.map((arg, i) => {
           return formatOutput.interpreterIdentifier({
             type: updateNode.interpreterArgTypes[i],
-          }, updateNode.displayArgs[i]);
+          }, updateNode.displayTokens[i]);
         });
 */
       let recursion = (updateNode.parent && updateNode.name === updateNode.parent.name);
       //updateNode.displayName = formatOutput.displayName(updateNode.name, formattedDisplayArgs, recursion);
-      updateNode.displayName = updateNode.name + '(' + updateNode.displayArgs.join(', ') + ')';
+      updateNode.displayName = updateNode.name + '(' + updateNode.displayTokens.join(', ') + ')';
     }
     if (newScope) {
       newScope = false;

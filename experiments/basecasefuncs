@@ -7,12 +7,14 @@ foo('argument');
 
 function foo(fooParam, passedBarFunc) {
   var blah = 'hi';
-  return param
+  return fooParam
 }
+
+var blah = [2,4,6];
 
 function bar(barParam){
-    return barParam;
+    return blah;
 }
 
 
-foo('argument', bar('thisIsLiteral'));
+foo('argument', bar(blah));

@@ -20,12 +20,12 @@ const warnings = {
     },
   },
   variableMutatedOutOfScope: {
-    get: (mutatorScopeName, declarationScopeName) => {
+    get: (mutatorScopeName, declarationScopeName, variableName) => {
       return {
         errorValue: 1,
         status: 'warning',
         action: 'Principle: Side effects',
-        message: `'${mutatorScopeName}' has mutated variable in the scope of '${declarationScopeName}'`,
+        message: `'${mutatorScopeName}' has mutated variable '${variableName}' in the scope of '${declarationScopeName}'`,
       };
     },
   },
@@ -40,12 +40,12 @@ const warnings = {
     },
   },
   variableMutatedInScope: {
-    get: (name) => {
+    get: (name, declarationScopeName, variableName) => {
       return {
         errorValue: 0,
         status: 'notice',
         'action': 'Principle: Immutability (notice only)',
-        message: `'${name}' has changed a variable within its own scope after creation`,
+        message: `'${name}' has mutated variable '${variableName}' within its own scope after creation`,
       };
     },
   },
