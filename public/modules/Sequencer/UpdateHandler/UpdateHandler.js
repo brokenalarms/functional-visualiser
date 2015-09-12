@@ -78,7 +78,8 @@ function UpdateHandler() {
         continue;
       }
 
-      // get object type from immediate interpreter scope for formatting otherwise
+      // last case - variable used from outside the scope
+      // get object type for formatting
       let scopeContainingValue = scope;
       while (!(arg.value in scopeContainingValue.properties) &&
         scopeContainingValue.parentScope !== null) {
@@ -102,40 +103,29 @@ function UpdateHandler() {
         console.error('its a param then, right?');
         debugger;
       }
-
-      // last case - must be referring to a paramName, so
-      // match by index to the parent argument passed in
-      let enclosingParams = updateNode.paramNodes || [];
-      let matchedParamIndex = enclosingParams.indexOf(arg.value);
-      if (matchedParamIndex > -1) {
-        let parentTokens = updateNode.parent.displayTokens;
-        displayTokens[i] = {
-          value: parentTokens[matchedParamIndex + 1].value,
-          type: parentTokens[matchedParamIndex + 1].type,
-        };
-        continue;
-      } else {
-        debugger;
-      }
     }
 
     displayTokens.unshift(funcNameObject);
     return displayTokens;
   }
 
-  function doesDisplayNameNeedUpdating(state, updateNode) {
-    let conditionMet = false;
+  function gatherEnteringFunctionInformation(state, updateNode) {
     if (state.scope) {
       scope = state.scope;
       updateNode.variablesDeclaredInScope = Object.keys(scope.properties);
     }
     if (state.func_ && !state.func_.nativeFunc) {
-      // get the identifier paramNodes so we can match with variables referring
+      // get the identifier paramNames so we can match with variables referring
       // to values declared in its parent scope when we hit the next function
-      updateNode.paramNodes = pluck(state.func_.node.params, 'name');
+      updateNode.paramNames = pluck(state.func_.node.params, 'name');
     }
 
-    if (state.n_ && state.value && state.value.isPrimitive) {
+    // computedPrimitive: interpreter has fetched the result for an
+    // interpolated function argument, eg (n - 1). Can't calculate
+    // these through static analysis so take the interpreter's result now.
+    let computedPrimitive =
+      state.n_ && state.value && state.value.isPrimitive;
+    if (computedPrimitive) {
       // need to get the interpreter computed values as they appear, eg (n-1)
       // take state.n_ -1 since interpreterComputedArgs does not have
       // a leading function identifier
@@ -144,14 +134,25 @@ function UpdateHandler() {
         type: state.value.type,
       };
     }
+  }
+
+  function doesDisplayNameNeedUpdating(state, updateNode) {
+    let conditionMet = false;
+
+    let updateNodeHasArguments = updateNode.displayTokens.length > 1;
+
+    let gatheredRequirementsForCallee = state.doneCallee_ && !state.doneExec;
+
+    // the interpreter has computed all arguments a function requires
+    // and created a wrapped function for it to execute.
+    // (Due to an interpreter bug (I think), evaluating `func_` for
+    // truthiness returns a copy of the object instead of true or
+    // false, hence the Boolean wrapper
+    let finishedGatheringArguments = Boolean(state.func_);
 
 
-    // don't try to fill in remaining args until the interpreter
-    // has finished computing any interpolated ones (eg n-1);
-    // once there is state.func_ it has the complete function
-    // ready to execute.
-    if (updateNode.displayTokens.length > 1 &&
-      state.doneCallee_ && state.func_) {
+    if (updateNodeHasArguments &&
+      gatheredRequirementsForCallee && finishedGatheringArguments) {
       let newDisplayTokens = fillRemainingDisplayTokens(
         updateNode.displayTokens, updateNode, updateNode.interpreterComputedArgs);
 
@@ -170,8 +171,11 @@ function UpdateHandler() {
   // ===================================================
 
   function doesCurrentNodeUpdate(state, updateNode, interpreter) {
+
+    gatherEnteringFunctionInformation(state, updateNode);
+
     let a = isVariableMutated(state, updateNode);
-    let b = doesDisplayNameNeedUpdating(state, updateNode, interpreter);
+    let b = doesDisplayNameNeedUpdating(state, updateNode);
     return (a || b);
   }
 
@@ -260,10 +264,10 @@ function UpdateHandler() {
               // must need to match param names to arguments passed in from enclosing function
               // - may be more than one level up due to nested functions in parameters
               let enclosingParamsParent = updateNode.parent;
-              while (!enclosingParamsParent.paramNodes) {
+              while (!enclosingParamsParent.paramNames) {
                 enclosingParamsParent = enclosingParamsParent.parent;
               }
-              let enclosingParamNames = pluck(enclosingParamsParent.paramNodes, 'name') || [];
+              let enclosingParamNames = pluck(enclosingParamsParent.paramNames, 'name') || [];
               let matchedParamIndex = enclosingParamNames.indexOf(matchIdentifier);
               if (matchedParamIndex > -1) {
                 let parentArgumentsPassed = enclosingParamsParent.displayTokens;

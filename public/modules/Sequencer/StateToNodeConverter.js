@@ -132,7 +132,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
 
     // recursively tokenizes functions as arguments:
     // e.g., [name, arg1, arg2, [name, arg1, arg2]].
-    function getInitialDisplayTokens(funcName, nodeArgs) {
+    function getInitialDisplayTokens(funcName, nodeArgs, parentNode) {
       let displayTokens = [];
       nodeArgs.forEach((arg, i) => {
         if (arg.type === 'Literal') {
@@ -141,12 +141,29 @@ function StateToNodeConverter(resetNodes, resetLinks) {
             type: isNaN(arg.value) ? 'string' : 'number',
           };
         } else if (arg.type === 'CallExpression') {
-          displayTokens[i] = getInitialDisplayTokens(arg.callee.name, arg.arguments);
+          displayTokens[i] = getInitialDisplayTokens(arg.callee.name, arg.arguments, parentNode);
         } else if (arg.type === 'Identifier') {
-          displayTokens[i] = {
-            value: arg.name,
-            type: 'Identifier',
-          };
+          if (parentNode && parentNode.paramNames) {
+            // interpolate params with passed arguments
+            // at this point. Would have liked to do this
+            // at the update step, but for functions
+            // which return functions this information
+            // needs to be present as soon as the returned function
+            // appears in the visualizer.
+            let enclosingParams = parentNode.paramNames || [];
+            let matchedParamIndex = enclosingParams.indexOf(arg.name);
+            if (matchedParamIndex > -1) {
+              let parentTokens = parentNode.parentNode.displayTokens;
+              displayTokens[i] = parentTokens[matchedParamIndex + 1];
+            }
+          } else {
+            console.error('should this happen...');
+            debugger;
+            displayTokens[i] = {
+              value: arg.name,
+              type: 'Identifier',
+            };
+          }
         } else {
           // BinaryExpressions, MemberExpressions etc...just get the code
           displayTokens[i] = {
@@ -165,18 +182,18 @@ function StateToNodeConverter(resetNodes, resetLinks) {
     if (isSupportedFunctionCall(state)) {
 
       let calleeName = state.node.callee.name || state.node.callee.id.name;
-      let parent = last(scopeChain) || null;
+      let parentNode = last(scopeChain) || null;
 
       // {arg, type} for formatting
-      let displayTokens = getInitialDisplayTokens(calleeName, state.node.arguments);
-      let recursion = (parent && calleeName === parent.name);
+      let displayTokens = getInitialDisplayTokens(calleeName, state.node.arguments, parentNode);
+      let recursion = (parentNode && calleeName === parentNode.name);
       let displayName = astTools.joinDisplayTokens(displayTokens);
 
       let calleeNode = {
         name: calleeName,
         displayTokens,
         displayName,
-        parent,
+        parentNode,
         interpreterComputedArgs: [],
         // variablesDeclaredInScope is not populated until the interpreter generates scope
         variablesDeclaredInScope: null,
@@ -195,7 +212,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
 
       // add nodes and links to d3
       nodes.push(calleeNode);
-      let callLink = getCallLink(parent, calleeNode, 'calling');
+      let callLink = getCallLink(parentNode, calleeNode, 'calling');
       if (callLink) {
         links.push(callLink);
       }
@@ -344,7 +361,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
     // if the state progresses too far past the return then this potential error
     // just abandoned as it becomes increasingly unreliable to infer.
     if (!(nodeIsBeingAssigned(state.node) || nodeWillBeAssigned(state))) {
-      updateHandler.addUnassignedFunctionWarning(exitingNode.parent, exitingNode);
+      updateHandler.addUnassignedFunctionWarning(exitingNode.parentNode, exitingNode);
 
       if (links[0] && links[0].source === exitingNode) {
         // break off this link too..but only if the returning link
