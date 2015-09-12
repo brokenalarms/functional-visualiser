@@ -11,8 +11,9 @@
 
 import {last} from 'lodash';
 // import formatOutput from '../d3DynamicVisualizer/formatOutput.js';
-import UpdateHandler from './updateHandler/updateHandler.js';
-import StringTokenizer from './StringTokenizer/StringTokenizer.js';
+import DisplayTextHandler from './DisplayTextHandler/DisplayTextHandler.js';
+import StringTokenizer from './DisplayTextHandler/StringTokenizer/StringTokenizer.js';
+import ErrorChecker from './ErrorChecker/ErrorChecker.js';
 
 function StateToNodeConverter(resetNodes, resetLinks) {
 
@@ -22,8 +23,9 @@ function StateToNodeConverter(resetNodes, resetLinks) {
   // are passed explicitly
   let nodes = resetNodes;
   let links = resetLinks;
-  let updateHandler = new UpdateHandler();
-
+  // responsible for handling string tokenization and update
+  let displayTextHandler = new DisplayTextHandler();
+  let errorChecker = new ErrorChecker();
   // use custom link index for d3 links and nodes, as otherwise they do not
   // re-associate reliably on popping off the end of the array and shifting
   // onto the front .
@@ -63,6 +65,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
     let nodeEnterOrExit = false;
     let functionReturnUnassigned = false;
     let currentNodeUpdated = false;
+    let variableErrors = false;
     let currentWarning = null;
     state = interpreter.stateStack[0];
 
@@ -74,8 +77,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
 
 
       let updateNode = last(scopeChain) || null;
-      /*      updateHandler.updateScopeAndParams(state, updateNode);
-       */
+
       if (!nodeEnterOrExit && updateNode) {
         if (exitingNode) {
           // make sure the returned function is 
@@ -84,15 +86,17 @@ function StateToNodeConverter(resetNodes, resetLinks) {
             isFunctionReturnUnassigned(state, updateNode, exitingNode);
         }
         currentNodeUpdated =
-          updateHandler.doesCurrentNodeUpdate(state, updateNode, interpreter);
+          displayTextHandler.doesDisplayNameNeedUpdating(state, updateNode, interpreter);
+        variableErrors = errorChecker.isVariableMutated(state, updateNode);
       }
     }
     if (rootNode) {
       [rootNode.errorCount, currentWarning] =
-      updateHandler.getErrorCountAndCurrentWarning();
+      errorChecker.getErrorCountAndCurrentWarning();
     }
     return [
-      (nodeEnterOrExit || functionReturnUnassigned || currentNodeUpdated),
+      (nodeEnterOrExit || functionReturnUnassigned ||
+        variableErrors || currentNodeUpdated),
       currentWarning,
     ];
   }
@@ -151,7 +155,8 @@ function StateToNodeConverter(resetNodes, resetLinks) {
       enterNode.displayTokens =
         StringTokenizer.getInitialDisplayTokens(
           enterNode.name, state.node.arguments, enterNode.parentNode, interpreter);
-      enterNode.displayName = StringTokenizer.joinAndFormatDisplayTokens(enterNode.displayTokens);
+      enterNode.displayName =
+        StringTokenizer.joinAndFormatDisplayTokens(enterNode.displayTokens, enterNode.recursion);
 
 
       // the root node carries through information to d3 about overall progress.
@@ -231,7 +236,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
     // is the exiting link
     let nodeReturning = link.target;
 
-    if (updateHandler.doesFunctionReturn(
+    if (errorChecker.doesFunctionReturn(
         state, nodeReturning)) {
       // reverse source and target to flip arrows and animation
       let returnLink = getCallLink(
@@ -249,25 +254,34 @@ function StateToNodeConverter(resetNodes, resetLinks) {
   }
 
   function exitNode(node) {
-    let returnValue = undefined;
+    let returnValue = null;
 
     // interpreter provides result
     if (state.doneCallee_ && state.doneExec) {
       if (state.value.isPrimitive) {
-        returnValue = state.value.data;
+        returnValue = StringTokenizer.formatSingleToken({
+          value: state.value.data,
+          type: state.value.type,
+        });
       } else if (state.value.type === 'function') {
         returnValue = StringTokenizer.joinAndFormatDisplayTokens(node.displayTokens);
-      } else if (state.n_) {
-        if (node.interpreterComputedArgs[state.n_ - 1] !== undefined) {
-          returnValue = StringTokenizer.formatSingleToken(node.interpreterComputedArgs[state.n_ - 1]);
+      } else if (state.value.type === 'object') {
+        if (state.n_) {
+          let returningArgIndex = state.n_ - 1;
+          if (node.interpreterComputedArgs[returningArgIndex] !== undefined) {
+            returnValue = StringTokenizer.formatSingleToken({
+              value: node.interpreterComputedArgs[returningArgIndex].value,
+              type: state.value.type,
+            });
+          } else {
+            returnValue = StringTokenizer.formatSingleToken({
+              value: 'object',
+              type: 'object',
+            });
+          }
         }
-      } else {
-        debugger;
       }
-    } else {
-      debugger;
     }
-
     node.displayName = `return (${returnValue})`;
     node.updateText = true;
 
@@ -318,7 +332,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
     // if the state progresses too far past the return then this potential error
     // just abandoned as it becomes increasingly unreliable to infer.
     if (!(nodeIsBeingAssigned(state.node) || nodeWillBeAssigned(state))) {
-      updateHandler.addUnassignedFunctionWarning(exitingNode.parentNode, exitingNode);
+      errorChecker.addUnassignedFunctionWarning(exitingNode.parentNode, exitingNode);
 
       if (links[0] && links[0].source === exitingNode) {
         // break off this link too..but only if the returning link

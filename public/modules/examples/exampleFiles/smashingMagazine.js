@@ -27,8 +27,8 @@ function Program() {
     return result;
   }
 
-  function reduce(array, callback, initialValue) {
-    var len = array.length >>> 0,
+function reduce(array, callback, initialValue) {
+    var len = array.length,
       index = 0,
       accumulator;
     if (arguments.length == 2) {
@@ -58,7 +58,7 @@ function Program() {
   }, {
     name: 'Funky Town',
     population: 1000000,
-    temperatures: [75, 75, 75, 75, 75]
+    temperatures: [75, 75, 75, 75]
   }];
 
   function addNumbers(a, b) {

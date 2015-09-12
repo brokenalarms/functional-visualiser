@@ -5,7 +5,7 @@ const warnings = {
         status: 'failure',
         errorValue: 1,
         action: 'Principle: Referential transparency',
-        message: `'${name}' did not return a value`,
+        message: `Function '${name}' did not return a value.`,
       };
     },
   },
@@ -15,7 +15,7 @@ const warnings = {
         errorValue: 1,
         status: 'warning',
         action: 'Principle: Side effects',
-        message: `Result of '${actingNodeName}' is not assigned to a value`,
+        message: `Result of function '${actingNodeName}' is not assigned to a value.`,
       };
     },
   },
@@ -25,17 +25,17 @@ const warnings = {
         errorValue: 1,
         status: 'warning',
         action: 'Principle: Side effects',
-        message: `'${mutatorScopeName}' has mutated variable '${variableName}' in the scope of '${declarationScopeName}'`,
+        message: `Function  '${mutatorScopeName}' has mutated variable '${variableName}' in the scope of function '${declarationScopeName}'.`,
       };
     },
   },
   variableDoesNotExist: {
-    get: (name) => {
+    get: (name, affectedNodeName, variableName) => {
       return {
         errorValue: 1,
         status: 'failure',
         'action': 'Principle: Side effects',
-        message: `'${name}' refers to an external variable that does not exist in the scope chain`,
+        message: `Function '${name}' refers to the variable ${variableName} that does not exist in the scope chain.`,
       };
     },
   },

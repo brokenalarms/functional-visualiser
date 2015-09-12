@@ -9,7 +9,7 @@ import {Toolbar, ToolbarGroup, ToolbarSeparator, IconButton, FlatButton} from 'm
    cycle as well as calling back to enable/disable buttons here. */
 
 import CodeStatusStore from '../../../../../modules/stores/CodeStatusStore.js';
-import Sequencer from '../../../../../modules/Sequencer/Sequencer.js';
+import Sequencer from '../../../../../modules/d3DynamicVisualizer/Sequencer/Sequencer.js';
 
 class ControlBar extends React.Component {
 

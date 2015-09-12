@@ -1,12 +1,12 @@
 'use strict';
-import CodeStore from '../stores/CodeStore.js';
-import CodeStatusStore from '../stores/CodeStatusStore.js';
-import SequencerStore from '../stores/SequencerStore.js';
-import Interpreter from '../vendor_mod/JS-Interpreter/interpreter.js';
-import initFunc from '../jsInterpreterInit/jsInterpreterInit.js';
-import astTools from '../astTools/astTools.js';
-import StateToNodeConverter from '../StateToNodeConverter/StateToNodeConverter.js';
 import {cloneDeep} from 'lodash';
+import CodeStore from '../../stores/CodeStore.js';
+import CodeStatusStore from '../../stores/CodeStatusStore.js';
+import SequencerStore from '../../stores/SequencerStore.js';
+import Interpreter from '../../vendor_mod/JS-Interpreter/interpreter.js';
+import initFunc from '../jsInterpreterInit/jsInterpreterInit.js';
+import astTools from '../../astTools/astTools.js';
+import StateToNodeConverter from '../StateToNodeConverter/StateToNodeConverter.js';
 
 /* Sequencer for d3DynamicVisualizer/Editor.
    controlled by React ControlBar via SequencerStore store.

@@ -8,7 +8,7 @@
 	of potentially deeply-nested functions in parameters.
    */
 
-import astTools from '../../astTools/astTools.js';
+import astTools from '../../../../astTools/astTools.js';
 
 
 function StringTokenizer() {
@@ -25,6 +25,9 @@ function StringTokenizer() {
         };
       } else if (arg.type === 'CallExpression') {
         displayTokens[i] = getInitialDisplayTokens(arg.callee.name, arg.arguments, parentNode, interpreter);
+      } else if (arg.type === 'FunctionExpression') {
+        // anonymous functions - don't show the full details
+        displayTokens[i] = getInitialDisplayTokens('anonymous', arg.params, parentNode, interpreter);
       } else if (arg.type === 'Identifier') {
         // interpolate paramNames with passed arguments
         // at this point. Would have liked to do this
@@ -54,10 +57,13 @@ function StringTokenizer() {
             let parentTokens = nodeContainingParams.displayTokens;
             displayTokens[i] = parentTokens[matchedParamIndex + 1];
           } else {
-            // must be rootScope. get type from interpreter.
+            let value = interpreter.getScope().properties[arg.name];
+            // must be rootScope - get type from interpreter.
+            // or FunctionExpression - just pass through.
+            let type = (value) ? value.type : 'code';
             displayTokens[i] = {
               value: arg.name,
-              type: interpreter.getScope().properties[arg.name].type,
+              type,
             };
           }
         } else {
@@ -80,7 +86,7 @@ function StringTokenizer() {
         // BinaryExpressions and more edge cases...just get the code
         // and the interpreter should provide an interpolated
         // replacement for this on the update pass.
-        //console.log('just generating code for edge case of ' + arg.type + ' types');
+        // console.log('just generating code for edge case of ' + arg.type + ' types');
         displayTokens[i] = {
           value: astTools.createCode(arg),
           type: 'code',
@@ -94,10 +100,10 @@ function StringTokenizer() {
     return displayTokens;
   }
 
-  function joinAndFormatDisplayTokens(tokens) {
+  function joinAndFormatDisplayTokens(tokens, recursion) {
     let newArgs = tokens.slice();
     let funcName = newArgs.shift();
-    return formatSingleToken(funcName) + '(' + newArgs.map((arg) => {
+    return formatSingleToken(funcName, recursion) + '(' + newArgs.map((arg) => {
       if (Array.isArray(arg)) {
         return joinAndFormatDisplayTokens(arg);
       }
@@ -105,27 +111,32 @@ function StringTokenizer() {
     }).join(', ') + ')';
   }
 
-  function formatSingleToken(token) {
+  function formatSingleToken(token, recursion) {
     switch (token.type) {
       case 'undefined':
       case 'number':
+      case 'code':
         return token.value;
       case 'string':
         return `"${token.value}"`;
       case 'object':
         return `{${token.value}}`;
       case 'function':
-        return formatFunctionName(token);
+        return formatFunctionName(token, recursion);
       default:
         console.error('unknown token type encountered: ' + token.type);
     }
   }
 
-  function formatFunctionName(token) {
+  function formatFunctionName(token, recursion) {
     // don't show the body of the function, for brevity
-    return (token.value) ?
-      `<i>${token.value}</i> ` :
-      `<i>function</i> `;
+     let preString = (recursion) ? '<i>(r)' : '<i>';
+
+let functionName = 
+     (token.value) ?
+      `${preString} ${token.value}</i> ` :
+      `${preString} anonymous</i> `;
+    return functionName;
   }
 
   return {

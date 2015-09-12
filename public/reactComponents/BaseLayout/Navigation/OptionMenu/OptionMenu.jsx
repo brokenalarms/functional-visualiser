@@ -2,7 +2,7 @@ import React from 'react';
 
 import {IconButton, IconMenu, MenuItem, Checkbox, List, Toggle, Slider} from 'material-ui';
 import SequencerStore from '../../../../modules/stores/SequencerStore.js';
-import Sequencer from '../../../../modules/Sequencer/Sequencer.js';
+import Sequencer from '../../../../modules/d3DynamicVisualizer/Sequencer/Sequencer.js';
 import RefreshStore from '../../../../modules/stores/RefreshStore.js';
 
 class OptionMenu extends React.Component {

@@ -1,4 +1,4 @@
-import SequencerStore from '../stores/SequencerStore.js'
+import SequencerStore from '../stores/SequencerStore.js';
 
 let options = {
   rootPositionFixed: false,
@@ -260,11 +260,11 @@ function update() {
   });
 
   function shrinkAndGrowText(selection) {
-    selection.transition().duration(transitionDelay / 1 / 3)
+    selection.transition().duration(transitionDelay / 2)
       .attr('opacity', 0)
       .attr('class', 'update-text-shrink')
       .each('end', () => {
-        selection.transition().duration(transitionDelay / 2 / 3)
+        selection.transition().duration(transitionDelay / 2)
           .attr('opacity', 1)
           .attr('class', 'unselectable function-text');
       });
