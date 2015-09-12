@@ -69,7 +69,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
 
     if (state) {
       nodeEnterOrExit = (
-        isNodeEntering(state, interpreter) ||
+        isNodeEntering(state, interpreter.stateStack) ||
         isNodeExiting(state, interpreter, maxAllowedReturnNodes)
       );
 
@@ -116,7 +116,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
      nodes have type: root, normal or finished
      nodes additionally have status: neutral, notice, warning, failure or finished 
    */
-  function isNodeEntering(state, interpreter) {
+  function isNodeEntering(state, stateStack) {
     let updateNeeded = false;
 
     function isSupportedFunctionCall(state) {
@@ -132,7 +132,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
 
     // recursively tokenizes functions as arguments:
     // e.g., [name, arg1, arg2, [name, arg1, arg2]].
-    function getInitialDisplayTokens(funcName, nodeArgs, parentNode) {
+    function getInitialDisplayTokens(funcName, nodeArgs, parentNode, stateStack) {
       let displayTokens = [];
       nodeArgs.forEach((arg, i) => {
         if (arg.type === 'Literal') {
@@ -141,31 +141,51 @@ function StateToNodeConverter(resetNodes, resetLinks) {
             type: isNaN(arg.value) ? 'string' : 'number',
           };
         } else if (arg.type === 'CallExpression') {
-          displayTokens[i] = getInitialDisplayTokens(arg.callee.name, arg.arguments, parentNode);
+          displayTokens[i] = getInitialDisplayTokens(arg.callee.name, arg.arguments, parentNode, stateStack);
         } else if (arg.type === 'Identifier') {
-          if (parentNode && parentNode.paramNames) {
-            // interpolate params with passed arguments
-            // at this point. Would have liked to do this
-            // at the update step, but for functions
-            // which return functions this information
-            // needs to be present as soon as the returned function
-            // appears in the visualizer.
-            let enclosingParams = parentNode.paramNames || [];
-            let matchedParamIndex = enclosingParams.indexOf(arg.name);
+          // interpolate paramNames with passed arguments
+          // at this point. Would have liked to do this
+          // at the update step, but for functions
+          // which return functions this information
+          // needs to be present as soon as the returned function
+          // appears in the visualizer.
+          let stackLevel = 1;
+          let callerPassingParams = stateStack[stackLevel].node;
+          // params will only be passed from Program down
+          if (parentNode) {
+            let nodeContainingParams = parentNode;
+            let matchedParamIndex = nodeContainingParams.paramNames.indexOf(arg.name);
+            while (nodeContainingParams.parentNode !== null &&
+              (!(matchedParamIndex > -1) ||
+                callerPassingParams.type === 'CallExpression'
+              )) {
+              // check for nested CallExpressions in return:
+              // will mean that param names don't come from immediate
+              // parent but point above last CallExpression
+              callerPassingParams = stateStack[++stackLevel].node;
+              nodeContainingParams = nodeContainingParams.parentNode;
+              matchedParamIndex = nodeContainingParams.paramNames.indexOf(arg.name);
+            }
             if (matchedParamIndex > -1) {
-              let parentTokens = parentNode.parentNode.displayTokens;
+              let parentTokens = nodeContainingParams.displayTokens;
               displayTokens[i] = parentTokens[matchedParamIndex + 1];
+            } else {
+              // must be rootScope. will get type for 
+              // visual formatting of identifier on update pass.
+              displayTokens[i] = {
+                value: arg.name,
+                type: 'Identifier',
+              };
+
             }
           } else {
-            console.error('should this happen...');
+            console.error('shouldnt happen?');
             debugger;
-            displayTokens[i] = {
-              value: arg.name,
-              type: 'Identifier',
-            };
           }
         } else {
           // BinaryExpressions, MemberExpressions etc...just get the code
+          // and the interpreter will provide a replacement for this
+          // on the update pass.
           displayTokens[i] = {
             value: astTools.createCode(arg),
             type: 'code',
@@ -185,7 +205,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
       let parentNode = last(scopeChain) || null;
 
       // {arg, type} for formatting
-      let displayTokens = getInitialDisplayTokens(calleeName, state.node.arguments, parentNode);
+      let displayTokens = getInitialDisplayTokens(calleeName, state.node.arguments, parentNode, stateStack);
       let recursion = (parentNode && calleeName === parentNode.name);
       let displayName = astTools.joinDisplayTokens(displayTokens);
 
@@ -194,6 +214,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
         displayTokens,
         displayName,
         parentNode,
+        paramNames: [],
         interpreterComputedArgs: [],
         // variablesDeclaredInScope is not populated until the interpreter generates scope
         variablesDeclaredInScope: null,
