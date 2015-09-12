@@ -10,15 +10,10 @@
 // =============================================
 
 import {last} from 'lodash';
-import formatOutput from '../d3DynamicVisualizer/formatOutput.js';
+// import formatOutput from '../d3DynamicVisualizer/formatOutput.js';
 import UpdateHandler from './updateHandler/updateHandler.js';
+import astTools from '../astTools/astTools.js';
 
-/**
- * VisibleFunctionsUpdater - runs three procedures: add, remove and update,
- * analogous to D3, via the action method.
- * Each has a main controlling function which returns true if a Sequencer update is required,
- *  and a number of helper functions which follow each
- */
 
 function StateToNodeConverter(resetNodes, resetLinks) {
 
@@ -49,8 +44,8 @@ function StateToNodeConverter(resetNodes, resetLinks) {
 
   // as we start to return nodes, we pop them off the array
   // and unshift them onto the front. The oldest returning nodes
-  // that can be removed once the maxAllowedReturnNodes limit is exceeded
-  // are therefore those immediately behind the rootNodeIndex.
+  // that can therefore be removed once the maxAllowedReturnNodes
+  // limit is exceeded are those immediately behind the rootNodeIndex.
   let rootNodeIndex = 0;
 
   // this is assigned if returning to a callExpression;
@@ -72,13 +67,16 @@ function StateToNodeConverter(resetNodes, resetLinks) {
     let currentWarning = null;
     state = interpreter.stateStack[0];
 
-    if (state && prevState) {
+    if (state) {
       nodeEnterOrExit = (
         isNodeEntering(state, interpreter) ||
         isNodeExiting(state, interpreter, maxAllowedReturnNodes)
       );
 
+
       let updateNode = last(scopeChain) || null;
+      /*      updateHandler.updateScopeAndParams(state, updateNode);
+       */
       if (!nodeEnterOrExit && updateNode) {
         if (exitingNode) {
           // make sure the returned function is 
@@ -87,7 +85,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
             isFunctionReturnUnassigned(state, updateNode, exitingNode);
         }
         currentNodeUpdated =
-          updateHandler.doesCurrentNodeUpdate(state, updateNode, exitingNode);
+          updateHandler.doesCurrentNodeUpdate(state, updateNode, interpreter);
       }
     }
     if (rootNode) {
@@ -132,20 +130,47 @@ function StateToNodeConverter(resetNodes, resetLinks) {
       );
     }
 
+    // recursively tokenizes functions as arguments:
+    // e.g., [name, arg1, arg2, [name, arg1, arg2]].
+    function getInitialDisplayTokens(funcName, nodeArgs) {
+      let displayArgs = [];
+      nodeArgs.forEach((arg, i) => {
+        if (arg.type === 'Literal') {
+          displayArgs[i] = {
+            value: arg.value.toString(),
+            type: isNaN(arg.value) ? 'string' : 'number',
+          };
+        } else if (arg.type === 'CallExpression') {
+          displayArgs[i] = getInitialDisplayTokens(arg.callee.name, arg.arguments);
+        } else if (arg.type === 'Identifier') {
+          displayArgs[i] = {
+            value: arg.name,
+            type: 'Identifier',
+          };
+        } else {
+          console.error('what is this');
+        }
+      });
+      displayArgs.unshift({
+        value: funcName,
+        type: 'string',
+      });
+      return displayArgs;
+    }
+
     if (isSupportedFunctionCall(state)) {
 
       let calleeName = state.node.callee.name || state.node.callee.id.name;
       let parent = last(scopeChain) || null;
 
-      let displayArgs = formatOutput.getDisplayArgs(state.node, true);
+      // {arg, type} for formatting
+      let displayArgs = getInitialDisplayTokens(calleeName, state.node.arguments);
       let recursion = (parent && calleeName === parent.name);
-      let displayName = formatOutput.displayName(calleeName, displayArgs, recursion);
+      let displayName = astTools.joinDisplayTokens(displayArgs);
 
       let calleeNode = {
         name: calleeName,
-        interpreterArgTypes: [],
         displayArgs,
-        updatedDisplayArgs: [],
         displayName,
         parent,
         // variablesDeclaredInScope is not populated until the interpreter generates scope
@@ -244,10 +269,14 @@ function StateToNodeConverter(resetNodes, resetLinks) {
   }
 
   function exitNode(node) {
+    // TODO - I just changed this return value
     // update parameters with data as it returns from callees
     let index = (state.n_ !== undefined) ? state.n_ : node.argIndex;
+    // IF IT'S NOT A PRIMITIVE, I JUST NEED TO KEEP WHAT IT WAS
+    // THEREFORE MATCH NODE IDENTIFIER VIA PARAMS, NOT NODE.ARGINDEX
     let originalIdentifier = node.displayArgs[index];
-    let returnValue = (state.value.isPrimitive) ? state.value.data : formatOutput.interpreterIdentifier(state.value, originalIdentifier);
+    // let returnValue = (state.value.isPrimitive) ? state.value.data : formatOutput.interpreterIdentifier(state.value, originalIdentifier);
+    let returnValue = (state.value.isPrimitive) ? state.value.data : originalIdentifier;
     node.displayName = `return (${returnValue})`;
     node.updateText = true;
 

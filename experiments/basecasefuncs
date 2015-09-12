@@ -1,0 +1,18 @@
+function foo(param) {
+  var blah = 'hi';
+  return param
+}
+foo('argument');
+
+
+function foo(fooParam, passedBarFunc) {
+  var blah = 'hi';
+  return param
+}
+
+function bar(barParam){
+    return barParam;
+}
+
+
+foo('argument', bar('thisIsLiteral'));

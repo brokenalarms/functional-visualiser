@@ -19,6 +19,17 @@ function astTools() {
     });
   }
 
+  function joinDisplayTokens(args) {
+    let newArgs = args.slice();
+    let funcName = newArgs.shift().value;
+    return funcName + '(' + newArgs.map((arg) => {
+      if (Array.isArray(arg)) {
+        return joinDisplayTokens(arg);
+      }
+      return arg.value;
+    }).join(', ') + ')';
+  }
+
   function createCode(ast, options) {
     return escodegen.generate(ast, options);
   }
@@ -161,7 +172,7 @@ function astTools() {
     getArgs, createsNewFunctionScope,
     addScopeInfo, getFirstActionSteps, typeIsSupported,
     getCodeRange, getCalleeName, getEndMemberExpression,
-    getRunCodeString,
+    getRunCodeString, joinDisplayTokens,
   };
 }
 

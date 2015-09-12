@@ -21,7 +21,7 @@ function Sequencer() {
 
   let interpreter;
   let astWithLocations;
-  let updateNodes;
+  let stateToNodeConverter;
 
   function displaySnackBarError(action, message) {
     SequencerStore.setStepOutput({
@@ -87,14 +87,14 @@ function Sequencer() {
     let doneAction = false;
     let warning = null;
     if (CodeStatusStore.isCodeRunning()) {
-      [doneAction, warning] = updateNodes.action(interpreter, maxAllowedReturnNodes);
+      [doneAction, warning] = stateToNodeConverter.action(interpreter, maxAllowedReturnNodes);
 
       if (doneAction) {
         console.log('this step actioned:');
       }
-      // console.log(cloneDeep(interpreter.stateStack[0]));
+      console.log(cloneDeep(interpreter.stateStack[0]));
       if (doneAction) {
-        let representedNode = updateNodes.getRepresentedNode();
+        let representedNode = stateToNodeConverter.getRepresentedNode();
         SequencerStore.setStepOutput({
           execCodeBlock: astTools.createCode(representedNode),
           range: astTools.getCodeRange(representedNode),
@@ -118,7 +118,7 @@ function Sequencer() {
     function gotoNextStep() {
       try {
         if (interpreter.step()) {
-          updateNodes.nextStep();
+          stateToNodeConverter.nextStep();
           if (doneAction && singleStep) {
             CodeStatusStore.setCodeRunning(false);
           } else {
