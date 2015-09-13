@@ -1498,6 +1498,25 @@ function astTools() {
     return escodegen.generate(ast, options);
   }
 
+  // check whether function is an
+  // immediately invokable function expression (IIFE)
+  // and if not, wrap it with one for the interpreter.
+  // The wrapping function is hidden, unless the code
+  // is imported to the editor via the pre-written examples.
+  function getRunCodeString(codeString) {
+    var runFuncString = codeString;
+    if (codeString.slice(0, 1) !== '(' || !(codeString.slice(-1) === ')' || codeString.slice(-2) === ');' || codeString.slice(-4) === '());')) {
+      if (!(codeString.slice(-1) === '}' || codeString.slice(-2) === '};')) {
+        // allow for commands typed in directly without enclosing function
+        runFuncString = '(function Program() { ' + codeString + ' })();';
+      } else {
+        // parse typed function as IIFE for interpreter
+        runFuncString = '(' + codeString + ')();';
+      }
+    }
+    return runFuncString;
+  }
+
   function getId(node) {
     switch (node.type) {
       case 'Literal':
@@ -1608,7 +1627,7 @@ function astTools() {
   }
 
   return {
-    astTools: astTools, createAst: createAst, createCode: createCode, getId: getId,
+    astTools: astTools, createAst: createAst, createCode: createCode, getRunCodeString: getRunCodeString, getId: getId,
     getArgs: getArgs, createsNewFunctionScope: createsNewFunctionScope,
     addScopeInfo: addScopeInfo, getFirstActionSteps: getFirstActionSteps, typeIsSupported: typeIsSupported,
     getCodeRange: getCodeRange, getCalleeName: getCalleeName, getEndMemberExpression: getEndMemberExpression
@@ -1709,25 +1728,6 @@ function Sequencer() {
     _storesSequencerStoreJs2['default'].sendUpdate();
   }
 
-  // check whether function is an
-  // immediately invokable function expression (IIFE)
-  // and if not, wrap it with one for the interpreter.
-  // The wrapping function is hidden, unless the code
-  // is imported to the editor via the pre-written examples.
-  function getRunCodeString(codeString) {
-    var runFuncString = codeString;
-    if (codeString.slice(0, 1) !== '(' || !(codeString.slice(-1) === ')' || codeString.slice(-2) === ');' || codeString.slice(-4) === '());')) {
-      if (!(codeString.slice(-1) === '}' || codeString.slice(-2) === '};')) {
-        // allow for commands typed in directly without enclosing function
-        runFuncString = '(function Program() { ' + codeString + ' })();';
-      } else {
-        // parse typed function as IIFE for interpreter
-        runFuncString = '(' + codeString + ')();';
-      }
-    }
-    return runFuncString;
-  }
-
   /* run once on code parse from editor.
      State can then be reset without re-parsing.
      Parsing will select user-written code once
@@ -1735,7 +1735,7 @@ function Sequencer() {
   function parseCodeAsIIFE() {
 
     var codeString = _storesCodeStoreJs2['default'].get();
-    var runCodeString = getRunCodeString(codeString);
+    var runCodeString = _astToolsAstToolsJs2['default'].getRunCodeString(codeString);
     try {
       astWithLocations = _astToolsAstToolsJs2['default'].createAst(runCodeString, true);
     } catch (e) {
@@ -4579,7 +4579,7 @@ function SequencerStore() {
     limitReturnedNodes: true,
     maxAllowedReturnNodes: 0.5,
     maxAllowedReturnNodesFactor: 40,
-    sequencerDelay: 0.01, // * 1000 = ms, this is sliderValue
+    sequencerDelay: 0.3, // * 1000 = ms, this is sliderValue
     minSequencerDelay: 0.01,
     delayFactor: 3000,
     singleStep: false
@@ -8662,6 +8662,7 @@ var Navigation = (function (_React$Component) {
     this.componentDidMount = function () {
       _modulesStoresNavigationStoreJs2['default'].subscribeListener(_this.onNavigationStoreChange);
       _modulesStoresSequencerStoreJs2['default'].subscribeListener(_this.onSequencerStoreUpdate);
+      _this.setIsNavBarShowing(true);
     };
 
     this.componentWillUnmount = function () {
@@ -8867,7 +8868,7 @@ var OptionMenu = (function (_React$Component) {
     this.render = function () {
       return _react2['default'].createElement(_materialUi.IconMenu, {
         closeOnItemTouchTap: false,
-        iconButtonElement: _react2['default'].createElement(_materialUi.IconButton, { style: { zIndex: '2', color: '#EBF6F5' }, tooltip: 'Options' }, 'Options', _react2['default'].createElement('i', { className: 'material-icons' }, 'expand_more')) }, _react2['default'].createElement(_materialUi.List, { subheader: 'Visualization type', subheaderStyle: { color: 'darkgray', width: '250px' } }, _react2['default'].createElement(_materialUi.MenuItem, { index: 0, style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }, _react2['default'].createElement('div', null, 'static (POC only)'), _react2['default'].createElement(_materialUi.Toggle, {
+        iconButtonElement: _react2['default'].createElement(_materialUi.IconButton, { style: { zIndex: '2', color: '#EBF6F5' }, tooltip: 'Options' }, 'Options', _react2['default'].createElement('i', { className: 'material-icons' }, 'expand_more')) }, _react2['default'].createElement(_materialUi.List, { subheader: 'Visualization type', subheaderStyle: { color: 'darkgray', width: '250px' } }, _react2['default'].createElement(_materialUi.MenuItem, { index: 0, style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }, _react2['default'].createElement('div', null, 'static (POC)'), _react2['default'].createElement(_materialUi.Toggle, {
         ref: 'toggleDynamic',
         onToggle: _this.setVisualizationType,
         name: 'toggleDynamic',

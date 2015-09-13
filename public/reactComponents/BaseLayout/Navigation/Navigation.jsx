@@ -35,6 +35,7 @@ componentDidUpdate = () => {
 componentDidMount = () => {
   NavigationStore.subscribeListener(this.onNavigationStoreChange);
   SequencerStore.subscribeListener(this.onSequencerStoreUpdate);
+  this.setIsNavBarShowing(true);
 }
 
 componentWillUnmount = () => {

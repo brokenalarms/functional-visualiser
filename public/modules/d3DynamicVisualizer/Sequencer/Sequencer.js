@@ -34,26 +34,6 @@ function Sequencer() {
     SequencerStore.sendUpdate();
   }
 
-    // check whether function is an 
-    // immediately invokable function expression (IIFE)
-    // and if not, wrap it with one for the interpreter.
-    // The wrapping function is hidden, unless the code
-    // is imported to the editor via the pre-written examples.
-  function getRunCodeString(codeString) {
-    let runFuncString = codeString;
-    if ((codeString.slice(0, 1) !== '(') ||
-      !(codeString.slice(-1) === ')' || codeString.slice(-2) === ');' || codeString.slice(-4) === '());')) {
-      if (!(codeString.slice(-1) === '}' || codeString.slice(-2) === '};')) {
-        // allow for commands typed in directly without enclosing function
-        runFuncString = `(function Program() { ${codeString} })();`;
-      } else {
-        // parse typed function as IIFE for interpreter
-        runFuncString = '(' + codeString + ')();';
-      }
-    }
-    return runFuncString;
-  }
-
   /* run once on code parse from editor.
      State can then be reset without re-parsing.
      Parsing will select user-written code once
@@ -61,7 +41,7 @@ function Sequencer() {
   function parseCodeAsIIFE() {
 
     let codeString = (CodeStore.get());
-    let runCodeString = getRunCodeString(codeString);
+    let runCodeString = astTools.getRunCodeString(codeString);
     try {
       astWithLocations = astTools.createAst(runCodeString, true);
     } catch (e) {
