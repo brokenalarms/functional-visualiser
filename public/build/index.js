@@ -8881,7 +8881,7 @@ var OptionMenu = (function (_React$Component) {
         onChange: _this.setDelayValue,
         name: 'sequencerDelay',
         min: _this.state.minSequencerDelay,
-        defaultValue: _this.state.sequencerDelay,
+        defaultValue: _modulesStoresSequencerStoreJs2['default'].getOptions().sequencerDelay,
         value: _this.state.sequencerDelay,
         max: 1 })), _react2['default'].createElement(_materialUi.Checkbox, { style: { padding: '0 24px 0 24px' },
         name: 'delayVisualizer',
@@ -8902,7 +8902,7 @@ var OptionMenu = (function (_React$Component) {
         onChange: _this.setMaxAllowedReturnNodes,
         name: 'maxAllowedReturnNodesSlider',
         min: 0,
-        defaultValue: _this.state.maxAllowedReturnNodes,
+        defaultValue: _modulesStoresSequencerStoreJs2['default'].getOptions().maxAllowedReturnNodes,
         value: _this.state.maxAllowedReturnNodes,
         max: 1 }))));
     };

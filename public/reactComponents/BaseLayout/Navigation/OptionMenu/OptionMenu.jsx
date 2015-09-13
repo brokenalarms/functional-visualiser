@@ -104,7 +104,7 @@ class OptionMenu extends React.Component {
           onChange={this.setDelayValue}
           name="sequencerDelay"
           min={this.state.minSequencerDelay}
-          defaultValue={this.state.sequencerDelay}
+          defaultValue={SequencerStore.getOptions().sequencerDelay}
           value={this.state.sequencerDelay}
           max={1}/>
         </MenuItem>
@@ -132,7 +132,7 @@ class OptionMenu extends React.Component {
           onChange={this.setMaxAllowedReturnNodes}
           name="maxAllowedReturnNodesSlider"
           min={0}
-          defaultValue={this.state.maxAllowedReturnNodes}
+          defaultValue={SequencerStore.getOptions().maxAllowedReturnNodes}
           value={this.state.maxAllowedReturnNodes}
           max={1}/>
         </MenuItem>
