@@ -83,7 +83,7 @@ class OptionMenu extends React.Component {
       </IconButton>}>
         <List subheader="Visualization type" subheaderStyle={{color: 'darkgray', width: '250px'}}>
         <MenuItem index={0} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-          <div>static (POC only)</div>
+          <div>static (POC)</div>
           <Toggle
             ref="toggleDynamic"
             onToggle={this.setVisualizationType}
