@@ -8812,10 +8812,12 @@ var OptionMenu = (function (_React$Component) {
 
     this.componentDidMount = function () {
       _modulesStoresSequencerStoreJs2['default'].subscribeOptionListener(_this.onSequencerStoreOptionChange);
+      _modulesStoresRefreshStoreJs2['default'].subscribeListener(_this.onRefreshStoreOptionChange);
     };
 
     this.componentWillUnmount = function () {
       _modulesStoresSequencerStoreJs2['default'].unsubscribeOptionListener(_this.onSequencerStoreOptionChange);
+      _modulesStoresRefreshStoreJs2['default'].unsubscribeListener(_this.onRefreshStoreOptionChange);
     };
 
     this.setStaggerEditorAndVisualizer = function (event, checked) {
@@ -8847,9 +8849,6 @@ var OptionMenu = (function (_React$Component) {
         showDynamic: !checked
       });
       _modulesD3DynamicVisualizerSequencerSequencerJs2['default'].restart();
-      _this.setState({
-        showDynamic: !checked
-      });
     };
 
     this.onSequencerStoreOptionChange = function () {
@@ -8857,7 +8856,6 @@ var OptionMenu = (function (_React$Component) {
         limitReturnedNodes: _modulesStoresSequencerStoreJs2['default'].getOptions().limitReturnedNodes,
         maxAllowedReturnNodes: _modulesStoresSequencerStoreJs2['default'].getOptions().maxAllowedReturnNodes,
         maxAllowedReturnNodesFactor: _modulesStoresSequencerStoreJs2['default'].getOptions().maxAllowedReturnNodesFactor,
-        showDynamic: _modulesStoresRefreshStoreJs2['default'].getOptions().showDynamic,
         staggerEditorAndVisualizer: _modulesStoresSequencerStoreJs2['default'].getOptions().staggerEditorAndVisualizer,
         sequencerDelay: _modulesStoresSequencerStoreJs2['default'].getOptions().sequencerDelay,
         minSequencerDelay: _modulesStoresSequencerStoreJs2['default'].getOptions().minSequencerDelay,
@@ -8865,15 +8863,21 @@ var OptionMenu = (function (_React$Component) {
       });
     };
 
+    this.onRefreshStoreOptionChange = function () {
+      _this.setState({
+        showDynamic: _modulesStoresRefreshStoreJs2['default'].getOptions().showDynamic
+      });
+    };
+
     this.render = function () {
       return _react2['default'].createElement(_materialUi.IconMenu, {
         closeOnItemTouchTap: false,
-        iconButtonElement: _react2['default'].createElement(_materialUi.IconButton, { style: { zIndex: '2', color: '#EBF6F5' }, tooltip: 'Options' }, 'Options', _react2['default'].createElement('i', { className: 'material-icons' }, 'expand_more')) }, _react2['default'].createElement(_materialUi.List, { subheader: 'Visualization type', subheaderStyle: { color: 'darkgray', width: '250px' } }, _react2['default'].createElement(_materialUi.MenuItem, { index: 0, style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }, _react2['default'].createElement('div', null, 'static (POC)'), _react2['default'].createElement(_materialUi.Toggle, {
+        iconButtonElement: _react2['default'].createElement(_materialUi.IconButton, { style: { zIndex: '2', color: '#EBF6F5' }, tooltip: 'Options' }, 'Options', _react2['default'].createElement('i', { className: 'material-icons' }, 'expand_more')) }, _react2['default'].createElement(_materialUi.List, { subheader: 'Visualization type', subheaderStyle: { color: 'darkgray', width: '250px' } }, _react2['default'].createElement(_materialUi.MenuItem, { disabled: true, index: 0, style: { color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }, _react2['default'].createElement('div', { style: { color: 'white' } }, 'static (POC)'), _react2['default'].createElement(_materialUi.Toggle, {
         ref: 'toggleDynamic',
         onToggle: _this.setVisualizationType,
         name: 'toggleDynamic',
         checked: _this.state.showDynamic,
-        style: { width: 'auto' } }), _react2['default'].createElement('div', null, 'dynamic'))), _react2['default'].createElement(_materialUi.List, { subheader: 'Dynamic visualization options', subheaderStyle: { color: 'darkgray' } }, _react2['default'].createElement(_materialUi.MenuItem, { index: 1 }, _react2['default'].createElement('div', null, 'Step delay: ', Math.round(_this.state.sequencerDelay * _this.state.delayFactor) + ' ms'), _react2['default'].createElement(_materialUi.Slider, { style: { margin: '0 12px 24px 12px', touchAction: 'none', cursor: 'pointer' },
+        style: { width: 'auto' } }), _react2['default'].createElement('div', { style: { color: 'white' } }, 'dynamic'))), _react2['default'].createElement(_materialUi.List, { subheader: 'Dynamic visualization options', subheaderStyle: { color: 'darkgray' } }, _react2['default'].createElement(_materialUi.MenuItem, { index: 1, disabled: true }, _react2['default'].createElement('div', { style: { color: 'white' } }, 'Step delay: ', Math.round(_this.state.sequencerDelay * _this.state.delayFactor) + ' ms'), _react2['default'].createElement(_materialUi.Slider, { style: { margin: '0 12px 24px 12px', touchAction: 'none', cursor: 'pointer' },
         onChange: _this.setDelayValue,
         name: 'sequencerDelay',
         min: _this.state.minSequencerDelay,
@@ -8893,7 +8897,7 @@ var OptionMenu = (function (_React$Component) {
         labelStyle: { width: 'calc(100% - 100px)' },
         defaultChecked: _this.state.limitReturnedNodes,
         checked: _this.state.limitReturnedNodes,
-        onCheck: _this.setlimitReturnedNodes }), _react2['default'].createElement(_materialUi.MenuItem, { index: 2 }, _react2['default'].createElement('div', { style: !_this.state.limitReturnedNodes ? { 'color': 'darkgray' } : {} }, 'Max visible: ', _this.state.limitReturnedNodes ? Math.round(_this.state.maxAllowedReturnNodes * _this.state.maxAllowedReturnNodesFactor) : 'unlimited'), _react2['default'].createElement(_materialUi.Slider, { style: { margin: '0 12px 24px 12px', touchAction: 'none', cursor: 'pointer' },
+        onCheck: _this.setlimitReturnedNodes }), _react2['default'].createElement(_materialUi.MenuItem, { index: 2, disabled: true }, _react2['default'].createElement('div', { style: !_this.state.limitReturnedNodes ? { 'color': 'darkgray' } : { 'color': 'white' } }, 'Max visible: ', _this.state.limitReturnedNodes ? Math.round(_this.state.maxAllowedReturnNodes * _this.state.maxAllowedReturnNodesFactor) : 'unlimited'), _react2['default'].createElement(_materialUi.Slider, { style: { margin: '0 12px 24px 12px', touchAction: 'none', cursor: 'pointer' },
         disabled: !_this.state.limitReturnedNodes,
         onChange: _this.setMaxAllowedReturnNodes,
         name: 'maxAllowedReturnNodesSlider',
