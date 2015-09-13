@@ -19,8 +19,8 @@ gen
 node_modules
 
 ### build files
-public/build/*
-*.map
+###/public/build/*
+### *.map
 
 ### other
 .DS_Store
