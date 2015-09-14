@@ -1,7 +1,6 @@
 import React from 'react';
 import {Snackbar} from 'material-ui';
 import SequencerStore from '../../../../modules/stores/SequencerStore.js';
-import CodeStatusStore from '../../../../modules/stores/CodeStatusStore.js';
 
 class ErrorPopup extends React.Component {
 
@@ -14,7 +13,7 @@ class ErrorPopup extends React.Component {
 
   componentDidUpdate() {
     if (this.state.warning &&
-      !(SequencerStore.getOptions().stopOnNotices && CodeStatusStore.isCodeRunning())) {
+      !(SequencerStore.getOptions().showDynamic && SequencerStore.getOptions().stopOnNotices)) {
       this.refs.snackbar.show();
     } else {
       this.refs.snackbar.dismiss();

@@ -8463,10 +8463,6 @@ var _modulesStoresSequencerStoreJs = require('../../../../modules/stores/Sequenc
 
 var _modulesStoresSequencerStoreJs2 = _interopRequireDefault(_modulesStoresSequencerStoreJs);
 
-var _modulesStoresCodeStatusStoreJs = require('../../../../modules/stores/CodeStatusStore.js');
-
-var _modulesStoresCodeStatusStoreJs2 = _interopRequireDefault(_modulesStoresCodeStatusStoreJs);
-
 var ErrorPopup = (function (_React$Component) {
   _inherits(ErrorPopup, _React$Component);
 
@@ -8513,7 +8509,7 @@ var ErrorPopup = (function (_React$Component) {
   _createClass(ErrorPopup, [{
     key: 'componentDidUpdate',
     value: function componentDidUpdate() {
-      if (this.state.warning && !(_modulesStoresSequencerStoreJs2['default'].getOptions().stopOnNotices && _modulesStoresCodeStatusStoreJs2['default'].isCodeRunning())) {
+      if (this.state.warning && !(_modulesStoresSequencerStoreJs2['default'].getOptions().showDynamic && _modulesStoresSequencerStoreJs2['default'].getOptions().stopOnNotices)) {
         this.refs.snackbar.show();
       } else {
         this.refs.snackbar.dismiss();
@@ -8528,7 +8524,7 @@ var ErrorPopup = (function (_React$Component) {
 exports['default'] = ErrorPopup;
 module.exports = exports['default'];
 
-},{"../../../../modules/stores/CodeStatusStore.js":"C:\\Users\\pitch\\functional-visualiser\\public\\modules\\stores\\CodeStatusStore.js","../../../../modules/stores/SequencerStore.js":"C:\\Users\\pitch\\functional-visualiser\\public\\modules\\stores\\SequencerStore.js","material-ui":"material-ui","react":"react"}],"C:\\Users\\pitch\\functional-visualiser\\public\\reactComponents\\BaseLayout\\Navigation\\MarkdownModal\\MarkdownModal.jsx":[function(require,module,exports){
+},{"../../../../modules/stores/SequencerStore.js":"C:\\Users\\pitch\\functional-visualiser\\public\\modules\\stores\\SequencerStore.js","material-ui":"material-ui","react":"react"}],"C:\\Users\\pitch\\functional-visualiser\\public\\reactComponents\\BaseLayout\\Navigation\\MarkdownModal\\MarkdownModal.jsx":[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
