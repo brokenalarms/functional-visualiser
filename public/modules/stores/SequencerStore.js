@@ -24,7 +24,7 @@ function SequencerStore() {
     limitReturnedNodes: true,
     maxAllowedReturnNodes: 0.5,
     maxAllowedReturnNodesFactor: 40,
-    sequencerDelay: 0.75, // * 1000 = ms, this is sliderValue
+    sequencerDelay: 0.6, // * 1000 = ms, this is sliderValue
     minSequencerDelay: 0.01,
     delayFactor: 2000,
     stopOnNotices: true,

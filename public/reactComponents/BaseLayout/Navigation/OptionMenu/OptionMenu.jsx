@@ -52,7 +52,7 @@ class OptionMenu extends React.Component {
     });
   }
 
-    setStopOnNotices = () => {
+  setStopOnNotices = () => {
     let flag = !this.state.stopOnNotices;
     SequencerStore.setOptions({
       stopOnNotices: flag,
@@ -119,7 +119,7 @@ class OptionMenu extends React.Component {
         closeOnItemTouchTap={false}
         iconButtonElement={<IconButton style={{zIndex: '2', color: '#EBF6F5'}} tooltip="Options">Options<i className="material-icons">expand_more</i>
       </IconButton>}>
-        <List subheader="Visualization type" subheaderStyle={{color: 'darkgray', width: '270px'}}>
+        <List subheader="Visualization type" subheaderStyle={{color: 'darkgray', width: '280px'}}>
         <MenuItem disabled={true} index={0} style={{color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
           <div style={{color: 'white'}}>static (POC)</div>
           <Toggle 
@@ -132,7 +132,8 @@ class OptionMenu extends React.Component {
       </MenuItem>
       </List>
       <List subheader="Dynamic visualization options" subheaderStyle={{color: 'darkgray'}}>
-        <Checkbox style={{padding: '0 24px 0 24px', margin: '12px 0'}}
+        <Checkbox
+        style={{padding: '0 24px 0 24px', margin: '12px 0'}}
           name="showLabelsCheckbox"
           ref="showLabelsCheckbox"
           label="Show function labels"
@@ -140,7 +141,8 @@ class OptionMenu extends React.Component {
           labelStyle={{width: 'calc(100% - 100px)'}}
           checked={this.state.showFunctionLabels}
           onCheck={this.setShowFunctionLabels}/>
-        <Checkbox style={{padding: '0 24px 0 24px', margin: '12px 0'}}
+        <Checkbox
+        style={{padding: '0 24px 0 24px', margin: '12px 0'}}
           name="stopForNoticesCheckbox"
           ref="stopForNoticesCheckbox"
           label="Stop on warnings"
@@ -148,7 +150,7 @@ class OptionMenu extends React.Component {
           labelStyle={{width: 'calc(100% - 100px)'}}
           checked={this.state.stopOnNotices}
           onCheck={this.setStopOnNotices}/>
-        <Checkbox style={{padding: '0 24px 0 24px', marginTop: '24px'}}
+        <Checkbox style={{padding: '0 24px 0 24px', margin: '12px 0'}}
           name="delayVisualizerCheckbox"
           ref="delayVisualizerCheckbox"
           label="Delay visualizer steps"
@@ -156,7 +158,7 @@ class OptionMenu extends React.Component {
           labelStyle={{width: 'calc(100% - 100px)'}}
           checked={this.state.delayVisualizer}
           onCheck={this.setDelayVisualizer}/>
-        <MenuItem index={1} disabled={true}>
+        <MenuItem index={1} disabled={true} style={{lineHeight: '24px'}}>
           <div style={{paddingLeft: '24px', 'color': this.state.delayVisualizer ? 'white' : 'darkgray'}}>Delay: {Math.round(this.state.sequencerDelay * this.state.delayFactor) + ' ms'}</div>
         <Slider style={{margin: '0 12px 24px 12px', touchAction: 'none', cursor: 'pointer'}}
           disabled={!this.state.delayVisualizer}
@@ -166,7 +168,7 @@ class OptionMenu extends React.Component {
           value={this.state.sequencerDelay}
           max={1}/>
         </MenuItem>
-        <Checkbox style={{padding: '0 24px 0 24px', marginTop: '24px'}}
+        <Checkbox style={{padding: '0 24px 0 24px', margin: '12px 0'}}
           name="limitReturnedNodesCheckbox"
           disabled={this.state.codeRunning}
           label={('Limit visible returned functions')}
@@ -174,7 +176,7 @@ class OptionMenu extends React.Component {
           labelStyle={{width: 'calc(100% - 100px)'}}
           checked={this.state.limitReturnedNodes}
           onCheck={this.setLimitReturnedNodes} />
-        <MenuItem index={2} disabled={true}>
+        <MenuItem index={2} disabled={true} style={{lineHeight: '24px'}}>
         <div style={{paddingLeft: '24px', 'color': (this.state.limitReturnedNodes && !this.state.codeRunning) ? 'white' : 'darkgray'}}>Visible: {((this.state.limitReturnedNodes) ? 
         (Math.round(this.state.maxAllowedReturnNodes * this.state.maxAllowedReturnNodesFactor)) : 'unlimited')}</div>
         <Slider style={{margin: '0 12px 24px 12px', touchAction: 'none', cursor: 'pointer'}}
