@@ -163,7 +163,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
       if (nodes.length === 0) {
         enterNode.type = 'root';
         enterNode.errorCount = 0;
-        enterNode.status = 'success';
+        enterNode.status = ''; //d3 manually assigns color to rootNode
         rootNode = enterNode;
       }
 
@@ -206,7 +206,6 @@ function StateToNodeConverter(resetNodes, resetLinks) {
         // we're at the root scope, there can't be a node exiting
         // unless the program is finishing
         exitingNode = null;
-        rootNode.status = 'finished';
       }
 
       if (rootNodeIndex > maxAllowedReturnNodes) {
@@ -392,10 +391,15 @@ function StateToNodeConverter(resetNodes, resetLinks) {
     }
   }
 
+  function setFinished() {
+    rootNode.status = 'finished';
+  }
+
   return {
     nextStep: setPrevState,
     action,
     getRepresentedNode,
+    setFinished,
   };
 }
 

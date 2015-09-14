@@ -129,6 +129,7 @@ function Sequencer() {
           }
         } else {
           CodeStatusStore.setCodeFinished(true);
+          stateToNodeConverter.setFinished();
           SequencerStore.sendUpdate();
         }
       } catch (e) {

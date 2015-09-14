@@ -47,12 +47,6 @@ function WarningHandler() {
         if (node.parent !== null) {
           node.status =
             (node.status !== 'failure') ? warning.status : node.status;
-        } else {
-          // d3 handles the coloring of rootNode directly
-          // in proportion to amount of errors -
-          // let it take over from 'success' now
-          //  if there is an error affecting it
-          node.status = '';
         }
       }
     });
