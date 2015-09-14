@@ -18,7 +18,7 @@ function StaticCallGraph() {
         message: e.message,
       },
     });
-    SequencerStore.sendUpdate();
+    SequencerStore.sendUpdate(true);
   }
 
   let decTracker = new DeclarationTracker('array');

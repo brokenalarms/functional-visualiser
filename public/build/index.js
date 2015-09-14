@@ -1600,7 +1600,7 @@ function astTools() {
 
   function typeIsSupported(type) {
     if (!(type === 'Identifier' || type === 'FunctionExpression')) {
-      throw new Error('Only Identifier variable types supported for static POC.');
+      throw new Error('Only Identifier variable types supported for static proof of concept.');
     }
     return true;
   }
@@ -3355,7 +3355,7 @@ function StaticCallGraph() {
         message: e.message
       }
     });
-    _storesSequencerStoreJs2['default'].sendUpdate();
+    _storesSequencerStoreJs2['default'].sendUpdate(true);
   }
 
   var decTracker = new _DeclarationTrackerJs2['default']('array');
