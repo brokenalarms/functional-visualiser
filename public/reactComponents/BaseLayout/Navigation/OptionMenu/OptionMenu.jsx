@@ -129,7 +129,7 @@ class OptionMenu extends React.Component {
         iconButtonElement={<IconButton style={{zIndex: '2', color: '#EBF6F5'}} tooltip="Options">Options<i className="material-icons">expand_more</i>
       </IconButton>}>
         <List subheader="Visualization type" subheaderStyle={{color: 'darkgray', width: '280px'}}>
-        <MenuItem disabled={true} index={0} style={{color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+        <MenuItem disabled={true} index={0} className="legacy-flex" style={{color: 'white', display: 'flex', justifyContent: 'space-around', alignItems: 'center'}}>
           <div style={{color: 'white'}}>static (POC)</div>
           <Toggle 
             ref="toggleDynamic"

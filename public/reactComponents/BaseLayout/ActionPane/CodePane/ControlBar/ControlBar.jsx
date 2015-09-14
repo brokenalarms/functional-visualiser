@@ -64,7 +64,7 @@ class ControlBar extends React.Component {
   render = () => {
     return (
       <Toolbar style={{backgroundColor: 'lightgrey', display: 'flex', 'alignItems': 'center', justifyContent: 'space-around'}}>
-        <ToolbarGroup style={{display: 'flex', 'flexGrow': 2, justifyContent: 'space-around'}}>
+        <ToolbarGroup className="legacy-flex" style={{display: 'flex', 'flexGrow': 2, justifyContent: 'space-around'}}>
           <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || this.props.codeRunning || this.props.codeFinished} onClick={this.onPlay} style={{'zIndex': 5}} tooltip="Play or resume dynamic execution"><i className="material-icons">play_arrow</i></IconButton>
           <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || !this.props.codeRunning || this.props.codeFinished} onClick={this.onPause} style={{'zIndex': 5}} tooltip="Pause dynamic execution"><i className="material-icons">pause</i></IconButton>
           <IconButton disabled={!this.props.showDynamic || !this.props.codeParsed || this.props.codeRunning || this.props.codeFinished} onClick={this.onAdvance} style={{'zIndex': 5}} tooltip="Advance one step"><i className="material-icons">skip_next</i></IconButton>
