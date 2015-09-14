@@ -70,7 +70,6 @@ var buildJs = function(watch) {
     'estraverse',
     'escodegen',
     'brace',
-    'rc-slider',
     ];
 
   var vendorBundler = browserify({
@@ -93,6 +92,7 @@ var buildJs = function(watch) {
     })
     .transform(babelify.configure({
       stage: 0,
+      plugins: ["object-assign"],
     }))
   libs.forEach(function(lib) {
     bundler.external(lib);

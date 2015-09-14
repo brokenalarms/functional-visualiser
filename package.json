@@ -44,6 +44,7 @@
   "devDependencies": {
     "acorn": "^2.1.0",
     "babel-eslint": "^4.0.5",
+    "babel-plugin-object-assign": "^1.2.1",
     "babelify": "^6.1.2",
     "brace": "^0.5.1",
     "browser-refresh": "^1.4.6",
