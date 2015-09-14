@@ -4,18 +4,35 @@ import Markdown from 'react-remarkable';
 import NavigationStore from '../../../../modules/stores/NavigationStore.js';
 
 
-class MarkdownModal {
+class MarkdownModal extends React.Component {
 
-  static propTypes = {
-    selectedMarkdown: React.PropTypes.object,
+  constructor(props) {
+    super(props);
+    this.state = {
+      selectedMarkdown: null,
+    };
   }
 
-  shouldComponentUpdate(nextProps) {
-    return nextProps.selectedMarkdown;
+  componentDidMount = () => {
+    NavigationStore.subscribeListener(this.onNavigationStoreChange);
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    return nextState.selectedMarkdown;
   }
 
   componentDidUpdate = () => {
     this.refs.dialog.show();
+  }
+
+  componentWillUnmount = () => {
+    NavigationStore.unsubscribeListener(this.onNavigationStoreChange);
+  }
+
+  onNavigationStoreChange = () => {
+    this.setState({
+      selectedMarkdown: NavigationStore.getSelectedMarkdown(),
+    });
   }
 
   handleDialogClose = (userClickedCloseButton) => {
@@ -29,7 +46,7 @@ class MarkdownModal {
 
   render() {
 
-    if (!this.props.selectedMarkdown) {
+    if (!this.state.selectedMarkdown) {
       return null;
     }
 
@@ -44,7 +61,7 @@ class MarkdownModal {
           ref="dialog"
           key="dialog"
           style={{color: 'white'}}
-          title={this.props.selectedMarkdown.title}
+          title={this.state.selectedMarkdown.title}
           actions={customActions}
           openImmediately={true}
           onDismiss={this.handleDialogClose.bind(this, false)}
@@ -53,7 +70,7 @@ class MarkdownModal {
         <div style={{height: '500px', 'overflowY': 'auto'}}>
           <Markdown
             key="markdownModal"
-            source={this.props.selectedMarkdown.body}/>
+            source={this.state.selectedMarkdown.body}/>
         </div>
      </Dialog>
     );

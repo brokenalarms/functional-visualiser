@@ -4,13 +4,12 @@
 */
 
 import React from 'react';
-import {AppBar, Snackbar} from 'material-ui';
+import {AppBar} from 'material-ui';
 import NavBar from './NavBar/NavBar.jsx';
 import OptionMenu from './OptionMenu/OptionMenu.jsx';
 import MarkdownModal from './MarkdownModal/MarkdownModal.jsx';
+import ErrorPopup from './ErrorPopup/ErrorPopup.jsx';
 import NavigationStore from '../../../modules/stores/NavigationStore.js';
-import SequencerStore from '../../../modules/stores/SequencerStore.js';
-
 
 class Navigation extends React.Component {
 
@@ -20,93 +19,37 @@ class Navigation extends React.Component {
       isNavBarShowing: NavigationStore.isNavBarShowing(),
       selectedMarkdown: NavigationStore.getSelectedMarkdown(),
       warning: null,
-  };
-}
-
-componentDidUpdate = () => {
-  if (this.state.warning) {
-    this.refs.snackbar.show();
-    SequencerStore.setWarningMessageShown();
-  } else {
-    this.refs.snackbar.dismiss();
+    };
   }
-};
 
-componentDidMount = () => {
-  NavigationStore.subscribeListener(this.onNavigationStoreChange);
-  SequencerStore.subscribeListener(this.onSequencerStoreUpdate);
-  this.setIsNavBarShowing(true);
-}
+  shouldComponentUpdate() {
+    // every element is a persistent popup
+    // with its own subscription to relevant events
+    return false;
+  }
 
-componentWillUnmount = () => {
-  NavigationStore.unsubscribeListener(this.onNavigationStoreChange);
-  SequencerStore.unsubscribeListener(this.onSequencerStoreUpdate);
-}
-
-setIsNavBarShowing = (isNavBarShowing) => {
-  NavigationStore.setOptions({
-    isNavBarShowing,
-  });
-}
-
-onNavigationStoreChange = (newOpts) => {
-  this.setState({
-    isNavBarShowing: newOpts.isNavBarShowing,
-    selectedMarkdown: newOpts.selectedMarkdown,
-    warning: null,
-  });
-}
-
-onSequencerStoreUpdate = () => {
-  let warning = SequencerStore.getWarning();
-  if (warning) {
-    this.setState({
-      warning,
-    });
-  } else {
-    this.setState({
-      warning: null,
+  setNavBarShowing = () => {
+    NavigationStore.setOptions({
+      isNavBarShowing: true,
     });
   }
-}
 
-dismissSnackbar = () => {
-  if (this.refs.snackbar) {
-    if (this.state.furtherReadingLink) {
-      window.open(this.state.furtherReadingLink);
-    } else {
-      this.refs.snackbar.dismiss();
-    }
-  }
-}
-
-render = () => {
-  return (
-    <div>
-      <MarkdownModal 
-        selectedMarkdown={this.state.selectedMarkdown}
-        zDepth={5}/>
-        <Snackbar
-          ref="snackbar"
-          action={(this.state.warning) ? this.state.warning.action : ''}
-          message={(this.state.warning) ? this.state.warning.message : ''}
-          onActionTouchTap={this.dismissSnackbar}
-          style={{maxWidth: 'auto'}}
-        />
-          <AppBar
-            style={{backgroundColor: '#2aa198'}}
-            title="Functional Visualiser"
-            iconElementRight={<OptionMenu />}
-            onLeftIconButtonTouchTap={this.setIsNavBarShowing.bind(this, true)} />
-          <NavBar
-            showNavBar={this.state.isNavBarShowing}
-            onNavClose={this.setIsNavBarShowing.bind(this, false)}
-          />
+  render = () => {
+    return (
+      <div>
+        <AppBar
+         style={{backgroundColor: '#2aa198'}}
+          title="Functional Visualiser"
+          iconElementRight={<OptionMenu />}
+          onLeftIconButtonTouchTap={this.setNavBarShowing} />
+        <MarkdownModal 
+          selectedMarkdown={this.state.selectedMarkdown}
+          zDepth={5}/>
+        <NavBar />
+        <ErrorPopup />
       </div>
-  );
-}
-
-
+    );
+  }
 }
 
 export default Navigation;

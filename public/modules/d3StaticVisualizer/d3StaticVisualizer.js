@@ -5,7 +5,7 @@
 // except update occurs through SequencerStore emit event
 // ======================================================
 let d3 = require('d3');
-let cola = require('webcola');
+//let cola = require('webcola');
 
 let options = {
   graphType: 'd3',

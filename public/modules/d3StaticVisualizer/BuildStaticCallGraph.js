@@ -7,8 +7,19 @@ import escodegen from 'escodegen';
 import {includes, pluck, uniq as unique, last} from 'lodash';
 import DeclarationTracker from './DeclarationTracker.js';
 import astTools from '../astTools/astTools.js';
+import SequencerStore from '../stores/SequencerStore.js';
 
 function StaticCallGraph() {
+
+  function showIdentifierError(e) {
+    SequencerStore.setStepOutput({
+      warning: {
+        action: 'ok',
+        message: e.message,
+      },
+    });
+    SequencerStore.sendUpdate();
+  }
 
   let decTracker = new DeclarationTracker('array');
 
@@ -90,12 +101,16 @@ function StaticCallGraph() {
   function addVariableInfo(currentScope, variables, isParam) {
     let varArray = (Array.isArray(variables)) ? variables : [variables];
     varArray.forEach((variable) => {
-      if (astTools.typeIsSupported(variable.type)) {
-        if (isParam) {
-          variable.isParam = true;
+      try {
+        if (astTools.typeIsSupported(variable.type)) {
+          if (isParam) {
+            variable.isParam = true;
+          }
+          decTracker.set(variable.name, currentScope);
+          currentScope.scopeInfo.declarationsMade.push(variable);
         }
-        decTracker.set(variable.name, currentScope);
-        currentScope.scopeInfo.declarationsMade.push(variable);
+      } catch (e) {
+        showIdentifierError(e);
       }
     });
   }
@@ -112,13 +127,17 @@ function StaticCallGraph() {
 
   function addFunctionCallRef(currentScope, node) {
     // TODO: add support for members and builtins
-    if (astTools.typeIsSupported(node.callee.type)) {
-      currentScope.scopeInfo.functionsCalled.push({
-        calleeName: astTools.getCalleeName(node),
-        source: currentScope,
-        target: null,
-        arguments: node.arguments,
-      });
+    try {
+      if (astTools.typeIsSupported(node.callee.type)) {
+        currentScope.scopeInfo.functionsCalled.push({
+          calleeName: astTools.getCalleeName(node),
+          source: currentScope,
+          target: null,
+          arguments: node.arguments,
+        });
+      }
+    } catch (e) {
+      showIdentifierError(e);
     }
   }
 

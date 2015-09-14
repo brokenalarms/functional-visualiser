@@ -16,8 +16,6 @@ class NavBar {
 
   static propTypes = {
     menuItems: React.PropTypes.array.isRequired,
-    showNavBar: React.PropTypes.bool.isRequired,
-    onNavClose: React.PropTypes.func.isRequired,
   }
 
   static defaultProps = {
@@ -52,22 +50,28 @@ class NavBar {
   }
 
   componentDidMount = () => {
-    if (this.props.showNavBar) {
-      this.refs.leftNav.toggle();
-    } else {
-      this.refs.leftNav.close();
-    }
+    NavigationStore.subscribeListener(this.onNavigationStoreChange);
+    this.setNavBarState();
   }
 
-  shouldComponentUpdate(nextProps) {
-    return (this.props.showNavBar !== nextProps.showNavBar);
+  componentWillUnmount = () => {
+    NavigationStore.unsubscribeListener(this.onNavigationStoreChange);
   }
 
-  componentDidUpdate() {
-    if (this.props.showNavBar) {
+
+  onNavClose() {
+    NavigationStore.setOptions({
+      isNavBarShowing: false,
+    });
+  }
+
+  onNavigationStoreChange = () => {
+    this.setNavBarState();
+  }
+
+  setNavBarState = () => {
+    if (NavigationStore.isNavBarShowing()) {
       this.refs.leftNav.toggle();
-    } else {
-      this.refs.leftNav.close();
     }
   }
 
@@ -99,7 +103,7 @@ class NavBar {
             docked={false}
             style={{'lineHeight': 1.5}}
             onChange={this.handleClick}
-            onNavClose={this.props.onNavClose} />
+            onNavClose={this.onNavClose} />
       </div>
     );
   }

@@ -59,8 +59,10 @@ var buildJs = function(watch) {
   //all the dependencies we don't want to watch (faster dev refresh)
   var libs = [
     'react',
+    'react-ace',
+    'react-remarkable',
     'd3',
-    'webcola',
+    //'webcola',
     'material-ui',
     'react-tap-event-plugin',
     'lodash',
@@ -68,7 +70,8 @@ var buildJs = function(watch) {
     'estraverse',
     'escodegen',
     'brace',
-    'react-remarkable',];
+    'rc-slider',
+    ];
 
   var vendorBundler = browserify({
     debug: true,

@@ -132,7 +132,7 @@ function astTools() {
   function typeIsSupported(type) {
     if (!(type === 'Identifier' ||
         type === 'FunctionExpression')) {
-      console.error('Only Identifier variable types currently supported.');
+      throw new Error('Only Identifier variable types supported for static POC.');
     }
     return true;
   }

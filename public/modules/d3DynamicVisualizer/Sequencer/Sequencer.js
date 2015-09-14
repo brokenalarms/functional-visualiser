@@ -76,36 +76,37 @@ function Sequencer() {
 
   function nextStep(singleStep) {
 
-    // arrows are not drawn in ratio speed  if we're advancing one step at a time
-    SequencerStore.setOptions({
-      singleStep,
-    });
-
     let delay = SequencerStore.getOptions().sequencerDelay * 3000;
     let maxAllowedReturnNodes =
-      SequencerStore.getOptions().maxAllowedReturnNodes * 
+      SequencerStore.getOptions().maxAllowedReturnNodes *
       SequencerStore.getOptions().maxAllowedReturnNodesFactor;
     let doneAction = false;
     let warning = null;
     if (CodeStatusStore.isCodeRunning()) {
-      [doneAction, warning] = 
+      [doneAction, warning] =
       stateToNodeConverter.action(interpreter, maxAllowedReturnNodes);
 
       if (doneAction) {
-       // console.log('this step actioned:');
+        // console.log('this step actioned:');
       }
-     // console.log(cloneDeep(interpreter.stateStack[0]));
+      // console.log(cloneDeep(interpreter.stateStack[0]));
       if (doneAction) {
         let representedNode = stateToNodeConverter.getRepresentedNode();
         SequencerStore.setStepOutput({
+          // arrows are not drawn in ratio speed  if we're advancing one step at a time
+          singleStep,
           execCodeBlock: astTools.createCode(representedNode),
-          range: astTools.getCodeRange(representedNode),
-          warning,
+            range: astTools.getCodeRange(representedNode),
+            warning,
         });
         // wait until sequencer has completed timedout editor/d3
-        // output before recursing
+        // output before recursing, or show warning
         SequencerStore.sendUpdate().then(() => {
-          gotoNextStep();
+          if (!(warning && SequencerStore.getOptions().stopOnNotices)) {
+            gotoNextStep();
+          } else {
+            CodeStatusStore.setCodeRunning(false);
+          }
         });
       } else {
         // keep skipping forward until we see something

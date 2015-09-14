@@ -213,9 +213,6 @@ body {
 .pointer {
   cursor: pointer; }
 
-.react-draggable {
-  touch-action: none; }
-
 ::-webkit-scrollbar {
   width: 0.5em; }
 

@@ -197,14 +197,13 @@ function update() {
   });
 
   // set up arrow/line drawing to sync up with live Sequencer options
-  let singleStep = SequencerStore.getOptions().singleStep;
   let delay = SequencerStore.getOptions().sequencerDelay;
   let delayFactor = SequencerStore.getOptions().delayFactor;
   let visualizerPercentageOfDelay = (SequencerStore.getOptions().staggerEditorAndVisualizer) ?
     SequencerStore.getOptions().visualizerPercentageOfDelay : 1;
   let singleStepDelay = options.singleStepDelay;
-  let transitionDelay = (singleStep) ? singleStepDelay : (delay * delayFactor / visualizerPercentageOfDelay);
-
+  let transitionDelay = (SequencerStore.isSingleStep()) ? singleStepDelay : (delay * delayFactor / visualizerPercentageOfDelay);
+  let showFunctionLabels = SequencerStore.getOptions().showFunctionLabels;
   let newLink = link.enter();
 
   newLink.append('line')
@@ -243,21 +242,27 @@ function update() {
   nodeText = nodeGroup.append('foreignObject')
     .attr('class', 'unselectable function-text');
 
-  let allText = node.selectAll('foreignObject');
-  // trigger single text animation via internal flag on node
-  let updateText = allText.filter((d) => {
-    if (d.updateText) {
-      d.updateText = false;
-      return true;
-    }
-  });
-  // swap out old text with new text
-  // d3 will not notice changed text
-  // unless this is done to all nodes
-  allText.html((d) => {
-    return '<div class="pointer unselectable function-text"}>' +
-      d.displayName + '</div>';
-  });
+  if (showFunctionLabels) {
+    let allText = node.selectAll('foreignObject');
+    // trigger single text animation via internal flag on node
+    let updateText = allText.filter((d) => {
+      if (d.updateText) {
+        d.updateText = false;
+        return true;
+      }
+    });
+    // swap out old text with new text
+    // d3 will not notice changed text
+    // unless this is done to all nodes
+    allText.html((d) => {
+      return '<div class="pointer unselectable function-text"}>' +
+        d.displayName + '</div>';
+    });
+  // hide the text that is to be updated then re-grow
+  let animateText = updateText.select('div');
+  shrinkAndGrowText(animateText);
+
+  }
 
   function shrinkAndGrowText(selection) {
     selection.transition().duration(transitionDelay / 2)
@@ -269,9 +274,6 @@ function update() {
           .attr('class', 'unselectable function-text');
       });
   }
-  // hide the text that is to be updated then re-grow
-  let animateText = updateText.select('div');
-  shrinkAndGrowText(animateText);
 
   node.selectAll('circle')
     .attr('class', (d) => {

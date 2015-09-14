@@ -17,24 +17,26 @@ function SequencerStore() {
   };
 
   let options = {
-    staggerEditorAndVisualizer: true,
+    delayVisualizer: true,
+    savedSequencerDelay: null,
+    staggerEditorAndVisualizer: true, // not user adjustable, it's better like this
     visualizerPercentageOfDelay: 2 / 3,
     limitReturnedNodes: true,
     maxAllowedReturnNodes: 0.5,
     maxAllowedReturnNodesFactor: 40,
-    sequencerDelay: 0.3, // * 1000 = ms, this is sliderValue
+    sequencerDelay: 0.75, // * 1000 = ms, this is sliderValue
     minSequencerDelay: 0.01,
-    delayFactor: 3000,
-    singleStep: false,
+    delayFactor: 2000,
+    stopOnNotices: true,
+    showFunctionLabels: true,
   };
 
   let stepOutput = {
     range: null,
     execCodeBlock: null,
     warning: null,
+    singleStep: false,
   };
-
-  let warningsHistory = [];
 
   function subscribeListener(callback) {
     sequencerStore.on('update', callback);
@@ -72,16 +74,29 @@ function SequencerStore() {
     return stepOutput.execCodeBlock;
   }
 
+  function isSingleStep() {
+    return stepOutput.singleStep;
+  }
+
   function setStepOutput(output) {
     Object.assign(stepOutput, output);
-    if (output.warning) {
-      warningsHistory.push(output.warning);
+  }
+
+  function setSavedDelay() {
+    if (!options.delayVisualizer) {
+      options.savedSequencerDelay = options.sequencerDelay;
+      options.sequencerDelay = options.minSequencerDelay;
+    } else {
+      options.sequencerDelay = options.savedSequencerDelay;
+      options.savedSequencerDelay = null;
     }
-    
   }
 
   function setOptions(newOpts) {
     Object.assign(options, newOpts);
+    if (newOpts.delayVisualizer !== undefined) {
+      setSavedDelay();
+    }
     sequencerStore.emit('optionsChanged', options);
   }
 
@@ -154,6 +169,7 @@ function SequencerStore() {
       getCurrentRange,
       getCurrentCodeBlock,
       setStepOutput,
+      isSingleStep,
       getWarning,
       setWarningMessageShown,
       setOptions,

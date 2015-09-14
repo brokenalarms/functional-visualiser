@@ -214,6 +214,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
         // has exceeded the limit; start removing the oldest
         // from the root node position backwards 
         removeOldestReturned(nodes, links, maxAllowedReturnNodes);
+        updateNeeded = true;
       }
 
     }

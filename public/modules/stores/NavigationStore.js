@@ -5,7 +5,7 @@ const event = require('events');
 function NavigationStore() {
   const navigationStore = Object.create(event.EventEmitter.prototype);
   let navigationOptions = {
-    isNavBarShowing: false,
+    isNavBarShowing: true,
     selectedMarkdown: null,
   };
 
