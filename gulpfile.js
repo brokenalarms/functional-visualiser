@@ -62,7 +62,6 @@ var buildJs = function(watch) {
     'react-ace',
     'react-remarkable',
     'd3',
-    //'webcola',
     'material-ui',
     'react-tap-event-plugin',
     'lodash',

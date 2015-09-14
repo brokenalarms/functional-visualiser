@@ -13913,7 +13913,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
 
 var React = require('react');
-//var StylePropable = require('./mixins/style-propable');
+var StylePropable = require('./mixins/style-propable');
 var Draggable = require('react-draggable2');
 var Transitions = require('./styles/transitions');
 var FocusRipple = require('./ripples/focus-ripple');
@@ -13955,7 +13955,7 @@ var valueInRangePropType = function valueInRangePropType(props, propName, compon
 var Slider = React.createClass({
   displayName: 'Slider',
 
-  // mixins: [StylePropable],
+  mixins: [StylePropable],
 
   contextTypes: {
     muiTheme: React.PropTypes.object
@@ -14315,10 +14315,10 @@ var Slider = React.createClass({
   },
 
   _onDragStart: function _onDragStart(e, ui) {
-  /*  this.setState({
+    this.setState({
       dragging: true,
       active: true
-    });*/
+    });
     if (this.props.onDragStart) this.props.onDragStart(e, ui);
   },
 
@@ -14358,7 +14358,7 @@ var Slider = React.createClass({
 });
 
 module.exports = Slider;
-},{"./ripples/focus-ripple":83,"./styles/transitions":96,"react":"react","react-draggable2":159}],88:[function(require,module,exports){
+},{"./mixins/style-propable":73,"./ripples/focus-ripple":83,"./styles/transitions":96,"react":"react","react-draggable2":159}],88:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };

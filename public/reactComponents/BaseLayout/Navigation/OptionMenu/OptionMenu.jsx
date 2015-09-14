@@ -21,6 +21,7 @@ class OptionMenu extends React.Component {
       delayFactor: SequencerStore.getOptions().delayFactor,
       stopOnNotices: SequencerStore.getOptions().stopOnNotices,
       showFunctionLabels: SequencerStore.getOptions().showFunctionLabels,
+      highlightExecutedCode: SequencerStore.getOptions().highlightExecutedCode,
       isCodeRunning: CodeStatusStore.isCodeRunning(),
     };
   }
@@ -49,6 +50,13 @@ class OptionMenu extends React.Component {
     let flag = !this.state.showFunctionLabels;
     SequencerStore.setOptions({
       showFunctionLabels: flag,
+    });
+  }
+
+  setHighlightExecutedCode = () => {
+    let flag = !this.state.highlightExecutedCode;
+    SequencerStore.setOptions({
+      highlightExecutedCode: flag,
     });
   }
 
@@ -98,6 +106,7 @@ class OptionMenu extends React.Component {
       delayFactor: SequencerStore.getOptions().delayFactor,
       stopOnNotices: SequencerStore.getOptions().stopOnNotices,
       showFunctionLabels: SequencerStore.getOptions().showFunctionLabels,
+      highlightExecutedCode: SequencerStore.getOptions().highlightExecutedCode,
     });
   }
 
@@ -150,6 +159,15 @@ class OptionMenu extends React.Component {
           labelStyle={{width: 'calc(100% - 100px)'}}
           checked={this.state.stopOnNotices}
           onCheck={this.setStopOnNotices}/>
+        <Checkbox
+          style={{padding: '0 24px 0 24px', margin: '12px 0'}}
+          name="highlightExecutedCodeCheckbox"
+          ref="highlightExecutedCodeCheckbox"
+          label="Highlight executed code"
+          labelPosition="left"
+          labelStyle={{width: 'calc(100% - 100px)'}}
+          checked={this.state.highlightExecutedCode}
+          onCheck={this.setHighlightExecutedCode}/>
         <Checkbox style={{padding: '0 24px 0 24px', margin: '12px 0'}}
           name="delayVisualizerCheckbox"
           ref="delayVisualizerCheckbox"
@@ -164,7 +182,8 @@ class OptionMenu extends React.Component {
           disabled={!this.state.delayVisualizer}
           onChange={this.setDelayValue}
           name="sequencerDelay"
-          min={0}
+          min={this.state.minSequencerDelay}
+          defaultValue={this.state.sequencerDelay}
           value={this.state.sequencerDelay}
           max={1}/>
         </MenuItem>

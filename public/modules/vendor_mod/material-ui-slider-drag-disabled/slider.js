@@ -5,7 +5,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
 
 var React = require('react');
-//var StylePropable = require('./mixins/style-propable');
+var StylePropable = require('./mixins/style-propable');
 var Draggable = require('react-draggable2');
 var Transitions = require('./styles/transitions');
 var FocusRipple = require('./ripples/focus-ripple');
@@ -47,7 +47,7 @@ var valueInRangePropType = function valueInRangePropType(props, propName, compon
 var Slider = React.createClass({
   displayName: 'Slider',
 
-  // mixins: [StylePropable],
+  mixins: [StylePropable],
 
   contextTypes: {
     muiTheme: React.PropTypes.object
@@ -407,10 +407,10 @@ var Slider = React.createClass({
   },
 
   _onDragStart: function _onDragStart(e, ui) {
-  /*  this.setState({
-      dragging: true,
-      active: true
-    });*/
+/*    this.setState({*/
+/*      dragging: true,*/
+/*      active: true*/
+/*    });*/
     if (this.props.onDragStart) this.props.onDragStart(e, ui);
   },
 

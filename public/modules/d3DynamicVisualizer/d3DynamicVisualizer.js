@@ -242,8 +242,8 @@ function update() {
   nodeText = nodeGroup.append('foreignObject')
     .attr('class', 'unselectable function-text');
 
+  let allText = node.selectAll('foreignObject');
   if (showFunctionLabels) {
-    let allText = node.selectAll('foreignObject');
     // trigger single text animation via internal flag on node
     let updateText = allText.filter((d) => {
       if (d.updateText) {
@@ -254,14 +254,16 @@ function update() {
     // swap out old text with new text
     // d3 will not notice changed text
     // unless this is done to all nodes
-    allText.html((d) => {
-      return '<div class="pointer unselectable function-text"}>' +
-        d.displayName + '</div>';
-    });
-  // hide the text that is to be updated then re-grow
-  let animateText = updateText.select('div');
-  shrinkAndGrowText(animateText);
-
+    allText.attr('width', 250)
+      .attr('height', 60).html((d) => {
+        return '<xhtml:div class="pointer unselectable function-text"}>' +
+          d.displayName + '</div>';
+      });
+    // hide the text that is to be updated then re-grow
+    let animateText = updateText.select('div');
+    shrinkAndGrowText(animateText);
+  } else {
+    allText.html('');
   }
 
   function shrinkAndGrowText(selection) {
@@ -289,7 +291,7 @@ function update() {
   endGroup.classed('finished', (d) => {
       if (d.status === 'finished') {
         rootNode.select('foreignObject')
-          .html('<div class="finish-text"><div>' +
+          .html('<xhtml:div class="finish-text"><div>' +
             ((d.errorCount > 0) ? d.errorCount : 'No') + ' critical errors.</div>' +
             ((!d.errorCount) ? '<div>FUNCTIONAL.</div></div>' : '</div>'));
         return (finished = true);

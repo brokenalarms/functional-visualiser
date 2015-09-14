@@ -3113,8 +3113,8 @@ function update() {
 
   nodeText = nodeGroup.append('foreignObject').attr('class', 'unselectable function-text');
 
+  var allText = node.selectAll('foreignObject');
   if (showFunctionLabels) {
-    var allText = node.selectAll('foreignObject');
     // trigger single text animation via internal flag on node
     var updateText = allText.filter(function (d) {
       if (d.updateText) {
@@ -3125,12 +3125,14 @@ function update() {
     // swap out old text with new text
     // d3 will not notice changed text
     // unless this is done to all nodes
-    allText.html(function (d) {
-      return '<div class="pointer unselectable function-text"}>' + d.displayName + '</div>';
+    allText.attr('width', 250).attr('height', 60).html(function (d) {
+      return '<xhtml:div class="pointer unselectable function-text"}>' + d.displayName + '</div>';
     });
     // hide the text that is to be updated then re-grow
     var animateText = updateText.select('div');
     shrinkAndGrowText(animateText);
+  } else {
+    allText.html('');
   }
 
   function shrinkAndGrowText(selection) {
@@ -3150,7 +3152,7 @@ function update() {
 
   endGroup.classed('finished', function (d) {
     if (d.status === 'finished') {
-      rootNode.select('foreignObject').html('<div class="finish-text"><div>' + (d.errorCount > 0 ? d.errorCount : 'No') + ' critical errors.</div>' + (!d.errorCount ? '<div>FUNCTIONAL.</div></div>' : '</div>'));
+      rootNode.select('foreignObject').html('<xhtml:div class="finish-text"><div>' + (d.errorCount > 0 ? d.errorCount : 'No') + ' critical errors.</div>' + (!d.errorCount ? '<div>FUNCTIONAL.</div></div>' : '</div>'));
       return finished = true;
     }
   }).transition().duration(singleStepDelay).attr('r', function (d) {
@@ -4656,15 +4658,16 @@ function SequencerStore() {
     delayVisualizer: true,
     savedSequencerDelay: null,
     staggerEditorAndVisualizer: true, // not user adjustable, it's better like this
-    visualizerPercentageOfDelay: 2 / 3,
+    visualizerPercentageOfDelay: 0.6,
     limitReturnedNodes: true,
-    maxAllowedReturnNodes: 0.5,
-    maxAllowedReturnNodesFactor: 40,
-    sequencerDelay: 0.6, // * 1000 = ms, this is sliderValue
+    maxAllowedReturnNodes: 0.6,
+    maxAllowedReturnNodesFactor: 100,
+    sequencerDelay: 0.5, // * 1000 = ms, this is sliderValue
     minSequencerDelay: 0.01,
     delayFactor: 2000,
     stopOnNotices: true,
-    showFunctionLabels: true
+    showFunctionLabels: true,
+    highlightExecutedCode: true
   };
 
   var stepOutput = {
@@ -4757,7 +4760,9 @@ function SequencerStore() {
   function sendUpdate(shouldResetD3) {
 
     if (shouldResetD3) {
-      sequencerStore.emit('updateEditor');
+      if (options.highlightExecutedCode) {
+        sequencerStore.emit('updateEditor');
+      }
       sequencerStore.emit('update', shouldResetD3);
       return;
     }
@@ -4768,24 +4773,28 @@ function SequencerStore() {
         // stagger code/visualizer steps evenly
         // to see cause/effect relationship.
         var editorComplete = new Promise(function (resolveEditorStep) {
-          setTimeout(function () {
+          if (options.highlightExecutedCode) {
             sequencerStore.emit('updateEditor');
+          }
+          setTimeout(function () {
             resolveEditorStep(true);
           }, stepDelay * (1 - options.visualizerPercentageOfDelay));
         });
 
         editorComplete.then(function () {
+          sequencerStore.emit('update');
           setTimeout(function () {
-            sequencerStore.emit('update');
             resolveAll(true);
           }, stepDelay * options.visualizerPercentageOfDelay);
         });
       } else {
         // run both events synchronously at the
         // end of the stepDelay the return
-        setTimeout(function () {
-          sequencerStore.emit('update');
+        sequencerStore.emit('update');
+        if (options.highlightExecutedCode) {
           sequencerStore.emit('updateEditor');
+        }
+        setTimeout(function () {
           resolveAll(true);
         }, stepDelay);
       }
@@ -8454,6 +8463,10 @@ var _modulesStoresSequencerStoreJs = require('../../../../modules/stores/Sequenc
 
 var _modulesStoresSequencerStoreJs2 = _interopRequireDefault(_modulesStoresSequencerStoreJs);
 
+var _modulesStoresCodeStatusStoreJs = require('../../../../modules/stores/CodeStatusStore.js');
+
+var _modulesStoresCodeStatusStoreJs2 = _interopRequireDefault(_modulesStoresCodeStatusStoreJs);
+
 var ErrorPopup = (function (_React$Component) {
   _inherits(ErrorPopup, _React$Component);
 
@@ -8500,12 +8513,12 @@ var ErrorPopup = (function (_React$Component) {
   _createClass(ErrorPopup, [{
     key: 'componentDidUpdate',
     value: function componentDidUpdate() {
-      if (this.state.warning) {
+      if (this.state.warning && !(_modulesStoresSequencerStoreJs2['default'].getOptions().stopOnNotices && _modulesStoresCodeStatusStoreJs2['default'].isCodeRunning())) {
         this.refs.snackbar.show();
-        _modulesStoresSequencerStoreJs2['default'].setWarningMessageShown();
       } else {
         this.refs.snackbar.dismiss();
       }
+      _modulesStoresSequencerStoreJs2['default'].setWarningMessageShown();
     }
   }]);
 
@@ -8515,7 +8528,7 @@ var ErrorPopup = (function (_React$Component) {
 exports['default'] = ErrorPopup;
 module.exports = exports['default'];
 
-},{"../../../../modules/stores/SequencerStore.js":"C:\\Users\\pitch\\functional-visualiser\\public\\modules\\stores\\SequencerStore.js","material-ui":"material-ui","react":"react"}],"C:\\Users\\pitch\\functional-visualiser\\public\\reactComponents\\BaseLayout\\Navigation\\MarkdownModal\\MarkdownModal.jsx":[function(require,module,exports){
+},{"../../../../modules/stores/CodeStatusStore.js":"C:\\Users\\pitch\\functional-visualiser\\public\\modules\\stores\\CodeStatusStore.js","../../../../modules/stores/SequencerStore.js":"C:\\Users\\pitch\\functional-visualiser\\public\\modules\\stores\\SequencerStore.js","material-ui":"material-ui","react":"react"}],"C:\\Users\\pitch\\functional-visualiser\\public\\reactComponents\\BaseLayout\\Navigation\\MarkdownModal\\MarkdownModal.jsx":[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -9064,6 +9077,13 @@ var OptionMenu = (function (_React$Component) {
       });
     };
 
+    this.setHighlightExecutedCode = function () {
+      var flag = !_this.state.highlightExecutedCode;
+      _modulesStoresSequencerStoreJs2['default'].setOptions({
+        highlightExecutedCode: flag
+      });
+    };
+
     this.setStopOnNotices = function () {
       var flag = !_this.state.stopOnNotices;
       _modulesStoresSequencerStoreJs2['default'].setOptions({
@@ -9107,7 +9127,8 @@ var OptionMenu = (function (_React$Component) {
         minSequencerDelay: _modulesStoresSequencerStoreJs2['default'].getOptions().minSequencerDelay,
         delayFactor: _modulesStoresSequencerStoreJs2['default'].getOptions().delayFactor,
         stopOnNotices: _modulesStoresSequencerStoreJs2['default'].getOptions().stopOnNotices,
-        showFunctionLabels: _modulesStoresSequencerStoreJs2['default'].getOptions().showFunctionLabels
+        showFunctionLabels: _modulesStoresSequencerStoreJs2['default'].getOptions().showFunctionLabels,
+        highlightExecutedCode: _modulesStoresSequencerStoreJs2['default'].getOptions().highlightExecutedCode
       });
     };
 
@@ -9147,7 +9168,15 @@ var OptionMenu = (function (_React$Component) {
         labelPosition: 'left',
         labelStyle: { width: 'calc(100% - 100px)' },
         checked: _this.state.stopOnNotices,
-        onCheck: _this.setStopOnNotices }), _react2['default'].createElement(_materialUi.Checkbox, { style: { padding: '0 24px 0 24px', margin: '12px 0' },
+        onCheck: _this.setStopOnNotices }), _react2['default'].createElement(_materialUi.Checkbox, {
+        style: { padding: '0 24px 0 24px', margin: '12px 0' },
+        name: 'highlightExecutedCodeCheckbox',
+        ref: 'highlightExecutedCodeCheckbox',
+        label: 'Highlight executed code',
+        labelPosition: 'left',
+        labelStyle: { width: 'calc(100% - 100px)' },
+        checked: _this.state.highlightExecutedCode,
+        onCheck: _this.setHighlightExecutedCode }), _react2['default'].createElement(_materialUi.Checkbox, { style: { padding: '0 24px 0 24px', margin: '12px 0' },
         name: 'delayVisualizerCheckbox',
         ref: 'delayVisualizerCheckbox',
         label: 'Delay visualizer steps',
@@ -9158,7 +9187,8 @@ var OptionMenu = (function (_React$Component) {
         disabled: !_this.state.delayVisualizer,
         onChange: _this.setDelayValue,
         name: 'sequencerDelay',
-        min: 0,
+        min: _this.state.minSequencerDelay,
+        defaultValue: _this.state.sequencerDelay,
         value: _this.state.sequencerDelay,
         max: 1 })), _react2['default'].createElement(_materialUi.Checkbox, { style: { padding: '0 24px 0 24px', margin: '12px 0' },
         name: 'limitReturnedNodesCheckbox',
@@ -9187,6 +9217,7 @@ var OptionMenu = (function (_React$Component) {
       delayFactor: _modulesStoresSequencerStoreJs2['default'].getOptions().delayFactor,
       stopOnNotices: _modulesStoresSequencerStoreJs2['default'].getOptions().stopOnNotices,
       showFunctionLabels: _modulesStoresSequencerStoreJs2['default'].getOptions().showFunctionLabels,
+      highlightExecutedCode: _modulesStoresSequencerStoreJs2['default'].getOptions().highlightExecutedCode,
       isCodeRunning: _modulesStoresCodeStatusStoreJs2['default'].isCodeRunning()
     };
   }

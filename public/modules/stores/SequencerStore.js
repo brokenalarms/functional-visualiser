@@ -20,15 +20,16 @@ function SequencerStore() {
     delayVisualizer: true,
     savedSequencerDelay: null,
     staggerEditorAndVisualizer: true, // not user adjustable, it's better like this
-    visualizerPercentageOfDelay: 2 / 3,
+    visualizerPercentageOfDelay: 0.6,
     limitReturnedNodes: true,
-    maxAllowedReturnNodes: 0.5,
-    maxAllowedReturnNodesFactor: 40,
-    sequencerDelay: 0.6, // * 1000 = ms, this is sliderValue
+    maxAllowedReturnNodes: 0.6,
+    maxAllowedReturnNodesFactor: 100,
+    sequencerDelay: 0.5, // * 1000 = ms, this is sliderValue
     minSequencerDelay: 0.01,
     delayFactor: 2000,
     stopOnNotices: true,
     showFunctionLabels: true,
+    highlightExecutedCode: true,
   };
 
   let stepOutput = {
@@ -121,7 +122,9 @@ function SequencerStore() {
   function sendUpdate(shouldResetD3) {
 
     if (shouldResetD3) {
-      sequencerStore.emit('updateEditor');
+      if (options.highlightExecutedCode) {
+        sequencerStore.emit('updateEditor');
+      }
       sequencerStore.emit('update', shouldResetD3);
       return;
     }
@@ -133,16 +136,18 @@ function SequencerStore() {
         // stagger code/visualizer steps evenly
         // to see cause/effect relationship.
         let editorComplete = new Promise((resolveEditorStep) => {
+          if (options.highlightExecutedCode) {
+            sequencerStore.emit('updateEditor');
+          }
           setTimeout(() => {
-              sequencerStore.emit('updateEditor');
               resolveEditorStep(true);
             },
             stepDelay * (1 - options.visualizerPercentageOfDelay));
         });
 
         editorComplete.then(() => {
+          sequencerStore.emit('update');
           setTimeout(() => {
-            sequencerStore.emit('update');
             resolveAll(true);
           }, stepDelay * options.visualizerPercentageOfDelay);
         });
@@ -150,9 +155,11 @@ function SequencerStore() {
       } else {
         // run both events synchronously at the
         // end of the stepDelay the return
-        setTimeout(() => {
-          sequencerStore.emit('update');
+        sequencerStore.emit('update');
+        if (options.highlightExecutedCode) {
           sequencerStore.emit('updateEditor');
+        }
+        setTimeout(() => {
           resolveAll(true);
         }, stepDelay);
       }
