@@ -57,7 +57,9 @@ const funcWithoutReturn = {
     funcWithReturnStatement();
     funcWithReturnStatement();
     funcWithReturnStatement();
-
+    funcWithReturnStatement();
+    funcWithReturnStatement();
+    funcWithReturnStatement();
 
     /* This statement does not generate either error. */
     var assignedResult = funcWithReturnStatement();

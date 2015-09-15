@@ -2377,7 +2377,7 @@ function WarningHandler() {
     // the root node and preserve failures
     classAssignees.forEach(function (node) {
       if (node) {
-        if (node.parent !== null) {
+        if (node.parentNode !== null) {
           node.status = node.status !== 'failure' ? warning.status : node.status;
         }
       }
@@ -3970,6 +3970,9 @@ var funcWithoutReturn = {
            it gets larger and 'redder' as more
            errors are made, eventually 'pulsating'.
         */
+        funcWithReturnStatement();
+        funcWithReturnStatement();
+        funcWithReturnStatement();
         funcWithReturnStatement();
         funcWithReturnStatement();
         funcWithReturnStatement();

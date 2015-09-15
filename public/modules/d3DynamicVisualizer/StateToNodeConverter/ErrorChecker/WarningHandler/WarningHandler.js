@@ -44,7 +44,7 @@ function WarningHandler() {
     // the root node and preserve failures
     classAssignees.forEach((node) => {
       if (node) {
-        if (node.parent !== null) {
+        if (node.parentNode !== null) {
           node.status =
             (node.status !== 'failure') ? warning.status : node.status;
         }

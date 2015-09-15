@@ -102,6 +102,7 @@
 
 .function-root {
     @include transition(1s);
+    fill: transparent;
 }
 
 .finish-text {

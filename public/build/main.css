@@ -165,7 +165,8 @@
 .function-root {
   -ms-transition: 1s ease-in-out;
   -o-transitionn: 1s ease-in-out;
-  transition: 1s ease-in-out; }
+  transition: 1s ease-in-out;
+  fill: transparent; }
 
 .finish-text {
   color: whitesmoke;
