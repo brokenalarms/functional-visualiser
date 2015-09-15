@@ -14,7 +14,9 @@ class ErrorPopup extends React.Component {
 
   componentDidUpdate() {
     if (this.state.warning &&
-      !(RefreshStore.getOptions().showDynamic && !SequencerStore.getOptions().stopOnNotices)) {
+      !(RefreshStore.getOptions().showDynamic && 
+        !SequencerStore.getOptions().stopOnNotices &&
+        !SequencerStore.isSingleStep())) {
       this.refs.snackbar.show();
     } else {
       this.refs.snackbar.dismiss();
