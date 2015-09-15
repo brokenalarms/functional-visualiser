@@ -16,10 +16,10 @@ class ErrorPopup extends React.Component {
     if (this.state.warning &&
       !(RefreshStore.getOptions().showDynamic && !SequencerStore.getOptions().stopOnNotices)) {
       this.refs.snackbar.show();
-      SequencerStore.setWarningMessageShown();
     } else {
       this.refs.snackbar.dismiss();
     }
+    SequencerStore.setWarningMessageShown();
   }
 
   componentDidMount = () => {

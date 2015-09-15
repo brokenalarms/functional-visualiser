@@ -8517,10 +8517,10 @@ var ErrorPopup = (function (_React$Component) {
     value: function componentDidUpdate() {
       if (this.state.warning && !(_modulesStoresRefreshStoreJs2['default'].getOptions().showDynamic && !_modulesStoresSequencerStoreJs2['default'].getOptions().stopOnNotices)) {
         this.refs.snackbar.show();
-        _modulesStoresSequencerStoreJs2['default'].setWarningMessageShown();
       } else {
         this.refs.snackbar.dismiss();
       }
+      _modulesStoresSequencerStoreJs2['default'].setWarningMessageShown();
     }
   }]);
 
