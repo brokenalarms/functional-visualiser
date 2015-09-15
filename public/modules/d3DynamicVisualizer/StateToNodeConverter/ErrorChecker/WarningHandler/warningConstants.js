@@ -10,12 +10,12 @@ const warnings = {
     },
   },
   functionReturnUnassigned: {
-    get: (affectedNodeName, actingNodeName) => {
+    get: (actingNodeName, affectedNodeName) => {
       return {
         errorValue: 1,
         status: 'warning',
         action: 'Principle: Side effects',
-        message: `Result of function '${actingNodeName}' is not assigned to a value.`,
+        message: `Result of function '${actingNodeName}' is not assigned to a value in '${affectedNodeName}'.`,
       };
     },
   },

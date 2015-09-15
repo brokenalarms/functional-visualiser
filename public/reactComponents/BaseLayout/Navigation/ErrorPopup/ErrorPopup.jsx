@@ -1,6 +1,7 @@
 import React from 'react';
 import {Snackbar} from 'material-ui';
 import SequencerStore from '../../../../modules/stores/SequencerStore.js';
+import RefreshStore from '../../../../modules/stores/RefreshStore.js';
 
 class ErrorPopup extends React.Component {
 
@@ -13,12 +14,12 @@ class ErrorPopup extends React.Component {
 
   componentDidUpdate() {
     if (this.state.warning &&
-      !(SequencerStore.getOptions().showDynamic && SequencerStore.getOptions().stopOnNotices)) {
+      !(RefreshStore.getOptions().showDynamic && !SequencerStore.getOptions().stopOnNotices)) {
       this.refs.snackbar.show();
+      SequencerStore.setWarningMessageShown();
     } else {
       this.refs.snackbar.dismiss();
     }
-    SequencerStore.setWarningMessageShown();
   }
 
   componentDidMount = () => {

@@ -22,7 +22,7 @@ function WarningHandler() {
       let receivedWarning = warningConstants[opts.key];
       warning =
         receivedWarning.get(
-          opts.actingNode.name, (opts.affectedNode) ? opts.affectedNode.name : null,
+          (opts.actingNode) ? opts.actingNode.name : null, (opts.affectedNode) ? opts.affectedNode.name : null,
           opts.variableName);
     }
 

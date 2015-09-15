@@ -70,21 +70,23 @@ function StateToNodeConverter(resetNodes, resetLinks) {
     state = interpreter.stateStack[0];
 
     if (state) {
+
+      if (exitingNode) {
+        // make sure the returned function is 
+        // then assigned to a variable, before
+        // the nodeExiting check clobbers it
+        functionReturnUnassigned =
+          isFunctionReturnUnassigned(state, exitingNode);
+      }
+
       nodeEnterOrExit = (
         isNodeEntering(state, interpreter) ||
         isNodeExiting(state, interpreter, maxAllowedReturnNodes)
       );
 
-
       let updateNode = last(scopeChain) || null;
 
       if (!nodeEnterOrExit && updateNode) {
-        if (exitingNode) {
-          // make sure the returned function is 
-          // then assigned to a variable
-          functionReturnUnassigned =
-            isFunctionReturnUnassigned(state, updateNode, exitingNode);
-        }
         currentNodeUpdated =
           displayTextHandler.doesDisplayNameNeedUpdating(state, updateNode, interpreter);
         variableErrors = errorChecker.isVariableMutated(state, updateNode);
@@ -203,11 +205,8 @@ function StateToNodeConverter(resetNodes, resetLinks) {
           scopeChain.pop();
         }
       } else {
-        // we're at the root scope, there can't be a node exiting
-        // unless the program is finishing
-        exitingNode = null;
+        exitingNode = null; // can't exit from rootNode
       }
-
       if (rootNodeIndex > maxAllowedReturnNodes) {
         // the returned nodes shifted to the front of the array
         // has exceeded the limit; start removing the oldest
@@ -332,7 +331,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
     // if the state progresses too far past the return then this potential error
     // just abandoned as it becomes increasingly unreliable to infer.
     if (!(nodeIsBeingAssigned(state.node) || nodeWillBeAssigned(state))) {
-      errorChecker.addUnassignedFunctionWarning(exitingNode.parentNode, exitingNode);
+      errorChecker.addUnassignedFunctionWarning(exitingNode, exitingNode.parentNode);
 
       if (links[0] && links[0].source === exitingNode) {
         // break off this link too..but only if the returning link

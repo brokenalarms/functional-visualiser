@@ -2358,7 +2358,7 @@ function WarningHandler() {
     // assign warning
     if (!warning) {
       var receivedWarning = _warningConstantsJs2['default'][opts.key];
-      warning = receivedWarning.get(opts.actingNode.name, opts.affectedNode ? opts.affectedNode.name : null, opts.variableName);
+      warning = receivedWarning.get(opts.actingNode ? opts.actingNode.name : null, opts.affectedNode ? opts.affectedNode.name : null, opts.variableName);
     }
 
     // If a variable error,
@@ -2427,12 +2427,12 @@ var warnings = {
     }
   },
   functionReturnUnassigned: {
-    get: function get(affectedNodeName, actingNodeName) {
+    get: function get(actingNodeName, affectedNodeName) {
       return {
         errorValue: 1,
         status: 'warning',
         action: 'Principle: Side effects',
-        message: 'Result of function \'' + actingNodeName + '\' is not assigned to a value.'
+        message: 'Result of function \'' + actingNodeName + '\' is not assigned to a value in \'' + affectedNodeName + '\'.'
       };
     }
   },
@@ -2590,16 +2590,19 @@ function StateToNodeConverter(resetNodes, resetLinks) {
     state = interpreter.stateStack[0];
 
     if (state) {
+
+      if (exitingNode) {
+        // make sure the returned function is
+        // then assigned to a variable, before
+        // the nodeExiting check clobbers it
+        functionReturnUnassigned = isFunctionReturnUnassigned(state, exitingNode);
+      }
+
       nodeEnterOrExit = isNodeEntering(state, interpreter) || isNodeExiting(state, interpreter, maxAllowedReturnNodes);
 
       var updateNode = (0, _lodash.last)(scopeChain) || null;
 
       if (!nodeEnterOrExit && updateNode) {
-        if (exitingNode) {
-          // make sure the returned function is
-          // then assigned to a variable
-          functionReturnUnassigned = isFunctionReturnUnassigned(state, updateNode, exitingNode);
-        }
         currentNodeUpdated = displayTextHandler.doesDisplayNameNeedUpdating(state, updateNode, interpreter);
         variableErrors = errorChecker.isVariableMutated(state, updateNode);
       }
@@ -2709,11 +2712,8 @@ function StateToNodeConverter(resetNodes, resetLinks) {
           scopeChain.pop();
         }
       } else {
-        // we're at the root scope, there can't be a node exiting
-        // unless the program is finishing
-        exitingNode = null;
+        exitingNode = null; // can't exit from rootNode
       }
-
       if (rootNodeIndex > maxAllowedReturnNodes) {
         // the returned nodes shifted to the front of the array
         // has exceeded the limit; start removing the oldest
@@ -2819,7 +2819,7 @@ function StateToNodeConverter(resetNodes, resetLinks) {
     // if the state progresses too far past the return then this potential error
     // just abandoned as it becomes increasingly unreliable to infer.
     if (!(nodeIsBeingAssigned(state.node) || nodeWillBeAssigned(state))) {
-      errorChecker.addUnassignedFunctionWarning(exitingNode.parentNode, exitingNode);
+      errorChecker.addUnassignedFunctionWarning(exitingNode, exitingNode.parentNode);
 
       if (links[0] && links[0].source === exitingNode) {
         // break off this link too..but only if the returning link
@@ -8465,6 +8465,10 @@ var _modulesStoresSequencerStoreJs = require('../../../../modules/stores/Sequenc
 
 var _modulesStoresSequencerStoreJs2 = _interopRequireDefault(_modulesStoresSequencerStoreJs);
 
+var _modulesStoresRefreshStoreJs = require('../../../../modules/stores/RefreshStore.js');
+
+var _modulesStoresRefreshStoreJs2 = _interopRequireDefault(_modulesStoresRefreshStoreJs);
+
 var ErrorPopup = (function (_React$Component) {
   _inherits(ErrorPopup, _React$Component);
 
@@ -8511,12 +8515,12 @@ var ErrorPopup = (function (_React$Component) {
   _createClass(ErrorPopup, [{
     key: 'componentDidUpdate',
     value: function componentDidUpdate() {
-      if (this.state.warning && !(_modulesStoresSequencerStoreJs2['default'].getOptions().showDynamic && _modulesStoresSequencerStoreJs2['default'].getOptions().stopOnNotices)) {
+      if (this.state.warning && !(_modulesStoresRefreshStoreJs2['default'].getOptions().showDynamic && !_modulesStoresSequencerStoreJs2['default'].getOptions().stopOnNotices)) {
         this.refs.snackbar.show();
+        _modulesStoresSequencerStoreJs2['default'].setWarningMessageShown();
       } else {
         this.refs.snackbar.dismiss();
       }
-      _modulesStoresSequencerStoreJs2['default'].setWarningMessageShown();
     }
   }]);
 
@@ -8526,7 +8530,7 @@ var ErrorPopup = (function (_React$Component) {
 exports['default'] = ErrorPopup;
 module.exports = exports['default'];
 
-},{"../../../../modules/stores/SequencerStore.js":"C:\\Users\\pitch\\functional-visualiser\\public\\modules\\stores\\SequencerStore.js","material-ui":"material-ui","react":"react"}],"C:\\Users\\pitch\\functional-visualiser\\public\\reactComponents\\BaseLayout\\Navigation\\MarkdownModal\\MarkdownModal.jsx":[function(require,module,exports){
+},{"../../../../modules/stores/RefreshStore.js":"C:\\Users\\pitch\\functional-visualiser\\public\\modules\\stores\\RefreshStore.js","../../../../modules/stores/SequencerStore.js":"C:\\Users\\pitch\\functional-visualiser\\public\\modules\\stores\\SequencerStore.js","material-ui":"material-ui","react":"react"}],"C:\\Users\\pitch\\functional-visualiser\\public\\reactComponents\\BaseLayout\\Navigation\\MarkdownModal\\MarkdownModal.jsx":[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
